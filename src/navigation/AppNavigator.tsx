@@ -1,0 +1,95 @@
+import React from 'react';
+import { NavigationContainer, DarkTheme } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+
+import { HomeScreen } from '../screens/HomeScreen';
+import { MonthlyScreen } from '../screens/MonthlyScreen';
+import { AnalyticsScreen } from '../screens/AnalyticsScreen';
+import { AddExpenseScreen } from '../screens/AddExpenseScreen';
+import { theme } from '../theme/theme';
+
+export type RootStackParamList = {
+  MainTabs: undefined;
+  AddExpense: undefined;
+};
+
+export type MainTabParamList = {
+  Home: undefined;
+  Monthly: undefined;
+  Analytics: undefined;
+};
+
+const Tab = createBottomTabNavigator<MainTabParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+const TabNavigator = () => {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerStyle: {
+          backgroundColor: theme.colors.surface,
+          elevation: 0,
+          shadowOpacity: 0,
+          borderBottomWidth: 1,
+          borderBottomColor: theme.colors.border,
+        },
+        headerTintColor: theme.colors.text,
+        tabBarStyle: {
+          backgroundColor: theme.colors.surface,
+          borderTopColor: theme.colors.border,
+          paddingBottom: 5,
+          paddingTop: 5,
+          height: 60,
+        },
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.textSecondary,
+        tabBarIcon: ({ color, size }) => {
+          let iconName = 'home';
+          if (route.name === 'Home') iconName = 'view-dashboard';
+          else if (route.name === 'Monthly') iconName = 'calendar-month';
+          else if (route.name === 'Analytics') iconName = 'chart-pie';
+          return <Icon name={iconName} size={size + 2} color={color} />;
+        },
+      })}
+    >
+      <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Daily Expenses' }} />
+      <Tab.Screen name="Monthly" component={MonthlyScreen} options={{ title: 'Monthly View' }} />
+      <Tab.Screen name="Analytics" component={AnalyticsScreen} options={{ title: 'Analytics' }} />
+    </Tab.Navigator>
+  );
+};
+
+export const AppNavigator = () => {
+  const MyTheme = {
+    ...DarkTheme,
+    colors: {
+      ...DarkTheme.colors,
+      background: theme.colors.background,
+      card: theme.colors.surface,
+      text: theme.colors.text,
+      border: theme.colors.border,
+      primary: theme.colors.primary,
+    },
+  };
+
+  return (
+    <NavigationContainer theme={MyTheme}>
+      <Stack.Navigator screenOptions={{ headerShown: false, presentation: 'modal' }}>
+        <Stack.Screen name="MainTabs" component={TabNavigator} />
+        <Stack.Screen 
+          name="AddExpense" 
+          component={AddExpenseScreen} 
+          options={{
+            headerShown: true,
+            title: 'Add Expense',
+            headerStyle: { backgroundColor: theme.colors.surface },
+            headerTintColor: theme.colors.text,
+            presentation: 'modal',
+          }} 
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};
