@@ -11,6 +11,7 @@ interface ExpenseState {
   fetchDailyExpenses: (date: string) => Promise<void>;
   fetchMonthlyExpenses: (year: number, month: number) => Promise<void>;
   addExpense: (expense: NewExpense) => Promise<void>;
+  deleteExpense: (id: string) => Promise<void>;
 }
 
 export const useExpenseStore = create<ExpenseState>((set, get) => ({
@@ -53,6 +54,21 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
       throw error; // Let the UI handle the failure presentation
+    }
+  },
+
+  deleteExpense: async (id: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      await expenseService.deleteExpense(id);
+      set({
+        dailyExpenses: get().dailyExpenses.filter(e => e.id !== id),
+        monthlyExpenses: get().monthlyExpenses.filter(e => e.id !== id),
+        isLoading: false
+      });
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+      throw error;
     }
   }
 }));

@@ -41,6 +41,7 @@ export const HomeScreen = () => {
             contentContainerStyle={styles.listContent}
             renderItem={({ item }) => (
               <ExpenseItem
+                id={item.id}
                 amount={item.amount}
                 category={item.category}
                 note={item.note}

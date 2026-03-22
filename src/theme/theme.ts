@@ -19,13 +19,14 @@ export const theme = {
     xl: 32,
   },
   typography: {
-    h1: { fontSize: 32, fontWeight: 'bold' as const, color: '#FFFFFF' },
-    h2: { fontSize: 24, fontWeight: 'bold' as const, color: '#FFFFFF' },
-    h3: { fontSize: 20, fontWeight: '600' as const, color: '#FFFFFF' },
-    body: { fontSize: 16, fontWeight: 'normal' as const, color: '#FFFFFF' },
-    caption: { fontSize: 14, fontWeight: 'normal' as const, color: '#B3B3B3' },
-    small: { fontSize: 12, fontWeight: 'normal' as const, color: '#B3B3B3' },
+    h1: { fontSize: 32, fontWeight: 'bold' as const, color: '#FFFFFF', fontFamily: 'Inter-Bold' },
+    h2: { fontSize: 24, fontWeight: 'bold' as const, color: '#FFFFFF', fontFamily: 'Inter-Bold' },
+    h3: { fontSize: 20, fontWeight: '600' as const, color: '#FFFFFF', fontFamily: 'Inter-SemiBold' },
+    body: { fontSize: 16, fontWeight: 'normal' as const, color: '#FFFFFF', fontFamily: 'Inter-Regular' },
+    caption: { fontSize: 14, fontWeight: 'normal' as const, color: '#B3B3B3', fontFamily: 'Inter-Medium' },
+    small: { fontSize: 12, fontWeight: 'normal' as const, color: '#B3B3B3', fontFamily: 'Inter-Regular' },
   },
+
   borderRadius: {
     sm: 4,
     md: 12,

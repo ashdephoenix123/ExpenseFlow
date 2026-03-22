@@ -1,16 +1,41 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../theme/theme';
+import { useExpenseStore } from '../store/expenseStore';
 
 interface ExpenseItemProps {
+  id: string;
   amount: number;
   category: string;
   note?: string;
   date?: string;
 }
 
-export const ExpenseItem: React.FC<ExpenseItemProps> = ({ amount, category, note, date }) => {
+export const ExpenseItem: React.FC<ExpenseItemProps> = ({ id, amount, category, note, date }) => {
+  const deleteExpense = useExpenseStore(state => state.deleteExpense);
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete Expense',
+      'Are you sure you want to delete this record?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteExpense(id);
+            } catch (error: any) {
+              Alert.alert('Error', 'Failed to delete expense: ' + error.message);
+            }
+          }
+        },
+      ]
+    );
+  };
+
   // Simple icon mapper based on category
   const getCategoryIcon = (cat: string) => {
     const C = cat.toLowerCase();
@@ -45,8 +70,13 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({ amount, category, note
       </View>
       
       <View style={styles.rightContent}>
-        <Text style={styles.amount}>₹ {amount.toLocaleString('en-IN')}</Text>
-        {date ? <Text style={styles.date}>{date}</Text> : null}
+        <View style={styles.amountContainer}>
+          <Text style={styles.amount}>₹ {amount.toLocaleString('en-IN')}</Text>
+          {date ? <Text style={styles.date}>{date}</Text> : null}
+        </View>
+        <TouchableOpacity onPress={handleDelete} style={styles.deleteBtn}>
+          <Icon name="delete-outline" size={22} color={theme.colors.error} />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -65,6 +95,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    marginRight: theme.spacing.sm,
   },
   iconContainer: {
     width: 48,
@@ -89,8 +120,15 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   rightContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  amountContainer: {
     alignItems: 'flex-end',
-    justifyContent: 'center',
+    marginRight: theme.spacing.md,
+  },
+  deleteBtn: {
+    padding: theme.spacing.sm,
   },
   amount: {
     ...theme.typography.h3,

@@ -50,5 +50,14 @@ export const expenseService = {
 
     if (error) throw error;
     return data as Expense[];
+  },
+
+  async deleteExpense(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('expenses')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
   }
 };
