@@ -61,6 +61,8 @@ const TabNavigator = () => {
   );
 };
 
+import BootSplash from 'react-native-bootsplash';
+
 export const AppNavigator = () => {
   const MyTheme = {
     ...DarkTheme,
@@ -75,8 +77,9 @@ export const AppNavigator = () => {
   };
 
   return (
-    <NavigationContainer theme={MyTheme}>
+    <NavigationContainer theme={MyTheme} onReady={() => BootSplash.hide({ fade: true })}>
       <Stack.Navigator screenOptions={{ headerShown: false, presentation: 'modal' }}>
+
         <Stack.Screen name="MainTabs" component={TabNavigator} />
         <Stack.Screen 
           name="AddExpense" 
