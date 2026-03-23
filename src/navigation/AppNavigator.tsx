@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -9,11 +9,14 @@ import { MonthlyScreen } from '../screens/MonthlyScreen';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
 import { AddExpenseScreen } from '../screens/AddExpenseScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { AuthScreen } from '../screens/AuthScreen';
+import { useAuthStore } from '../store/authStore';
 import { theme } from '../theme/theme';
 
 export type RootStackParamList = {
   MainTabs: undefined;
   AddExpense: undefined;
+  Auth: undefined;
 };
 
 export type MainTabParamList = {
@@ -68,6 +71,12 @@ const TabNavigator = () => {
 import BootSplash from 'react-native-bootsplash';
 
 export const AppNavigator = () => {
+  const { session, initialized, initialize } = useAuthStore();
+
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
+
   const MyTheme = {
     ...DarkTheme,
     colors: {
@@ -80,22 +89,29 @@ export const AppNavigator = () => {
     },
   };
 
+  if (!initialized) return null;
+
   return (
     <NavigationContainer theme={MyTheme} onReady={() => BootSplash.hide({ fade: true })}>
       <Stack.Navigator screenOptions={{ headerShown: false, presentation: 'modal' }}>
-
-        <Stack.Screen name="MainTabs" component={TabNavigator} />
-        <Stack.Screen 
-          name="AddExpense" 
-          component={AddExpenseScreen} 
-          options={{
-            headerShown: true,
-            title: 'Add Expense',
-            headerStyle: { backgroundColor: theme.colors.surface },
-            headerTintColor: theme.colors.text,
-            presentation: 'modal',
-          }} 
-        />
+        {session ? (
+          <>
+            <Stack.Screen name="MainTabs" component={TabNavigator} />
+            <Stack.Screen 
+              name="AddExpense" 
+              component={AddExpenseScreen} 
+              options={{
+                headerShown: true,
+                title: 'Add Expense',
+                headerStyle: { backgroundColor: theme.colors.surface },
+                headerTintColor: theme.colors.text,
+                presentation: 'modal',
+              }} 
+            />
+          </>
+        ) : (
+          <Stack.Screen name="Auth" component={AuthScreen} />
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

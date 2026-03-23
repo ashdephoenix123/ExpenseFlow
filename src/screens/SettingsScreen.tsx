@@ -1,12 +1,34 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { Button } from 'react-native-paper';
 import { theme } from '../theme/theme';
+import { useAuthStore } from '../store/authStore';
+import { supabase } from '../services/supabase';
 
 export const SettingsScreen = () => {
+  const { user } = useAuthStore();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Settings</Text>
-      <Text style={styles.subtitle}>User profile and settings will be implemented here.</Text>
+      
+      <View style={styles.profileSection}>
+        <Text style={styles.label}>Logged in as:</Text>
+        <Text style={styles.email}>{user?.email}</Text>
+      </View>
+
+      <Button 
+        mode="outlined" 
+        onPress={handleLogout}
+        textColor={theme.colors.error}
+        style={styles.logoutBtn}
+      >
+        Logout
+      </Button>
     </View>
   );
 };
@@ -23,11 +45,25 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 20,
   },
-  subtitle: {
+  profileSection: {
+    marginBottom: 40,
+    alignItems: 'center',
+  },
+  label: {
     color: theme.colors.textSecondary,
-    fontSize: 16,
-    textAlign: 'center',
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  email: {
+    color: theme.colors.text,
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  logoutBtn: {
+    marginTop: 20,
+    width: '100%',
+    borderColor: theme.colors.error,
   },
 });
