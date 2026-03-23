@@ -8,6 +8,7 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { MonthlyScreen } from '../screens/MonthlyScreen';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
 import { AddExpenseScreen } from '../screens/AddExpenseScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
 import { theme } from '../theme/theme';
 
 export type RootStackParamList = {
@@ -19,6 +20,7 @@ export type MainTabParamList = {
   Home: undefined;
   Monthly: undefined;
   Analytics: undefined;
+  Settings: undefined;
 };
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -50,6 +52,7 @@ const TabNavigator = () => {
           if (route.name === 'Home') iconName = 'view-dashboard';
           else if (route.name === 'Monthly') iconName = 'calendar-month';
           else if (route.name === 'Analytics') iconName = 'chart-pie';
+          else if (route.name === 'Settings') iconName = 'cog';
           return <Icon name={iconName} size={size + 2} color={color} />;
         },
       })}
@@ -57,6 +60,7 @@ const TabNavigator = () => {
       <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Daily Expenses' }} />
       <Tab.Screen name="Monthly" component={MonthlyScreen} options={{ title: 'Monthly View' }} />
       <Tab.Screen name="Analytics" component={AnalyticsScreen} options={{ title: 'Analytics' }} />
+      <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
     </Tab.Navigator>
   );
 };
