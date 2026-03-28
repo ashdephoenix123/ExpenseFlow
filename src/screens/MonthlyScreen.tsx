@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { theme } from '../theme/theme';
 import { useExpenseStore } from '../store/expenseStore';
 import { ExpenseItem } from '../components/ExpenseItem';
@@ -14,9 +15,12 @@ export const MonthlyScreen = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 1-12
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
-  useEffect(() => {
-    fetchMonthlyExpenses(selectedYear, selectedMonth);
-  }, [selectedYear, selectedMonth]);
+  // Refetch whenever the tab gains focus OR month/year changes
+  useFocusEffect(
+    useCallback(() => {
+      fetchMonthlyExpenses(selectedYear, selectedMonth);
+    }, [selectedYear, selectedMonth])
+  );
 
   const totalSpent = useMemo(() => {
     return monthlyExpenses.reduce((sum, item) => sum + Number(item.amount), 0);

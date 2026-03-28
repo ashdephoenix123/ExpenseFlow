@@ -64,7 +64,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   logoutBtn: {
-    ...theme.typography.body,
     marginTop: 20,
     width: '100%',
     borderColor: theme.colors.error,
