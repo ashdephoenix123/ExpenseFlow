@@ -2,6 +2,22 @@
   "migIndex": 1,
   "data": [
     {
+      "path": "assets/fonts/GoogleSans-Bold.ttf",
+      "sha1": "2e577a5eecfc65e5e34bc948d4c4f846207c4612"
+    },
+    {
+      "path": "assets/fonts/GoogleSans-Medium.ttf",
+      "sha1": "9a24eecc0bc0c617199a6801752a42c00c7f1319"
+    },
+    {
+      "path": "assets/fonts/GoogleSans-Regular.ttf",
+      "sha1": "33a5cb17dc4743ee95efe6dc4b3f75a38c5acbf7"
+    },
+    {
+      "path": "assets/fonts/GoogleSans-SemiBold.ttf",
+      "sha1": "1a37a2ad4e69511f745eacb30f7c0cc362139517"
+    },
+    {
       "path": "assets/fonts/Inter-Bold.ttf",
       "sha1": "78fb38f212fa49029aff24c669a39648d9b4e68b"
     },
@@ -16,6 +32,22 @@
     {
       "path": "assets/fonts/Inter-SemiBold.ttf",
       "sha1": "78fb38f212fa49029aff24c669a39648d9b4e68b"
+    },
+    {
+      "path": "assets/fonts/PlayfairDisplay-Bold.ttf",
+      "sha1": "57360f49f076d7bdd7a9e1e93abf3bed7d56d726"
+    },
+    {
+      "path": "assets/fonts/PlayfairDisplay-Medium.ttf",
+      "sha1": "de85ce98fad06daf64f86d670e13fa3ecef5b515"
+    },
+    {
+      "path": "assets/fonts/PlayfairDisplay-Regular.ttf",
+      "sha1": "3e12c2cf422de852cd0af0227179901b155abf14"
+    },
+    {
+      "path": "assets/fonts/PlayfairDisplay-SemiBold.ttf",
+      "sha1": "7fa24e8796734ec17d72f1e97cfb5d427508e337"
     }
   ]
 }

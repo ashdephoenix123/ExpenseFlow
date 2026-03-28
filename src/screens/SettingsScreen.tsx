@@ -15,19 +15,20 @@ export const SettingsScreen = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Settings</Text>
-      
+
       <View style={styles.profileSection}>
         <Text style={styles.label}>Logged in as:</Text>
         <Text style={styles.email}>{user?.email}</Text>
       </View>
 
-      <Button 
-        mode="outlined" 
+      <Button
+        mode="outlined"
         onPress={handleLogout}
         textColor={theme.colors.error}
         style={styles.logoutBtn}
+        labelStyle={styles.logoutLabel}
       >
-        Logout
+        Logout button
       </Button>
     </View>
   );
@@ -42,9 +43,8 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
+    ...theme.typography.h2,
     color: theme.colors.text,
-    fontSize: 24,
-    fontWeight: 'bold',
     marginBottom: 20,
   },
   profileSection: {
@@ -52,18 +52,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   label: {
+    ...theme.typography.body,
     color: theme.colors.textSecondary,
     fontSize: 14,
     marginBottom: 4,
   },
   email: {
+    ...theme.typography.body,
     color: theme.colors.text,
     fontSize: 18,
     fontWeight: '600',
   },
   logoutBtn: {
+    ...theme.typography.body,
     marginTop: 20,
     width: '100%',
     borderColor: theme.colors.error,
   },
+  logoutLabel: {
+    ...theme.typography.body,
+    color: theme.colors.error,
+  }
 });

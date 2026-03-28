@@ -41,8 +41,8 @@ export const AddExpenseScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
+    <KeyboardAvoidingView
+      style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
@@ -55,11 +55,11 @@ export const AddExpenseScreen = () => {
           autoFocus
           style={styles.amountInput}
         />
-        
+
         <View style={styles.categoryContainer}>
-          <Input 
-            label="Category" 
-            value={category} 
+          <Input
+            label="Category"
+            value={category}
             onChangeText={setCategory}
             placeholder="e.g. Food, Travel"
           />
@@ -67,7 +67,7 @@ export const AddExpenseScreen = () => {
             {CATEGORIES.map(cat => {
               const isActive = category === cat;
               return (
-                <TouchableOpacity 
+                <TouchableOpacity
                   key={cat}
                   style={[styles.chip, isActive && styles.chipActive]}
                   onPress={() => setCategory(cat)}
@@ -87,11 +87,11 @@ export const AddExpenseScreen = () => {
           onChangeText={setNote}
         />
 
-        <Button 
-          title="Save Expense" 
-          onPress={handleSave} 
+        <Button
+          title="Save Expense"
+          onPress={handleSave}
           loading={loading}
-          style={styles.saveBtn} 
+          style={styles.saveBtn}
         />
       </ScrollView>
     </KeyboardAvoidingView>
@@ -107,8 +107,8 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
   },
   amountInput: {
+    ...theme.typography.h1,
     fontSize: 32,
-    fontWeight: 'bold',
     height: 70,
   },
   categoryContainer: {
@@ -133,12 +133,13 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.primary,
   },
   chipText: {
+    ...theme.typography.caption,
     fontSize: 14,
     color: theme.colors.textSecondary,
   },
   chipTextActive: {
+    ...theme.typography.caption,
     color: '#000000',
-    fontWeight: 'bold',
   },
   saveBtn: {
     marginTop: theme.spacing.xl,

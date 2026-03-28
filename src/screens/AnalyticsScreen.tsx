@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
   },
   headerTitle: {
-    ...theme.typography.h2,
+    ...theme.typography.h3,
     marginBottom: theme.spacing.lg,
   },
   card: {
@@ -92,11 +92,9 @@ const styles = StyleSheet.create({
   },
   rowValue: {
     ...theme.typography.body,
-    fontWeight: 'bold',
   },
   emptyText: {
     ...theme.typography.body,
     color: theme.colors.textSecondary,
-    fontStyle: 'italic',
   },
 });

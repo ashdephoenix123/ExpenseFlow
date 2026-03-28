@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { Text } from 'react-native';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -41,6 +42,9 @@ const TabNavigator = () => {
           borderBottomColor: theme.colors.border,
         },
         headerTintColor: theme.colors.text,
+        headerTitleStyle: {
+          ...theme.typography.h2
+        },
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.border,
@@ -50,6 +54,10 @@ const TabNavigator = () => {
         },
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.textSecondary,
+        tabBarLabelStyle: {
+          fontFamily: theme.fonts.displaySemiBold,
+          fontSize: 10,
+        },
         tabBarIcon: ({ color, size }) => {
           let iconName = 'home';
           if (route.name === 'Home') iconName = 'view-dashboard';
@@ -97,16 +105,17 @@ export const AppNavigator = () => {
         {session ? (
           <>
             <Stack.Screen name="MainTabs" component={TabNavigator} />
-            <Stack.Screen 
-              name="AddExpense" 
-              component={AddExpenseScreen} 
+            <Stack.Screen
+              name="AddExpense"
+              component={AddExpenseScreen}
               options={{
                 headerShown: true,
                 title: 'Add Expense',
                 headerStyle: { backgroundColor: theme.colors.surface },
                 headerTintColor: theme.colors.text,
                 presentation: 'modal',
-              }} 
+                headerTitleStyle: theme.typography.h3
+              }}
             />
           </>
         ) : (

@@ -28,8 +28,8 @@ export const LoginScreen = ({ navigation }: { navigation: NavigationProp }) => {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
+    <KeyboardAvoidingView
+      style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.content}>
@@ -41,8 +41,15 @@ export const LoginScreen = ({ navigation }: { navigation: NavigationProp }) => {
           autoCapitalize="none"
           keyboardType="email-address"
           style={styles.input}
-          theme={{ colors: { primary: theme.colors.primary, background: theme.colors.surface, text: theme.colors.text } }}
+          theme={{
+            colors: { primary: theme.colors.primary, background: theme.colors.surface, text: theme.colors.text }, fonts: {
+              bodyLarge: {
+                fontFamily: theme.fonts.displaySemiBold,
+              },
+            },
+          }}
           textColor={theme.colors.text}
+          contentStyle={{ ...theme.typography.body }}
         />
         <TextInput
           label="Password"
@@ -50,24 +57,33 @@ export const LoginScreen = ({ navigation }: { navigation: NavigationProp }) => {
           onChangeText={setPassword}
           secureTextEntry
           style={styles.input}
-          theme={{ colors: { primary: theme.colors.primary, background: theme.colors.surface, text: theme.colors.text } }}
+          theme={{
+            colors: { primary: theme.colors.primary, background: theme.colors.surface, text: theme.colors.text }, fonts: {
+              bodyLarge: {
+                fontFamily: theme.fonts.displaySemiBold,
+              },
+            },
+          }}
           textColor={theme.colors.text}
+          contentStyle={{ ...theme.typography.body }}
         />
-        <Button 
-          mode="contained" 
-          onPress={handleLogin} 
-          loading={loading} 
+        <Button
+          mode="contained"
+          onPress={handleLogin}
+          loading={loading}
           style={styles.button}
           buttonColor={theme.colors.primary}
+          labelStyle={{ ...theme.typography.body, fontSize: 18 }}
         >
           Login
         </Button>
-        <Button 
-          mode="text" 
-          onPress={() => navigation.navigate('Signup')} 
-          disabled={loading} 
+        <Button
+          mode="text"
+          onPress={() => navigation.navigate('Signup')}
+          disabled={loading}
           style={styles.linkButton}
           textColor={theme.colors.textSecondary}
+          labelStyle={{ ...theme.typography.body, color: theme.colors.textSecondary }}
         >
           Don't have an account? Sign Up
         </Button>
@@ -87,13 +103,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
+    ...theme.typography.h1,
     fontSize: 32,
-    fontWeight: 'bold',
     color: theme.colors.primary,
     textAlign: 'center',
     marginBottom: 40,
   },
   input: {
+    ...theme.typography.body,
     marginBottom: 16,
     backgroundColor: theme.colors.surface,
   },
