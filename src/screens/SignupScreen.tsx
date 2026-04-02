@@ -27,6 +27,9 @@ export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => 
     const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: 'expenseflow://auth-callback'
+      }
     });
     if (error) {
       Alert.alert('Registration Failed', error.message);
@@ -38,8 +41,8 @@ export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => 
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
+    <KeyboardAvoidingView
+      style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.content}>
