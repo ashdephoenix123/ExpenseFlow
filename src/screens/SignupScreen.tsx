@@ -12,6 +12,8 @@ export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSignUp = async () => {
@@ -69,7 +71,14 @@ export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => 
           label="Password"
           value={password}
           onChangeText={setPassword}
-          secureTextEntry
+          secureTextEntry={!showPassword}
+          right={
+            <TextInput.Icon
+              icon={showPassword ? 'eye-off' : 'eye'}
+              onPress={() => setShowPassword(prev => !prev)}
+              color={theme.colors.textSecondary}
+            />
+          }
           style={styles.input}
           theme={{
             colors: { primary: theme.colors.primary, background: theme.colors.surface, text: theme.colors.text },
@@ -86,7 +95,14 @@ export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => 
           label="Confirm Password"
           value={confirmPassword}
           onChangeText={setConfirmPassword}
-          secureTextEntry
+          secureTextEntry={!showConfirmPassword}
+          right={
+            <TextInput.Icon
+              icon={showConfirmPassword ? 'eye-off' : 'eye'}
+              onPress={() => setShowConfirmPassword(prev => !prev)}
+              color={theme.colors.textSecondary}
+            />
+          }
           style={styles.input}
           theme={{
             colors: { primary: theme.colors.primary, background: theme.colors.surface, text: theme.colors.text },

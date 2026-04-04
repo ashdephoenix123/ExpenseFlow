@@ -11,6 +11,7 @@ type NavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 export const LoginScreen = ({ navigation }: { navigation: NavigationProp }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
@@ -55,7 +56,14 @@ export const LoginScreen = ({ navigation }: { navigation: NavigationProp }) => {
           label="Password"
           value={password}
           onChangeText={setPassword}
-          secureTextEntry
+          secureTextEntry={!showPassword}
+          right={
+            <TextInput.Icon
+              icon={showPassword ? 'eye-off' : 'eye'}
+              onPress={() => setShowPassword(prev => !prev)}
+              color={theme.colors.textSecondary}
+            />
+          }
           style={styles.input}
           theme={{
             colors: { primary: theme.colors.primary, background: theme.colors.surface, text: theme.colors.text }, fonts: {
