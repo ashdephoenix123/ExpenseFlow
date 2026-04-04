@@ -1,5 +1,12 @@
 import React from 'react';
-import { View, TextInput, Text, StyleSheet, TextInputProps } from 'react-native';
+import {
+  View,
+  TextInput,
+  Text,
+  StyleSheet,
+  TextInputProps,
+  Platform,
+} from 'react-native';
 import { theme } from '../theme/theme';
 
 interface InputProps extends TextInputProps {
@@ -7,7 +14,12 @@ interface InputProps extends TextInputProps {
   error?: string;
 }
 
-export const Input: React.FC<InputProps> = ({ label, error, style, ...props }) => {
+export const Input: React.FC<InputProps> = ({
+  label,
+  error,
+  style,
+  ...props
+}) => {
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
@@ -39,8 +51,10 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     borderRadius: theme.borderRadius.md,
     paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.md,
-    minHeight: 48,
+    paddingVertical: Platform.OS === 'android' ? 16 : 12,
+    minHeight: 32,
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
   inputError: {
     borderColor: theme.colors.error,

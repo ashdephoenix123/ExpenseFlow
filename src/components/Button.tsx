@@ -10,14 +10,14 @@ interface ButtonProps extends TouchableOpacityProps {
   loading?: boolean;
 }
 
-export const Button: React.FC<ButtonProps> = ({ 
-  title, 
-  variant = 'primary', 
-  style, 
-  textStyle, 
+export const Button: React.FC<ButtonProps> = ({
+  title,
+  variant = 'primary',
+  style,
+  textStyle,
   loading = false,
   disabled,
-  ...props 
+  ...props
 }) => {
   const getVariantStyles = () => {
     switch (variant) {
@@ -44,13 +44,13 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[
-        styles.container, 
-        getVariantStyles(), 
+        styles.container,
+        getVariantStyles(),
         disabled && styles.disabled,
         style
-      ]} 
+      ]}
       disabled={disabled || loading}
       activeOpacity={0.8}
       {...props}
@@ -90,6 +90,7 @@ const styles = StyleSheet.create({
   text: {
     ...theme.typography.h3,
     fontSize: 16,
+    includeFontPadding: false,
   },
   textPrimary: {
     color: '#000000', // Better contrast for primary color

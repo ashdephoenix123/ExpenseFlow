@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform, TouchableOpacity, Text } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableOpacity,
+  Text,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../theme/theme';
 import { Input } from '../components/Input';
@@ -7,7 +16,14 @@ import { Button } from '../components/Button';
 import { useExpenseStore } from '../store/expenseStore';
 import { getTodayFormatted } from '../utils/dateUtils';
 
-const CATEGORIES = ['Food & Dining', 'Travel & Transport', 'Shopping', 'Bills & Utilities', 'Entertainment', 'Other'];
+const CATEGORIES = [
+  'Food & Dining',
+  'Travel & Transport',
+  'Shopping',
+  'Bills & Utilities',
+  'Entertainment',
+  'Other',
+];
 
 export const AddExpenseScreen = () => {
   const navigation = useNavigation();
@@ -20,7 +36,10 @@ export const AddExpenseScreen = () => {
 
   const handleSave = async () => {
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
-      Alert.alert('Invalid Amount', 'Please enter a valid amount greater than 0.');
+      Alert.alert(
+        'Invalid Amount',
+        'Please enter a valid amount greater than 0.',
+      );
       return;
     }
 
@@ -43,9 +62,13 @@ export const AddExpenseScreen = () => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         <Input
           label="Amount (₹)"
           placeholder="0.00"
@@ -62,8 +85,13 @@ export const AddExpenseScreen = () => {
             value={category}
             onChangeText={setCategory}
             placeholder="e.g. Food, Travel"
+            style={styles.categoryInput}
           />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.chipsContainer}
+          >
             {CATEGORIES.map(cat => {
               const isActive = category === cat;
               return (
@@ -73,7 +101,11 @@ export const AddExpenseScreen = () => {
                   onPress={() => setCategory(cat)}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.chipText, isActive && styles.chipTextActive]}>{cat}</Text>
+                  <Text
+                    style={[styles.chipText, isActive && styles.chipTextActive]}
+                  >
+                    {cat}
+                  </Text>
                 </TouchableOpacity>
               );
             })}
@@ -85,6 +117,9 @@ export const AddExpenseScreen = () => {
           placeholder="What was this for?"
           value={note}
           onChangeText={setNote}
+          multiline
+          numberOfLines={4}
+          style={styles.notesInput}
         />
 
         <Button
@@ -105,14 +140,28 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: theme.spacing.lg,
+    flexGrow: 1,
   },
   amountInput: {
-    ...theme.typography.h1,
+    ...theme.typography.h3,
     fontSize: 32,
-    height: 70,
+    height: 64,
+    paddingVertical: 8,
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
   categoryContainer: {
     marginBottom: theme.spacing.md,
+    gap: 8,
+  },
+  categoryInput: {
+    fontSize: 16,
+  },
+  notesInput: {
+    minHeight: 100,
+    textAlignVertical: 'top',
+    paddingTop: 12,
+    fontSize: 16,
   },
   chipsContainer: {
     flexDirection: 'row',
@@ -136,6 +185,7 @@ const styles = StyleSheet.create({
     ...theme.typography.caption,
     fontSize: 14,
     color: theme.colors.textSecondary,
+    lineHeight: 24,
   },
   chipTextActive: {
     ...theme.typography.caption,
