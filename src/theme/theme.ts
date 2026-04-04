@@ -17,10 +17,14 @@ export const theme = {
     semiBold: 'GoogleSans-SemiBold',
     bold: 'GoogleSans-Bold',
     // Display / accent font
-    display: 'PlayfairDisplay-Regular',
-    displayMedium: 'PlayfairDisplay-Medium',
-    displaySemiBold: 'PlayfairDisplay-SemiBold',
-    displayBold: 'PlayfairDisplay-Bold',
+    display: 'GoogleSans-Regular',
+    displayMedium: 'GoogleSans-Medium',
+    displaySemiBold: 'GoogleSans-SemiBold',
+    displayBold: 'GoogleSans-Bold',
+    // display: 'PlayfairDisplay-Regular',
+    // displayMedium: 'PlayfairDisplay-Medium',
+    // displaySemiBold: 'PlayfairDisplay-SemiBold',
+    // displayBold: 'PlayfairDisplay-Bold',
   },
   spacing: {
     xs: 4,
@@ -30,12 +34,42 @@ export const theme = {
     xl: 32,
   },
   typography: {
-    h1: { fontSize: 32, fontWeight: '600' as const, color: '#FFFFFF', fontFamily: 'PlayfairDisplay-Bold' },
-    h2: { fontSize: 24, fontWeight: '600' as const, color: '#FFFFFF', fontFamily: 'PlayfairDisplay-Bold' },
-    h3: { fontSize: 20, fontWeight: '600' as const, color: '#FFFFFF', fontFamily: 'PlayfairDisplay-SemiBold' },
-    body: { fontSize: 16, fontWeight: 'normal' as const, color: '#FFFFFF', fontFamily: 'PlayfairDisplay-Regular' },
-    caption: { fontSize: 14, fontWeight: 'normal' as const, color: '#B3B3B3', fontFamily: 'PlayfairDisplay-Medium' },
-    small: { fontSize: 12, fontWeight: 'normal' as const, color: '#B3B3B3', fontFamily: 'PlayfairDisplay-Regular' },
+    h1: {
+      fontSize: 32,
+      fontWeight: '600' as const,
+      color: '#FFFFFF',
+      fontFamily: 'GoogleSans-Bold',
+    },
+    h2: {
+      fontSize: 24,
+      fontWeight: '600' as const,
+      color: '#FFFFFF',
+      fontFamily: 'GoogleSans-Bold',
+    },
+    h3: {
+      fontSize: 20,
+      fontWeight: '600' as const,
+      color: '#FFFFFF',
+      fontFamily: 'GoogleSans-SemiBold',
+    },
+    body: {
+      fontSize: 16,
+      fontWeight: 'normal' as const,
+      color: '#FFFFFF',
+      fontFamily: 'GoogleSans-Regular',
+    },
+    caption: {
+      fontSize: 14,
+      fontWeight: 'normal' as const,
+      color: '#B3B3B3',
+      fontFamily: 'GoogleSans-Medium',
+    },
+    small: {
+      fontSize: 12,
+      fontWeight: 'normal' as const,
+      color: '#B3B3B3',
+      fontFamily: 'GoogleSans-Regular',
+    },
   },
 
   borderRadius: {
@@ -43,5 +77,5 @@ export const theme = {
     md: 12,
     lg: 16,
     round: 9999,
-  }
+  },
 };
