@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Privacy Policy for ExpenseFlow - a personal expense tracking mobile application.">
+    <title>ExpenseFlow — Privacy Policy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --text-primary: #f0f0f5;
+            --text-secondary: #9d9db5;
+            --text-muted: #6b6b80;
+            --accent-gradient: linear-gradient(135deg, #6366f1, #8b5cf6, #a78bfa);
+            --accent-solid: #8b5cf6;
+            --accent-glow: rgba(139, 92, 246, 0.15);
+            --section-gap: 2.5rem;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.75;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ---- Ambient background glow ---- */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -40%;
+            left: -20%;
+            width: 70%;
+            height: 70%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -30%;
+            right: -10%;
+            width: 60%;
+            height: 60%;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.06) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ---- Header / Hero ---- */
+        .hero {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 5rem 1.5rem 3rem;
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .hero .badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent-solid);
+            background: var(--accent-glow);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 999px;
+            padding: 0.35rem 1rem;
+            margin-bottom: 1.5rem;
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 5vw, 3.2rem);
+            font-weight: 700;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.75rem;
+            animation: fadeInDown 0.6s ease-out 0.1s both;
+        }
+
+        .hero p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            max-width: 520px;
+            margin: 0 auto;
+            animation: fadeInDown 0.6s ease-out 0.2s both;
+        }
+
+        .effective-date {
+            display: inline-block;
+            margin-top: 1.25rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 0.3rem 0.85rem;
+            animation: fadeInDown 0.6s ease-out 0.3s both;
+        }
+
+        /* ---- Main Content ---- */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 0 1.5rem 4rem;
+        }
+
+        /* ---- Section Cards ---- */
+        .section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 2rem 2rem;
+            margin-bottom: var(--section-gap);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeInUp 0.5s ease-out both;
+        }
+
+        .section:hover {
+            border-color: rgba(139, 92, 246, 0.15);
+            box-shadow: 0 0 40px rgba(139, 92, 246, 0.04);
+        }
+
+        .section:nth-child(1) {
+            animation-delay: 0.05s;
+        }
+
+        .section:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .section:nth-child(3) {
+            animation-delay: 0.15s;
+        }
+
+        .section:nth-child(4) {
+            animation-delay: 0.2s;
+        }
+
+        .section:nth-child(5) {
+            animation-delay: 0.25s;
+        }
+
+        .section:nth-child(6) {
+            animation-delay: 0.3s;
+        }
+
+        .section:nth-child(7) {
+            animation-delay: 0.35s;
+        }
+
+        .section:nth-child(8) {
+            animation-delay: 0.4s;
+        }
+
+        .section:nth-child(9) {
+            animation-delay: 0.45s;
+        }
+
+        .section:nth-child(10) {
+            animation-delay: 0.5s;
+        }
+
+        .section h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .section h2 .icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--accent-glow);
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .section p,
+        .section li {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .section p+p {
+            margin-top: 0.75rem;
+        }
+
+        .section ul {
+            list-style: none;
+            padding: 0;
+            margin-top: 0.75rem;
+        }
+
+        .section ul li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .section ul li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.6rem;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent-solid);
+            opacity: 0.7;
+        }
+
+        .section a {
+            color: var(--accent-solid);
+            text-decoration: none;
+            border-bottom: 1px solid rgba(139, 92, 246, 0.3);
+            transition: border-color 0.2s;
+        }
+
+        .section a:hover {
+            border-color: var(--accent-solid);
+        }
+
+        .highlight-box {
+            background: var(--accent-glow);
+            border: 1px solid rgba(139, 92, 246, 0.15);
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* ---- Footer ---- */
+        footer {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 2rem 1.5rem 3rem;
+            border-top: 1px solid var(--border-subtle);
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        footer p {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        footer .app-name {
+            font-weight: 600;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ---- Animations ---- */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-16px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ---- Responsive ---- */
+        @media (max-width: 600px) {
+            .hero {
+                padding: 3.5rem 1.25rem 2rem;
+            }
+
+            .section {
+                padding: 1.5rem 1.25rem;
+                border-radius: 12px;
+            }
+
+            .container {
+                padding: 0 1rem 3rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Hero / Header -->
+    <header class="hero">
+        <span class="badge">Legal</span>
+        <h1>Privacy Policy</h1>
+        <p>Your privacy matters. Here's how ExpenseFlow handles your data — transparently and responsibly.</p>
+        <span class="effective-date">Effective Date: April 5, 2026</span>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+
+        <!-- 1. Introduction -->
+        <section class="section" id="introduction">
+            <h2><span class="icon">📋</span> Introduction</h2>
+            <p>
+                ExpenseFlow ("we", "our", or "the app") is a personal expense tracking mobile application
+                built for Android. This Privacy Policy explains what information we collect, how we use it,
+                and your rights regarding your data.
+            </p>
+            <p>
+                By using ExpenseFlow, you agree to the practices described in this policy.
+                If you do not agree, please do not use the app.
+            </p>
+        </section>
+
+        <!-- 2. Information We Collect -->
+        <section class="section" id="information-collected">
+            <h2><span class="icon">📦</span> Information We Collect</h2>
+            <p>We collect only the minimum data necessary to provide our service:</p>
+            <ul>
+                <li><strong>Account Information</strong> — Email address and password when you create an account or log
+                    in.</li>
+                <li><strong>Expense Data</strong> — Expense entries you create, including amounts, categories,
+                    descriptions, and dates.</li>
+                <li><strong>Authentication Tokens</strong> — Securely generated tokens stored locally on your device to
+                    keep you signed in.</li>
+            </ul>
+            <div class="highlight-box">
+                ✅ We do <strong>not</strong> collect your location, contacts, photos, device identifiers,
+                or any data beyond what is described above.
+            </div>
+        </section>
+
+        <!-- 3. How We Use Your Information -->
+        <section class="section" id="how-we-use-info">
+            <h2><span class="icon">⚙️</span> How We Use Your Information</h2>
+            <p>Your data is used solely to:</p>
+            <ul>
+                <li>Authenticate your identity and maintain your session.</li>
+                <li>Store and retrieve your expense records so they are available across sessions.</li>
+                <li>Provide analytics and summaries of your spending habits within the app.</li>
+                <li>Enable password reset and account recovery via email.</li>
+            </ul>
+        </section>
+
+        <!-- 4. Data Storage & Security -->
+        <section class="section" id="data-storage">
+            <h2><span class="icon">🔒</span> Data Storage &amp; Security</h2>
+            <p>
+                Your data is stored securely using <a href="https://supabase.com" target="_blank"
+                    rel="noopener noreferrer">Supabase</a>,
+                a cloud-hosted backend platform. Supabase uses industry-standard security measures including:
+            </p>
+            <ul>
+                <li>Encrypted data transmission via HTTPS / TLS.</li>
+                <li>Row-level security policies ensuring users can only access their own data.</li>
+                <li>Passwords are hashed and never stored in plain text.</li>
+            </ul>
+            <p>
+                Authentication tokens are stored locally on your device using secure async storage and
+                are never shared with third parties.
+            </p>
+        </section>
+
+        <!-- 5. Third-Party Services -->
+        <section class="section" id="third-party">
+            <h2><span class="icon">🔗</span> Third-Party Services</h2>
+            <p>ExpenseFlow uses the following third-party service:</p>
+            <ul>
+                <li>
+                    <strong>Supabase</strong> — For authentication and database storage.
+                    You can review their privacy policy at
+                    <a href="https://supabase.com/privacy" target="_blank"
+                        rel="noopener noreferrer">supabase.com/privacy</a>.
+                </li>
+            </ul>
+            <p>
+                We do <strong>not</strong> use any advertising SDKs, analytics trackers, or other
+                third-party services that collect personal information.
+            </p>
+        </section>
+
+        <!-- 6. Data Sharing -->
+        <section class="section" id="data-sharing">
+            <h2><span class="icon">🚫</span> Data Sharing</h2>
+            <p>
+                We do <strong>not</strong> sell, trade, rent, or share your personal data with any third
+                parties. Your expense data is private and accessible only to you through your authenticated account.
+            </p>
+            <p>
+                We may only disclose information if required to do so by law or in response to valid
+                legal requests by public authorities.
+            </p>
+        </section>
+
+        <!-- 7. Data Retention & Deletion -->
+        <section class="section" id="data-retention">
+            <h2><span class="icon">🗑️</span> Data Retention &amp; Deletion</h2>
+            <p>
+                Your data is retained as long as your account is active. You may request deletion of your
+                account and all associated data at any time by contacting us at the email address below.
+            </p>
+            <p>
+                Upon account deletion, all your expense records and personal information will be
+                permanently removed from our servers within 30 days.
+            </p>
+        </section>
+
+        <!-- 8. Children's Privacy -->
+        <section class="section" id="children">
+            <h2><span class="icon">👶</span> Children's Privacy</h2>
+            <p>
+                ExpenseFlow is not intended for use by children under the age of 13. We do not
+                knowingly collect personal information from children. If we become aware that we have
+                inadvertently collected data from a child under 13, we will take steps to delete that
+                information promptly.
+            </p>
+        </section>
+
+        <!-- 9. Changes to This Policy -->
+        <section class="section" id="changes">
+            <h2><span class="icon">📝</span> Changes to This Policy</h2>
+            <p>
+                We may update this Privacy Policy from time to time. Any changes will be reflected on
+                this page with an updated effective date. We encourage you to review this policy
+                periodically. Continued use of the app after changes constitutes acceptance of the
+                updated policy.
+            </p>
+        </section>
+
+        <!-- 10. Contact Us -->
+        <section class="section" id="contact">
+            <h2><span class="icon">📧</span> Contact Us</h2>
+            <p>
+                If you have any questions, concerns, or requests regarding this Privacy Policy or your
+                personal data, please contact us at:
+            </p>
+            <div class="highlight-box">
+                📬 <strong>Email:</strong>
+                <a href="mailto:akashsarki12345@gmail.com">akashsarki12345@gmail.com</a>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 <span class="app-name">ExpenseFlow</span>. All rights reserved.</p>
+    </footer>
+
+</body>
+
+</html>
