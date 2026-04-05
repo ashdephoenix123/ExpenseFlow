@@ -3,43 +3,56 @@ import { View, StyleSheet, Alert, KeyboardAvoidingView, Platform, Text } from 'r
 import { TextInput, Button } from 'react-native-paper';
 import { supabase } from '../services/supabase';
 import { theme } from '../theme/theme';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AuthStackParamList } from './AuthScreen';
+import { useAuthStore } from '../store/authStore';
 
-type NavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Signup'>;
-
-export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+export const ResetPasswordScreen = () => {
+  const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const setPendingPasswordReset = useAuthStore(state => state.setPendingPasswordReset);
 
-  const handleSignUp = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter email and password');
+  const handleUpdatePassword = async () => {
+    if (!newPassword) {
+      Alert.alert('Error', 'Please enter a new password');
       return;
     }
-    if (password !== confirmPassword) {
+    if (newPassword.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
       Alert.alert('Error', 'Passwords do not match');
       return;
     }
+
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: 'expenseflow://auth-callback'
-      }
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
     });
+
     if (error) {
-      Alert.alert('Registration Failed', error.message);
+      Alert.alert('Error', error.message);
     } else {
-      // Alert.alert('Success', 'Account created! Please check your email for verification before logging in if required.');
-      navigation.navigate('Login');
+      Alert.alert('Success', 'Your password has been updated successfully!');
+      setPendingPasswordReset(false);
     }
     setLoading(false);
+  };
+
+  const handleSkip = () => {
+    Alert.alert(
+      'Skip Password Reset?',
+      'You can change your password later from Settings.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Skip',
+          onPress: () => setPendingPasswordReset(false),
+        },
+      ],
+    );
   };
 
   return (
@@ -48,29 +61,15 @@ export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => 
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.content}>
-        <Text style={styles.title}>Create Account</Text>
+        <Text style={styles.icon}>🔐</Text>
+        <Text style={styles.title}>Set New Password</Text>
+        <Text style={styles.description}>
+          Create a strong password for your account. It must be at least 6 characters long.
+        </Text>
         <TextInput
-          label="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          style={styles.input}
-          theme={{
-            colors: { primary: theme.colors.primary, background: theme.colors.surface, text: theme.colors.text },
-            fonts: {
-              bodyLarge: {
-                fontFamily: theme.fonts.displaySemiBold,
-              },
-            },
-          }}
-          textColor={theme.colors.text}
-          contentStyle={{ ...theme.typography.body }}
-        />
-        <TextInput
-          label="Password"
-          value={password}
-          onChangeText={setPassword}
+          label="New Password"
+          value={newPassword}
+          onChangeText={setNewPassword}
           secureTextEntry={!showPassword}
           right={
             <TextInput.Icon
@@ -92,7 +91,7 @@ export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => 
           contentStyle={{ ...theme.typography.body }}
         />
         <TextInput
-          label="Confirm Password"
+          label="Confirm New Password"
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           secureTextEntry={!showConfirmPassword}
@@ -117,23 +116,24 @@ export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => 
         />
         <Button
           mode="contained"
-          onPress={handleSignUp}
+          onPress={handleUpdatePassword}
           loading={loading}
+          disabled={loading}
           style={styles.button}
           buttonColor={theme.colors.primary}
           labelStyle={{ ...theme.typography.body, fontSize: 18 }}
         >
-          Sign Up
+          Update Password
         </Button>
         <Button
           mode="text"
-          onPress={() => navigation.goBack()}
+          onPress={handleSkip}
           disabled={loading}
           style={styles.linkButton}
           textColor={theme.colors.textSecondary}
           labelStyle={{ ...theme.typography.body, color: theme.colors.textSecondary }}
         >
-          Already have an account? Login
+          Skip for now
         </Button>
       </View>
     </KeyboardAvoidingView>
@@ -150,12 +150,25 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: 'center',
   },
+  icon: {
+    fontSize: 48,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
   title: {
     ...theme.typography.h1,
     fontSize: 32,
     color: theme.colors.primary,
     textAlign: 'center',
-    marginBottom: 40,
+    marginBottom: 16,
+  },
+  description: {
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 22,
+    paddingHorizontal: 16,
   },
   input: {
     ...theme.typography.body,

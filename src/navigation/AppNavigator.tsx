@@ -11,6 +11,7 @@ import { AnalyticsScreen } from '../screens/AnalyticsScreen';
 import { AddExpenseScreen } from '../screens/AddExpenseScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { AuthScreen } from '../screens/AuthScreen';
+import { ResetPasswordScreen } from '../screens/ResetPasswordScreen';
 import { useAuthStore } from '../store/authStore';
 import { theme } from '../theme/theme';
 
@@ -18,6 +19,7 @@ export type RootStackParamList = {
   MainTabs: undefined;
   AddExpense: undefined;
   Auth: undefined;
+  ResetPassword: undefined;
 };
 
 export type MainTabParamList = {
@@ -79,7 +81,7 @@ const TabNavigator = () => {
 import BootSplash from 'react-native-bootsplash';
 
 export const AppNavigator = () => {
-  const { session, initialized, initialize } = useAuthStore();
+  const { session, initialized, initialize, pendingPasswordReset } = useAuthStore();
 
   useEffect(() => {
     initialize();
@@ -103,21 +105,25 @@ export const AppNavigator = () => {
     <NavigationContainer theme={MyTheme} onReady={() => BootSplash.hide({ fade: true })}>
       <Stack.Navigator screenOptions={{ headerShown: false, presentation: 'modal' }}>
         {session ? (
-          <>
-            <Stack.Screen name="MainTabs" component={TabNavigator} />
-            <Stack.Screen
-              name="AddExpense"
-              component={AddExpenseScreen}
-              options={{
-                headerShown: true,
-                title: 'Add Expense',
-                headerStyle: { backgroundColor: theme.colors.surface },
-                headerTintColor: theme.colors.text,
-                presentation: 'modal',
-                headerTitleStyle: theme.typography.h3
-              }}
-            />
-          </>
+          pendingPasswordReset ? (
+            <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+          ) : (
+            <>
+              <Stack.Screen name="MainTabs" component={TabNavigator} />
+              <Stack.Screen
+                name="AddExpense"
+                component={AddExpenseScreen}
+                options={{
+                  headerShown: true,
+                  title: 'Add Expense',
+                  headerStyle: { backgroundColor: theme.colors.surface },
+                  headerTintColor: theme.colors.text,
+                  presentation: 'modal',
+                  headerTitleStyle: theme.typography.h3
+                }}
+              />
+            </>
+          )
         ) : (
           <Stack.Screen name="Auth" component={AuthScreen} />
         )}

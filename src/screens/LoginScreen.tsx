@@ -80,10 +80,23 @@ export const LoginScreen = ({ navigation }: { navigation: NavigationProp }) => {
           onPress={handleLogin}
           loading={loading}
           style={styles.button}
+          contentStyle={{ paddingVertical: 10 }}
+
           buttonColor={theme.colors.primary}
           labelStyle={{ ...theme.typography.body, fontSize: 18 }}
         >
           Login
+        </Button>
+        <Button
+          mode="text"
+          onPress={() => navigation.navigate('ForgotPassword')}
+          disabled={loading}
+          style={styles.forgotButton}
+          textColor={theme.colors.primary}
+          labelStyle={{ ...theme.typography.caption }}
+          rippleColor="transparent"
+        >
+          Forgot Password?
         </Button>
         <Button
           mode="text"
@@ -124,8 +137,10 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 8,
-    paddingVertical: 10,
     borderRadius: 8,
+  },
+  forgotButton: {
+    marginTop: 16,
   },
   linkButton: {
     marginTop: 16,

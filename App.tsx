@@ -15,16 +15,39 @@ import { AppNavigator } from './src/navigation/AppNavigator';
 import { Linking } from 'react-native';
 import { supabase } from './src/services/supabase';
 
+import { useAuthStore } from './src/store/authStore';
+
 // Listen for deep links
 Linking.addEventListener('url', async (event) => {
   const url = event.url;
+  console.log('[DeepLink] Received URL:', url);
+
   if (url.includes('access_token') && url.includes('refresh_token')) {
     // Parse tokens from the URL fragment
-    const params = new URLSearchParams(url.split('#')[1]);
-    const accessToken = params.get('access_token');
-    const refreshToken = params.get('refresh_token');
+    const fragment = url.split('#')[1] || '';
+    const fragmentParams = new URLSearchParams(fragment);
+    const accessToken = fragmentParams.get('access_token');
+    const refreshToken = fragmentParams.get('refresh_token');
+
+    // Check for recovery type in fragment params, query params, or URL path
+    const fragmentType = fragmentParams.get('type');
+    const queryString = url.split('?')[1]?.split('#')[0] || '';
+    const queryParams = new URLSearchParams(queryString);
+    const queryType = queryParams.get('type');
+    const isRecovery =
+      fragmentType === 'recovery' ||
+      queryType === 'recovery' ||
+      url.includes('type=recovery');
+
+    console.log('[DeepLink] isRecovery:', isRecovery, 'fragmentType:', fragmentType, 'queryType:', queryType);
 
     if (accessToken && refreshToken) {
+      // Flag password reset BEFORE setting session to avoid race condition
+      // (setSession triggers onAuthStateChange which re-renders the navigator)
+      if (isRecovery) {
+        useAuthStore.getState().setPendingPasswordReset(true);
+      }
+
       await supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken,
