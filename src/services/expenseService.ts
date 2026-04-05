@@ -59,5 +59,17 @@ export const expenseService = {
       .eq('id', id);
 
     if (error) throw error;
-  }
+  },
+
+  async updateExpense(id: string, updates: Partial<NewExpense>): Promise<Expense> {
+    const { data, error } = await supabase
+      .from('expenses')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as Expense;
+  },
 };

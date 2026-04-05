@@ -17,7 +17,12 @@ import { theme } from '../theme/theme';
 
 export type RootStackParamList = {
   MainTabs: undefined;
-  AddExpense: undefined;
+  AddExpense: {
+    editId?: string;
+    editAmount?: number;
+    editCategory?: string;
+    editNote?: string;
+  } | undefined;
   Auth: undefined;
   ResetPassword: undefined;
 };

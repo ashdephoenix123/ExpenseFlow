@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useLayoutEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,7 +9,8 @@ import {
   TouchableOpacity,
   Text,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { theme } from '../theme/theme';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
@@ -27,12 +28,29 @@ const CATEGORIES = [
 
 export const AddExpenseScreen = () => {
   const navigation = useNavigation();
+  const route = useRoute<RouteProp<RootStackParamList, 'AddExpense'>>();
   const addExpense = useExpenseStore(state => state.addExpense);
+  const updateExpense = useExpenseStore(state => state.updateExpense);
 
-  const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState(CATEGORIES[0]);
-  const [note, setNote] = useState('');
+  const editId = route.params?.editId;
+  const isEditing = !!editId;
+
+  const [amount, setAmount] = useState(
+    isEditing && route.params?.editAmount ? String(route.params.editAmount) : ''
+  );
+  const [category, setCategory] = useState(
+    isEditing && route.params?.editCategory ? route.params.editCategory : CATEGORIES[0]
+  );
+  const [note, setNote] = useState(
+    isEditing && route.params?.editNote ? route.params.editNote : ''
+  );
   const [loading, setLoading] = useState(false);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: isEditing ? 'Edit Expense' : 'Add Expense',
+    });
+  }, [navigation, isEditing]);
 
   const handleSave = async () => {
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
@@ -45,15 +63,23 @@ export const AddExpenseScreen = () => {
 
     setLoading(true);
     try {
-      await addExpense({
-        amount: Number(amount),
-        category,
-        note,
-        spent_on: getTodayFormatted(),
-      });
+      if (isEditing && editId) {
+        await updateExpense(editId, {
+          amount: Number(amount),
+          category,
+          note,
+        });
+      } else {
+        await addExpense({
+          amount: Number(amount),
+          category,
+          note,
+          spent_on: getTodayFormatted(),
+        });
+      }
       navigation.goBack();
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to add expense.');
+      Alert.alert('Error', error.message || `Failed to ${isEditing ? 'update' : 'add'} expense.`);
     } finally {
       setLoading(false);
     }
@@ -123,7 +149,7 @@ export const AddExpenseScreen = () => {
         />
 
         <Button
-          title="Save Expense"
+          title={isEditing ? 'Update Expense' : 'Save Expense'}
           onPress={handleSave}
           loading={loading}
           style={styles.saveBtn}
