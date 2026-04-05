@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Alert, KeyboardAvoidingView, Platform, Text } from 'react-native';
+import { View, StyleSheet, Alert, KeyboardAvoidingView, Platform, Text, Linking, TouchableOpacity } from 'react-native';
 import { TextInput, Button } from 'react-native-paper';
 import { supabase } from '../services/supabase';
 import { theme } from '../theme/theme';
@@ -108,6 +108,12 @@ export const LoginScreen = ({ navigation }: { navigation: NavigationProp }) => {
         >
           Don't have an account? Sign Up
         </Button>
+        <TouchableOpacity
+          onPress={() => Linking.openURL('https://ashdephoenix123.github.io/ExpenseFlow/')}
+          style={styles.privacyLink}
+        >
+          <Text style={styles.privacyText}>Privacy Policy</Text>
+        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
@@ -144,5 +150,16 @@ const styles = StyleSheet.create({
   },
   linkButton: {
     marginTop: 16,
+  },
+  privacyLink: {
+    position: 'absolute',
+    bottom: 20,
+    alignSelf: 'center',
+  },
+  privacyText: {
+    ...theme.typography.caption,
+    color: theme.colors.textSecondary,
+    textDecorationLine: 'underline',
+    fontSize: 13,
   },
 });
