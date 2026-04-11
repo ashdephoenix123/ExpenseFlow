@@ -1,28 +1,29 @@
-import React, { useEffect } from 'react';
-import { Text } from 'react-native';
-import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { DarkTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import React, { useEffect } from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
+import { AddExpenseScreen } from '../screens/AddExpenseScreen';
+import { AnalyticsScreen } from '../screens/AnalyticsScreen';
+import { AuthScreen } from '../screens/AuthScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { MonthlyScreen } from '../screens/MonthlyScreen';
-import { AnalyticsScreen } from '../screens/AnalyticsScreen';
-import { AddExpenseScreen } from '../screens/AddExpenseScreen';
-import { SettingsScreen } from '../screens/SettingsScreen';
-import { AuthScreen } from '../screens/AuthScreen';
 import { ResetPasswordScreen } from '../screens/ResetPasswordScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
 import { useAuthStore } from '../store/authStore';
 import { theme } from '../theme/theme';
 
 export type RootStackParamList = {
   MainTabs: undefined;
-  AddExpense: {
-    editId?: string;
-    editAmount?: number;
-    editCategory?: string;
-    editNote?: string;
-  } | undefined;
+  AddExpense:
+    | {
+        editId?: string;
+        editAmount?: number;
+        editCategory?: string;
+        editNote?: string;
+      }
+    | undefined;
   Auth: undefined;
   ResetPassword: undefined;
 };
@@ -50,7 +51,7 @@ const TabNavigator = () => {
         },
         headerTintColor: theme.colors.text,
         headerTitleStyle: {
-          ...theme.typography.h2
+          ...theme.typography.h2,
         },
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
@@ -75,10 +76,26 @@ const TabNavigator = () => {
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Daily Expenses' }} />
-      <Tab.Screen name="Monthly" component={MonthlyScreen} options={{ title: 'Monthly View' }} />
-      <Tab.Screen name="Analytics" component={AnalyticsScreen} options={{ title: 'Analytics' }} />
-      <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{ title: 'Daily Expenses' }}
+      />
+      <Tab.Screen
+        name="Monthly"
+        component={MonthlyScreen}
+        options={{ title: 'Monthly View' }}
+      />
+      <Tab.Screen
+        name="Analytics"
+        component={AnalyticsScreen}
+        options={{ title: 'Analytics' }}
+      />
+      <Tab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{ title: 'Settings' }}
+      />
     </Tab.Navigator>
   );
 };
@@ -86,7 +103,8 @@ const TabNavigator = () => {
 import BootSplash from 'react-native-bootsplash';
 
 export const AppNavigator = () => {
-  const { session, initialized, initialize, pendingPasswordReset } = useAuthStore();
+  const { session, initialized, initialize, pendingPasswordReset } =
+    useAuthStore();
 
   useEffect(() => {
     initialize();
@@ -107,11 +125,19 @@ export const AppNavigator = () => {
   if (!initialized) return null;
 
   return (
-    <NavigationContainer theme={MyTheme} onReady={() => BootSplash.hide({ fade: true })}>
-      <Stack.Navigator screenOptions={{ headerShown: false, presentation: 'modal' }}>
+    <NavigationContainer
+      theme={MyTheme}
+      onReady={() => BootSplash.hide({ fade: true })}
+    >
+      <Stack.Navigator
+        screenOptions={{ headerShown: false, presentation: 'modal' }}
+      >
         {session ? (
           pendingPasswordReset ? (
-            <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+            <Stack.Screen
+              name="ResetPassword"
+              component={ResetPasswordScreen}
+            />
           ) : (
             <>
               <Stack.Screen name="MainTabs" component={TabNavigator} />
@@ -124,7 +150,7 @@ export const AppNavigator = () => {
                   headerStyle: { backgroundColor: theme.colors.surface },
                   headerTintColor: theme.colors.text,
                   presentation: 'modal',
-                  headerTitleStyle: theme.typography.h3
+                  headerTitleStyle: theme.typography.h3,
                 }}
               />
             </>

@@ -1,6 +1,13 @@
-import React, { useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useMemo, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  ActivityIndicator,
+  AppState,
+} from 'react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { theme } from '../theme/theme';
@@ -14,10 +21,26 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
 export const HomeScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const { dailyExpenses, isLoading, fetchDailyExpenses } = useExpenseStore();
-  
-  useEffect(() => {
+
+  const refreshTodayExpenses = useCallback(() => {
     fetchDailyExpenses(getTodayFormatted());
-  }, []);
+  }, [fetchDailyExpenses]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshTodayExpenses();
+
+      const subscription = AppState.addEventListener('change', nextState => {
+        if (nextState === 'active') {
+          refreshTodayExpenses();
+        }
+      });
+
+      return () => {
+        subscription.remove();
+      };
+    }, [refreshTodayExpenses]),
+  );
 
   const totalSpent = useMemo(() => {
     return dailyExpenses.reduce((sum, item) => sum + Number(item.amount), 0);

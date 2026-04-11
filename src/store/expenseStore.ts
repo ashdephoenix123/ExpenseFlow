@@ -5,6 +5,7 @@ import { expenseService } from '../services/expenseService';
 interface ExpenseState {
   dailyExpenses: Expense[];
   monthlyExpenses: Expense[];
+  currentDailyDate: string | null;
   isLoading: boolean;
   error: string | null;
   
@@ -18,6 +19,7 @@ interface ExpenseState {
 export const useExpenseStore = create<ExpenseState>((set, get) => ({
   dailyExpenses: [],
   monthlyExpenses: [],
+  currentDailyDate: null,
   isLoading: false,
   error: null,
 
@@ -25,7 +27,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const data = await expenseService.getDailyExpenses(date);
-      set({ dailyExpenses: data, isLoading: false });
+      set({ dailyExpenses: data, currentDailyDate: date, isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
     }
@@ -45,11 +47,12 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const newExp = await expenseService.addExpense(expense);
-      // Insert locally so UI updates instantly if the date matches today
+      // Insert locally only when the current daily list is for the same date.
       const currentDaily = get().dailyExpenses;
-      // We assume it's added for today by default, so it prepends
+      const currentDailyDate = get().currentDailyDate;
+      const shouldPrependToDaily = newExp.spent_on === currentDailyDate;
       set({ 
-        dailyExpenses: [newExp, ...currentDaily],
+        dailyExpenses: shouldPrependToDaily ? [newExp, ...currentDaily] : currentDaily,
         isLoading: false 
       });
     } catch (error: any) {
@@ -88,4 +91,3 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
     }
   }
 }));
-

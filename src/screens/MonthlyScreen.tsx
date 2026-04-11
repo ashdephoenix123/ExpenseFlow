@@ -1,17 +1,43 @@
-import React, { useState, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
+﻿import React, { useState, useMemo, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  ActivityIndicator,
+  TouchableOpacity,
+} from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { theme } from '../theme/theme';
 import { useExpenseStore } from '../store/expenseStore';
 import { ExpenseItem } from '../components/ExpenseItem';
 import { formatDateDisplay } from '../utils/dateUtils';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Expense } from '../types';
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+type MonthlyListItem =
+  | { type: 'date_header'; id: string; date: string }
+  | { type: 'expense'; id: string; expense: Expense };
 
 export const MonthlyScreen = () => {
-  const { monthlyExpenses, isLoading, fetchMonthlyExpenses } = useExpenseStore();
-  
+  const { monthlyExpenses, isLoading, fetchMonthlyExpenses } =
+    useExpenseStore();
+
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 1-12
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
@@ -19,11 +45,43 @@ export const MonthlyScreen = () => {
   useFocusEffect(
     useCallback(() => {
       fetchMonthlyExpenses(selectedYear, selectedMonth);
-    }, [selectedYear, selectedMonth])
+    }, [fetchMonthlyExpenses, selectedYear, selectedMonth]),
   );
 
   const totalSpent = useMemo(() => {
     return monthlyExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
+  }, [monthlyExpenses]);
+
+  const dayTotals = useMemo(() => {
+    return monthlyExpenses.reduce<Record<string, number>>((acc, expense) => {
+      const date = expense.spent_on;
+      acc[date] = (acc[date] ?? 0) + Number(expense.amount);
+      return acc;
+    }, {});
+  }, [monthlyExpenses]);
+
+  const listItems = useMemo<MonthlyListItem[]>(() => {
+    const items: MonthlyListItem[] = [];
+    let currentDate = '';
+
+    monthlyExpenses.forEach(expense => {
+      if (expense.spent_on !== currentDate) {
+        currentDate = expense.spent_on;
+        items.push({
+          type: 'date_header',
+          id: `date-${currentDate}`,
+          date: currentDate,
+        });
+      }
+
+      items.push({
+        type: 'expense',
+        id: expense.id,
+        expense,
+      });
+    });
+
+    return items;
   }, [monthlyExpenses]);
 
   const handlePrevMonth = () => {
@@ -59,31 +117,53 @@ export const MonthlyScreen = () => {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.totalAmount}>₹ {totalSpent.toLocaleString('en-IN')}</Text>
+        <Text style={styles.totalAmount}>
+          ₹ {totalSpent.toLocaleString('en-IN')}
+        </Text>
         <Text style={styles.subText}>Total Spent this Month</Text>
       </View>
 
       <View style={styles.listContainer}>
         {isLoading ? (
-          <ActivityIndicator size="large" color={theme.colors.primary} style={styles.loader} />
+          <ActivityIndicator
+            size="large"
+            color={theme.colors.primary}
+            style={styles.loader}
+          />
         ) : (
           <FlatList
-            data={monthlyExpenses}
-            keyExtractor={(item) => item.id}
+            data={listItems}
+            keyExtractor={item => item.id}
             contentContainerStyle={styles.listContent}
-            renderItem={({ item }) => (
-              <ExpenseItem
-                id={item.id}
-                amount={item.amount}
-                category={item.category}
-                note={item.note}
-                date={formatDateDisplay(item.spent_on)}
-              />
-            )}
+            renderItem={({ item }) => {
+              if (item.type === 'date_header') {
+                return (
+                  <View style={styles.dayHeader}>
+                    <Text style={styles.dayHeaderText}>
+                      {formatDateDisplay(item.date)}
+                    </Text>
+                    <Text style={styles.dayHeaderAmount}>
+                      ₹ {(dayTotals[item.date] ?? 0).toLocaleString('en-IN')}
+                    </Text>
+                  </View>
+                );
+              }
+
+              return (
+                <ExpenseItem
+                  id={item.expense.id}
+                  amount={item.expense.amount}
+                  category={item.expense.category}
+                  note={item.expense.note}
+                />
+              );
+            }}
             ListEmptyComponent={
               <View style={styles.emptyState}>
                 <Text style={styles.emptyText}>No expenses found.</Text>
-                <Text style={styles.emptySubText}>Try selecting a different month.</Text>
+                <Text style={styles.emptySubText}>
+                  Try selecting a different month.
+                </Text>
               </View>
             }
           />
@@ -141,6 +221,22 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: theme.spacing.md,
+  },
+  dayHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.xs,
+  },
+  dayHeaderText: {
+    ...theme.typography.caption,
+    color: theme.colors.textSecondary,
+  },
+  dayHeaderAmount: {
+    ...theme.typography.caption,
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.medium,
   },
   loader: {
     marginTop: theme.spacing.xl,

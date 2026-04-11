@@ -1,5 +1,12 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Animated } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  Animated,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -17,8 +24,15 @@ interface ExpenseItemProps {
 
 const ACTION_WIDTH = 180; // Width of the actions panel (two buttons)
 
-export const ExpenseItem: React.FC<ExpenseItemProps> = ({ id, amount, category, note, date }) => {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+export const ExpenseItem: React.FC<ExpenseItemProps> = ({
+  id,
+  amount,
+  category,
+  note,
+  date,
+}) => {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const deleteExpense = useExpenseStore(state => state.deleteExpense);
   const [actionsVisible, setActionsVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -68,11 +82,14 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({ id, amount, category, 
             try {
               await deleteExpense(id);
             } catch (error: any) {
-              Alert.alert('Error', 'Failed to delete expense: ' + error.message);
+              Alert.alert(
+                'Error',
+                'Failed to delete expense: ' + error.message,
+              );
             }
-          }
+          },
         },
-      ]
+      ],
     );
   };
 
@@ -101,34 +118,63 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({ id, amount, category, 
     <View style={styles.wrapper}>
       {/* Action buttons revealed behind the card */}
       <View style={styles.actionsContainer}>
-        <TouchableOpacity style={styles.editBtn} onPress={handleEdit} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.editBtn}
+          onPress={handleEdit}
+          activeOpacity={0.7}
+        >
           <Icon name="pencil-outline" size={20} color="#FFFFFF" />
           <Text style={styles.actionText}>Edit</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.deleteBtn}
+          onPress={handleDelete}
+          activeOpacity={0.7}
+        >
           <Icon name="delete-outline" size={20} color="#FFFFFF" />
           <Text style={styles.actionText}>Delete</Text>
         </TouchableOpacity>
       </View>
 
       {/* Sliding card */}
-      <Animated.View style={[styles.container, { transform: [{ translateX: slideAnim }] }]}>
+      <Animated.View
+        style={[styles.container, { transform: [{ translateX: slideAnim }] }]}
+      >
         <View style={styles.leftContent}>
-          <View style={[styles.iconContainer, { backgroundColor: getCategoryColor(category) + '20' }]}>
-            <Icon name={getCategoryIcon(category)} size={24} color={getCategoryColor(category)} />
+          <View
+            style={[
+              styles.iconContainer,
+              { backgroundColor: getCategoryColor(category) + '20' },
+            ]}
+          >
+            <Icon
+              name={getCategoryIcon(category)}
+              size={24}
+              color={getCategoryColor(category)}
+            />
           </View>
           <View style={styles.details}>
             <Text style={styles.category}>{category}</Text>
-            {note ? <Text style={styles.note} numberOfLines={1}>{note}</Text> : null}
+            {note ? (
+              <Text style={styles.note} numberOfLines={1}>
+                {note}
+              </Text>
+            ) : null}
+            {date ? <Text style={styles.date}>{date}</Text> : null}
           </View>
         </View>
 
         <View style={styles.rightContent}>
           <View style={styles.amountContainer}>
-            <Text style={styles.amount}>₹ {amount.toLocaleString('en-IN')}</Text>
-            {date ? <Text style={styles.date}>{date}</Text> : null}
+            <Text style={styles.amount}>
+              ₹ {amount.toLocaleString('en-IN')}
+            </Text>
           </View>
-          <TouchableOpacity onPress={toggleActions} style={styles.moreBtn} activeOpacity={0.6}>
+          <TouchableOpacity
+            onPress={toggleActions}
+            style={styles.moreBtn}
+            activeOpacity={0.6}
+          >
             <Icon
               name={actionsVisible ? 'close' : 'dots-vertical'}
               size={22}
@@ -178,14 +224,15 @@ const styles = StyleSheet.create({
   },
   container: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     paddingVertical: theme.spacing.md,
     backgroundColor: theme.colors.background,
+    gap: 10,
   },
   leftContent: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     flex: 1,
     marginRight: theme.spacing.sm,
   },
@@ -209,11 +256,11 @@ const styles = StyleSheet.create({
   note: {
     ...theme.typography.small,
     color: theme.colors.textSecondary,
-    marginTop: 2,
+    marginTop: -5,
   },
   rightContent: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   amountContainer: {
     alignItems: 'flex-end',
@@ -227,8 +274,8 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
   date: {
-    ...theme.typography.caption,
+    ...theme.typography.small,
     color: theme.colors.textSecondary,
-    marginTop: 2,
+    marginTop: -10,
   },
 });

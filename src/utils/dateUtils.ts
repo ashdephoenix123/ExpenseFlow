@@ -10,7 +10,7 @@ export const getTodayFormatted = () => format(new Date(), 'yyyy-MM-dd');
  */
 export const formatDateDisplay = (dateStr: string) => {
   try {
-    return format(new Date(dateStr), 'dd MMM yyyy');
+    return format(new Date(dateStr), 'EEE, PPP');
   } catch {
     return dateStr;
   }
