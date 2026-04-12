@@ -1,9 +1,31 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Alert, KeyboardAvoidingView, Platform, Text } from 'react-native';
-import { TextInput, Button } from 'react-native-paper';
+import {
+  View,
+  StyleSheet,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
+import { TextInput } from 'react-native-paper';
 import { supabase } from '../services/supabase';
 import { theme } from '../theme/theme';
 import { useAuthStore } from '../store/authStore';
+import { Button } from '../components/Button';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+
+const paperTheme = {
+  colors: {
+    primary: theme.colors.primary,
+    background: theme.colors.surface,
+    text: theme.colors.text,
+  },
+  fonts: {
+    bodyLarge: { fontFamily: theme.fonts.displaySemiBold },
+  },
+};
 
 export const ResetPasswordScreen = () => {
   const [newPassword, setNewPassword] = useState('');
@@ -60,82 +82,84 @@ export const ResetPasswordScreen = () => {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={styles.content}>
-        <Text style={styles.icon}>🔐</Text>
-        <Text style={styles.title}>Set New Password</Text>
-        <Text style={styles.description}>
-          Create a strong password for your account. It must be at least 6 characters long.
-        </Text>
-        <TextInput
-          label="New Password"
-          value={newPassword}
-          onChangeText={setNewPassword}
-          secureTextEntry={!showPassword}
-          right={
-            <TextInput.Icon
-              icon={showPassword ? 'eye-off' : 'eye'}
-              onPress={() => setShowPassword(prev => !prev)}
-              color={theme.colors.textSecondary}
-            />
-          }
-          style={styles.input}
-          theme={{
-            colors: { primary: theme.colors.primary, background: theme.colors.surface, text: theme.colors.text },
-            fonts: {
-              bodyLarge: {
-                fontFamily: theme.fonts.displaySemiBold,
-              },
-            },
-          }}
-          textColor={theme.colors.text}
-          contentStyle={{ ...theme.typography.body }}
-        />
-        <TextInput
-          label="Confirm New Password"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry={!showConfirmPassword}
-          right={
-            <TextInput.Icon
-              icon={showConfirmPassword ? 'eye-off' : 'eye'}
-              onPress={() => setShowConfirmPassword(prev => !prev)}
-              color={theme.colors.textSecondary}
-            />
-          }
-          style={styles.input}
-          theme={{
-            colors: { primary: theme.colors.primary, background: theme.colors.surface, text: theme.colors.text },
-            fonts: {
-              bodyLarge: {
-                fontFamily: theme.fonts.displaySemiBold,
-              },
-            },
-          }}
-          textColor={theme.colors.text}
-          contentStyle={{ ...theme.typography.body }}
-        />
-        <Button
-          mode="contained"
-          onPress={handleUpdatePassword}
-          loading={loading}
-          disabled={loading}
-          style={styles.button}
-          buttonColor={theme.colors.primary}
-          labelStyle={{ ...theme.typography.body, fontSize: 18 }}
-        >
-          Update Password
-        </Button>
-        <Button
-          mode="text"
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.iconCircle}>
+            <Icon name="shield-lock" size={36} color={theme.colors.primary} />
+          </View>
+          <Text style={styles.title}>Set New Password</Text>
+          <Text style={styles.subtitle}>
+            Create a strong password for your account. It must be at least 6 characters long.
+          </Text>
+        </View>
+
+        {/* Form Card */}
+        <View style={styles.card}>
+          <TextInput
+            label="New Password"
+            value={newPassword}
+            onChangeText={setNewPassword}
+            secureTextEntry={!showPassword}
+            left={<TextInput.Icon icon="lock-outline" color={theme.colors.textSecondary} />}
+            right={
+              <TextInput.Icon
+                icon={showPassword ? 'eye-off' : 'eye'}
+                onPress={() => setShowPassword(prev => !prev)}
+                color={theme.colors.textSecondary}
+              />
+            }
+            style={styles.input}
+            theme={paperTheme}
+            textColor={theme.colors.text}
+            contentStyle={styles.inputContent}
+          />
+          <TextInput
+            label="Confirm New Password"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry={!showConfirmPassword}
+            left={<TextInput.Icon icon="lock-check-outline" color={theme.colors.textSecondary} />}
+            right={
+              <TextInput.Icon
+                icon={showConfirmPassword ? 'eye-off' : 'eye'}
+                onPress={() => setShowConfirmPassword(prev => !prev)}
+                color={theme.colors.textSecondary}
+              />
+            }
+            style={styles.input}
+            theme={paperTheme}
+            textColor={theme.colors.text}
+            contentStyle={styles.inputContent}
+          />
+
+          {/* Password strength hint */}
+          <View style={styles.hintRow}>
+            <Icon name="information-outline" size={16} color={theme.colors.textSecondary} />
+            <Text style={styles.hintText}>Minimum 6 characters required</Text>
+          </View>
+
+          <Button
+            title="Update Password"
+            onPress={handleUpdatePassword}
+            loading={loading}
+            disabled={loading || !newPassword || !confirmPassword}
+            style={styles.primaryBtn}
+          />
+        </View>
+
+        {/* Skip */}
+        <TouchableOpacity
           onPress={handleSkip}
           disabled={loading}
-          style={styles.linkButton}
-          textColor={theme.colors.textSecondary}
-          labelStyle={{ ...theme.typography.body, color: theme.colors.textSecondary }}
+          style={styles.skipBtn}
         >
-          Skip for now
-        </Button>
-      </View>
+          <Text style={styles.skipText}>Skip for now</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
@@ -145,42 +169,80 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  content: {
-    flex: 1,
-    padding: 20,
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
     justifyContent: 'center',
+    paddingVertical: 40,
   },
-  icon: {
-    fontSize: 48,
-    textAlign: 'center',
+
+  // Header
+  header: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  iconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: 'rgba(139, 92, 246, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 16,
   },
   title: {
     ...theme.typography.h1,
-    fontSize: 32,
-    color: theme.colors.primary,
+    color: theme.colors.text,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
   },
-  description: {
-    ...theme.typography.body,
+  subtitle: {
+    ...theme.typography.caption,
     color: theme.colors.textSecondary,
     textAlign: 'center',
-    marginBottom: 32,
+    fontSize: 14,
     lineHeight: 22,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
+  },
+
+  // Card
+  card: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    marginBottom: 24,
   },
   input: {
     ...theme.typography.body,
-    marginBottom: 16,
-    backgroundColor: theme.colors.surface,
+    marginBottom: 14,
+    backgroundColor: theme.colors.background,
   },
-  button: {
-    marginTop: 8,
-    paddingVertical: 10,
-    borderRadius: 8,
+  inputContent: {
+    ...theme.typography.body,
   },
-  linkButton: {
-    marginTop: 16,
+  hintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 18,
+  },
+  hintText: {
+    ...theme.typography.small,
+    color: theme.colors.textSecondary,
+  },
+  primaryBtn: {
+    borderRadius: theme.borderRadius.md,
+  },
+
+  // Skip
+  skipBtn: {
+    alignSelf: 'center',
+  },
+  skipText: {
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
+    fontSize: 14,
   },
 });

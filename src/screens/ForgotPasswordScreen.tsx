@@ -1,10 +1,32 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Alert, KeyboardAvoidingView, Platform, Text } from 'react-native';
-import { TextInput, Button } from 'react-native-paper';
+import {
+  View,
+  StyleSheet,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
+import { TextInput } from 'react-native-paper';
 import { supabase } from '../services/supabase';
 import { theme } from '../theme/theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from './AuthScreen';
+import { Button } from '../components/Button';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+
+const paperTheme = {
+  colors: {
+    primary: theme.colors.primary,
+    background: theme.colors.surface,
+    text: theme.colors.text,
+  },
+  fonts: {
+    bodyLarge: { fontFamily: theme.fonts.displaySemiBold },
+  },
+};
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList, 'ForgotPassword'>;
 
@@ -35,37 +57,43 @@ export const ForgotPasswordScreen = ({ navigation }: { navigation: NavigationPro
   if (emailSent) {
     return (
       <View style={styles.container}>
-        <View style={styles.content}>
-          <Text style={styles.successIcon}>✉️</Text>
-          <Text style={styles.title}>Check Your Email</Text>
-          <Text style={styles.description}>
-            We've sent a password reset link to{'\n'}
+        <View style={styles.scrollContent}>
+          <View style={styles.header}>
+            <View style={[styles.iconCircle, styles.successCircle]}>
+              <Icon name="email-check" size={36} color={theme.colors.success} />
+            </View>
+            <Text style={styles.title}>Check Your Email</Text>
+            <Text style={styles.subtitle}>
+              We've sent a password reset link to
+            </Text>
             <Text style={styles.emailHighlight}>{email}</Text>
-          </Text>
-          <Text style={styles.hint}>
-            Didn't receive the email? Check your spam folder or try again.
-          </Text>
+          </View>
+
+          <View style={styles.card}>
+            <View style={styles.hintRow}>
+              <Icon name="information-outline" size={18} color={theme.colors.textSecondary} />
+              <Text style={styles.hintText}>
+                Didn't receive the email? Check your spam folder or try again.
+              </Text>
+            </View>
+          </View>
+
           <Button
-            mode="contained"
+            title="Try Again"
             onPress={() => {
               setEmailSent(false);
               setEmail('');
             }}
-            style={styles.button}
-            buttonColor={theme.colors.primary}
-            labelStyle={{ ...theme.typography.body, fontSize: 18 }}
-          >
-            Try Again
-          </Button>
-          <Button
-            mode="text"
+            style={styles.primaryBtn}
+          />
+
+          <TouchableOpacity
             onPress={() => navigation.navigate('Login')}
-            style={styles.linkButton}
-            textColor={theme.colors.textSecondary}
-            labelStyle={{ ...theme.typography.body, color: theme.colors.textSecondary }}
+            style={styles.backBtn}
           >
-            Back to Login
-          </Button>
+            <Icon name="arrow-left" size={18} color={theme.colors.textSecondary} />
+            <Text style={styles.backText}>Back to Sign In</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -76,52 +104,56 @@ export const ForgotPasswordScreen = ({ navigation }: { navigation: NavigationPro
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={styles.content}>
-        <Text style={styles.title}>Reset Password</Text>
-        <Text style={styles.description}>
-          Enter the email address associated with your account and we'll send you a link to reset your password.
-        </Text>
-        <TextInput
-          label="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          autoFocus
-          style={styles.input}
-          theme={{
-            colors: { primary: theme.colors.primary, background: theme.colors.surface, text: theme.colors.text },
-            fonts: {
-              bodyLarge: {
-                fontFamily: theme.fonts.displaySemiBold,
-              },
-            },
-          }}
-          textColor={theme.colors.text}
-          contentStyle={{ ...theme.typography.body }}
-        />
-        <Button
-          mode="contained"
-          onPress={handleResetPassword}
-          loading={loading}
-          disabled={loading}
-          style={styles.button}
-          buttonColor={theme.colors.primary}
-          labelStyle={{ ...theme.typography.body, fontSize: 18 }}
-        >
-          Send Reset Link
-        </Button>
-        <Button
-          mode="text"
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.iconCircle}>
+            <Icon name="lock-reset" size={36} color={theme.colors.primary} />
+          </View>
+          <Text style={styles.title}>Reset Password</Text>
+          <Text style={styles.subtitle}>
+            Enter the email address associated with your account and we'll send you a reset link.
+          </Text>
+        </View>
+
+        {/* Form Card */}
+        <View style={styles.card}>
+          <TextInput
+            label="Email"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            autoFocus
+            left={<TextInput.Icon icon="email-outline" color={theme.colors.textSecondary} />}
+            style={styles.input}
+            theme={paperTheme}
+            textColor={theme.colors.text}
+            contentStyle={styles.inputContent}
+          />
+
+          <Button
+            title="Send Reset Link"
+            onPress={handleResetPassword}
+            loading={loading}
+            disabled={loading || !email.trim()}
+            style={styles.primaryBtn}
+          />
+        </View>
+
+        {/* Back */}
+        <TouchableOpacity
           onPress={() => navigation.goBack()}
           disabled={loading}
-          style={styles.linkButton}
-          textColor={theme.colors.textSecondary}
-          labelStyle={{ ...theme.typography.body, color: theme.colors.textSecondary }}
+          style={styles.backBtn}
         >
-          Back to Login
-        </Button>
-      </View>
+          <Icon name="arrow-left" size={18} color={theme.colors.textSecondary} />
+          <Text style={styles.backText}>Back to Sign In</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
@@ -131,54 +163,98 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  content: {
-    flex: 1,
-    padding: 20,
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
     justifyContent: 'center',
+    paddingVertical: 40,
+  },
+
+  // Header
+  header: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  iconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: 'rgba(139, 92, 246, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  successCircle: {
+    backgroundColor: 'rgba(75, 181, 67, 0.12)',
   },
   title: {
     ...theme.typography.h1,
-    fontSize: 32,
-    color: theme.colors.primary,
+    color: theme.colors.text,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
   },
-  description: {
-    ...theme.typography.body,
+  subtitle: {
+    ...theme.typography.caption,
     color: theme.colors.textSecondary,
     textAlign: 'center',
-    marginBottom: 32,
+    fontSize: 14,
     lineHeight: 22,
-    paddingHorizontal: 16,
-  },
-  input: {
-    ...theme.typography.body,
-    marginBottom: 16,
-    backgroundColor: theme.colors.surface,
-  },
-  button: {
-    marginTop: 8,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  linkButton: {
-    marginTop: 16,
-  },
-  successIcon: {
-    fontSize: 48,
-    textAlign: 'center',
-    marginBottom: 16,
+    paddingHorizontal: 12,
   },
   emailHighlight: {
     ...theme.typography.body,
     color: theme.colors.primary,
-    fontFamily: theme.fonts.bold,
+    fontFamily: theme.fonts.semiBold,
+    textAlign: 'center',
+    marginTop: 4,
   },
-  hint: {
+
+  // Card
+  card: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    marginBottom: 24,
+  },
+  input: {
+    ...theme.typography.body,
+    marginBottom: 14,
+    backgroundColor: theme.colors.background,
+  },
+  inputContent: {
+    ...theme.typography.body,
+  },
+  primaryBtn: {
+    marginTop: 4,
+    borderRadius: theme.borderRadius.md,
+  },
+
+  // Hint
+  hintRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  hintText: {
     ...theme.typography.caption,
     color: theme.colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: 32,
-    paddingHorizontal: 16,
+    flex: 1,
+    lineHeight: 20,
+  },
+
+  // Back button
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 8,
+  },
+  backText: {
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
+    fontSize: 14,
   },
 });

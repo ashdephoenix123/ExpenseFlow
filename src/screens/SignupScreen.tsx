@@ -1,10 +1,32 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Alert, KeyboardAvoidingView, Platform, Text } from 'react-native';
-import { TextInput, Button } from 'react-native-paper';
+import {
+  View,
+  StyleSheet,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
+import { TextInput } from 'react-native-paper';
 import { supabase } from '../services/supabase';
 import { theme } from '../theme/theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from './AuthScreen';
+import { Button } from '../components/Button';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+
+const paperTheme = {
+  colors: {
+    primary: theme.colors.primary,
+    background: theme.colors.surface,
+    text: theme.colors.text,
+  },
+  fonts: {
+    bodyLarge: { fontFamily: theme.fonts.displaySemiBold },
+  },
+};
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Signup'>;
 
@@ -36,7 +58,6 @@ export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => 
     if (error) {
       Alert.alert('Registration Failed', error.message);
     } else {
-      // Alert.alert('Success', 'Account created! Please check your email for verification before logging in if required.');
       navigation.navigate('Login');
     }
     setLoading(false);
@@ -47,95 +68,88 @@ export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => 
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={styles.content}>
-        <Text style={styles.title}>Create Account</Text>
-        <TextInput
-          label="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          style={styles.input}
-          theme={{
-            colors: { primary: theme.colors.primary, background: theme.colors.surface, text: theme.colors.text },
-            fonts: {
-              bodyLarge: {
-                fontFamily: theme.fonts.displaySemiBold,
-              },
-            },
-          }}
-          textColor={theme.colors.text}
-          contentStyle={{ ...theme.typography.body }}
-        />
-        <TextInput
-          label="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!showPassword}
-          right={
-            <TextInput.Icon
-              icon={showPassword ? 'eye-off' : 'eye'}
-              onPress={() => setShowPassword(prev => !prev)}
-              color={theme.colors.textSecondary}
-            />
-          }
-          style={styles.input}
-          theme={{
-            colors: { primary: theme.colors.primary, background: theme.colors.surface, text: theme.colors.text },
-            fonts: {
-              bodyLarge: {
-                fontFamily: theme.fonts.displaySemiBold,
-              },
-            },
-          }}
-          textColor={theme.colors.text}
-          contentStyle={{ ...theme.typography.body }}
-        />
-        <TextInput
-          label="Confirm Password"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry={!showConfirmPassword}
-          right={
-            <TextInput.Icon
-              icon={showConfirmPassword ? 'eye-off' : 'eye'}
-              onPress={() => setShowConfirmPassword(prev => !prev)}
-              color={theme.colors.textSecondary}
-            />
-          }
-          style={styles.input}
-          theme={{
-            colors: { primary: theme.colors.primary, background: theme.colors.surface, text: theme.colors.text },
-            fonts: {
-              bodyLarge: {
-                fontFamily: theme.fonts.displaySemiBold,
-              },
-            },
-          }}
-          textColor={theme.colors.text}
-          contentStyle={{ ...theme.typography.body }}
-        />
-        <Button
-          mode="contained"
-          onPress={handleSignUp}
-          loading={loading}
-          style={styles.button}
-          buttonColor={theme.colors.primary}
-          labelStyle={{ ...theme.typography.body, fontSize: 18 }}
-        >
-          Sign Up
-        </Button>
-        <Button
-          mode="text"
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.iconCircle}>
+            <Icon name="account-plus" size={36} color={theme.colors.primary} />
+          </View>
+          <Text style={styles.title}>Create Account</Text>
+          <Text style={styles.subtitle}>Start tracking your expenses in seconds</Text>
+        </View>
+
+        {/* Form Card */}
+        <View style={styles.card}>
+          <TextInput
+            label="Email"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            left={<TextInput.Icon icon="email-outline" color={theme.colors.textSecondary} />}
+            style={styles.input}
+            theme={paperTheme}
+            textColor={theme.colors.text}
+            contentStyle={styles.inputContent}
+          />
+          <TextInput
+            label="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            left={<TextInput.Icon icon="lock-outline" color={theme.colors.textSecondary} />}
+            right={
+              <TextInput.Icon
+                icon={showPassword ? 'eye-off' : 'eye'}
+                onPress={() => setShowPassword(prev => !prev)}
+                color={theme.colors.textSecondary}
+              />
+            }
+            style={styles.input}
+            theme={paperTheme}
+            textColor={theme.colors.text}
+            contentStyle={styles.inputContent}
+          />
+          <TextInput
+            label="Confirm Password"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry={!showConfirmPassword}
+            left={<TextInput.Icon icon="lock-check-outline" color={theme.colors.textSecondary} />}
+            right={
+              <TextInput.Icon
+                icon={showConfirmPassword ? 'eye-off' : 'eye'}
+                onPress={() => setShowConfirmPassword(prev => !prev)}
+                color={theme.colors.textSecondary}
+              />
+            }
+            style={styles.input}
+            theme={paperTheme}
+            textColor={theme.colors.text}
+            contentStyle={styles.inputContent}
+          />
+
+          <Button
+            title="Create Account"
+            onPress={handleSignUp}
+            loading={loading}
+            style={styles.primaryBtn}
+          />
+        </View>
+
+        {/* Footer */}
+        <TouchableOpacity
           onPress={() => navigation.goBack()}
           disabled={loading}
-          style={styles.linkButton}
-          textColor={theme.colors.textSecondary}
-          labelStyle={{ ...theme.typography.body, color: theme.colors.textSecondary }}
+          style={styles.switchRow}
         >
-          Already have an account? Login
-        </Button>
-      </View>
+          <Text style={styles.switchText}>Already have an account? </Text>
+          <Text style={styles.switchHighlight}>Sign In</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
@@ -145,29 +159,77 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  content: {
-    flex: 1,
-    padding: 20,
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
     justifyContent: 'center',
+    paddingVertical: 40,
+  },
+
+  // Header
+  header: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  iconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: 'rgba(139, 92, 246, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
   },
   title: {
     ...theme.typography.h1,
-    fontSize: 32,
-    color: theme.colors.primary,
+    color: theme.colors.text,
     textAlign: 'center',
-    marginBottom: 40,
+    marginBottom: 8,
+  },
+  subtitle: {
+    ...theme.typography.caption,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    fontSize: 14,
+  },
+
+  // Card
+  card: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    marginBottom: 24,
   },
   input: {
     ...theme.typography.body,
-    marginBottom: 16,
-    backgroundColor: theme.colors.surface,
+    marginBottom: 14,
+    backgroundColor: theme.colors.background,
   },
-  button: {
-    marginTop: 8,
-    paddingVertical: 10,
-    borderRadius: 8,
+  inputContent: {
+    ...theme.typography.body,
   },
-  linkButton: {
-    marginTop: 16,
+  primaryBtn: {
+    marginTop: 4,
+    borderRadius: theme.borderRadius.md,
+  },
+
+  // Footer
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  switchText: {
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
+    fontSize: 14,
+  },
+  switchHighlight: {
+    ...theme.typography.body,
+    color: theme.colors.primary,
+    fontFamily: theme.fonts.semiBold,
+    fontSize: 14,
   },
 });

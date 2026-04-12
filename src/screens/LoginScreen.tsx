@@ -1,10 +1,33 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Alert, KeyboardAvoidingView, Platform, Text, Linking, TouchableOpacity } from 'react-native';
-import { TextInput, Button } from 'react-native-paper';
+import {
+  View,
+  StyleSheet,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Text,
+  Linking,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
+import { TextInput } from 'react-native-paper';
 import { supabase } from '../services/supabase';
 import { theme } from '../theme/theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from './AuthScreen';
+import { Button } from '../components/Button';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+
+const paperTheme = {
+  colors: {
+    primary: theme.colors.primary,
+    background: theme.colors.surface,
+    text: theme.colors.text,
+  },
+  fonts: {
+    bodyLarge: { fontFamily: theme.fonts.displaySemiBold },
+  },
+};
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -33,88 +56,88 @@ export const LoginScreen = ({ navigation }: { navigation: NavigationProp }) => {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={styles.content}>
-        <Text style={styles.title}>Welcome Back</Text>
-        <TextInput
-          label="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          style={styles.input}
-          theme={{
-            colors: { primary: theme.colors.primary, background: theme.colors.surface, text: theme.colors.text }, fonts: {
-              bodyLarge: {
-                fontFamily: theme.fonts.displaySemiBold,
-              },
-            },
-          }}
-          textColor={theme.colors.text}
-          contentStyle={{ ...theme.typography.body }}
-        />
-        <TextInput
-          label="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!showPassword}
-          right={
-            <TextInput.Icon
-              icon={showPassword ? 'eye-off' : 'eye'}
-              onPress={() => setShowPassword(prev => !prev)}
-              color={theme.colors.textSecondary}
-            />
-          }
-          style={styles.input}
-          theme={{
-            colors: { primary: theme.colors.primary, background: theme.colors.surface, text: theme.colors.text }, fonts: {
-              bodyLarge: {
-                fontFamily: theme.fonts.displaySemiBold,
-              },
-            },
-          }}
-          textColor={theme.colors.text}
-          contentStyle={{ ...theme.typography.body }}
-        />
-        <Button
-          mode="contained"
-          onPress={handleLogin}
-          loading={loading}
-          style={styles.button}
-          contentStyle={{ paddingVertical: 10 }}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.iconCircle}>
+            <Icon name="wallet" size={36} color={theme.colors.primary} />
+          </View>
+          <Text style={styles.appName}>ExpenseFlow</Text>
+          <Text style={styles.title}>Welcome Back</Text>
+          <Text style={styles.subtitle}>Sign in to continue tracking your expenses</Text>
+        </View>
 
-          buttonColor={theme.colors.primary}
-          labelStyle={{ ...theme.typography.body, fontSize: 18 }}
-        >
-          Login
-        </Button>
-        <Button
-          mode="text"
-          onPress={() => navigation.navigate('ForgotPassword')}
-          disabled={loading}
-          style={styles.forgotButton}
-          textColor={theme.colors.primary}
-          labelStyle={{ ...theme.typography.caption }}
-          rippleColor="transparent"
-        >
-          Forgot Password?
-        </Button>
-        <Button
-          mode="text"
-          onPress={() => navigation.navigate('Signup')}
-          disabled={loading}
-          style={styles.linkButton}
-          textColor={theme.colors.textSecondary}
-          labelStyle={{ ...theme.typography.body, color: theme.colors.textSecondary }}
-        >
-          Don't have an account? Sign Up
-        </Button>
-        <TouchableOpacity
-          onPress={() => Linking.openURL('https://ashdephoenix123.github.io/ExpenseFlow/')}
-          style={styles.privacyLink}
-        >
-          <Text style={styles.privacyText}>Privacy Policy</Text>
-        </TouchableOpacity>
-      </View>
+        {/* Form Card */}
+        <View style={styles.card}>
+          <TextInput
+            label="Email"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            left={<TextInput.Icon icon="email-outline" color={theme.colors.textSecondary} />}
+            style={styles.input}
+            theme={paperTheme}
+            textColor={theme.colors.text}
+            contentStyle={styles.inputContent}
+          />
+          <TextInput
+            label="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            left={<TextInput.Icon icon="lock-outline" color={theme.colors.textSecondary} />}
+            right={
+              <TextInput.Icon
+                icon={showPassword ? 'eye-off' : 'eye'}
+                onPress={() => setShowPassword(prev => !prev)}
+                color={theme.colors.textSecondary}
+              />
+            }
+            style={styles.input}
+            theme={paperTheme}
+            textColor={theme.colors.text}
+            contentStyle={styles.inputContent}
+          />
+
+          <Button
+            title="Sign In"
+            onPress={handleLogin}
+            loading={loading}
+            style={styles.primaryBtn}
+          />
+
+          <TouchableOpacity
+            onPress={() => navigation.navigate('ForgotPassword')}
+            disabled={loading}
+            style={styles.forgotBtn}
+          >
+            <Text style={styles.forgotText}>Forgot Password?</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Signup')}
+            disabled={loading}
+            style={styles.switchRow}
+          >
+            <Text style={styles.switchText}>Don't have an account? </Text>
+            <Text style={styles.switchHighlight}>Sign Up</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => Linking.openURL('https://ashdephoenix123.github.io/ExpenseFlow/')}
+            style={styles.privacyBtn}
+          >
+            <Text style={styles.privacyText}>Privacy Policy</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
@@ -124,40 +147,104 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  content: {
-    flex: 1,
-    padding: 20,
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
     justifyContent: 'center',
+    paddingVertical: 40,
+  },
+
+  // Header
+  header: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  iconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: 'rgba(139, 92, 246, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  appName: {
+    ...theme.typography.h3,
+    color: theme.colors.primary,
+    fontSize: 16,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    marginBottom: 8,
   },
   title: {
     ...theme.typography.h1,
-    fontSize: 32,
-    color: theme.colors.primary,
+    color: theme.colors.text,
     textAlign: 'center',
-    marginBottom: 40,
+    marginBottom: 8,
+  },
+  subtitle: {
+    ...theme.typography.caption,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    fontSize: 14,
+  },
+
+  // Card
+  card: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    marginBottom: 24,
   },
   input: {
     ...theme.typography.body,
-    marginBottom: 16,
-    backgroundColor: theme.colors.surface,
+    marginBottom: 14,
+    backgroundColor: theme.colors.background,
   },
-  button: {
-    marginTop: 8,
-    borderRadius: 8,
+  inputContent: {
+    ...theme.typography.body,
   },
-  forgotButton: {
-    marginTop: 16,
+  primaryBtn: {
+    marginTop: 4,
+    borderRadius: theme.borderRadius.md,
   },
-  linkButton: {
-    marginTop: 16,
-  },
-  privacyLink: {
-    position: 'absolute',
-    bottom: 20,
+  forgotBtn: {
     alignSelf: 'center',
+    marginTop: 16,
+  },
+  forgotText: {
+    ...theme.typography.caption,
+    color: theme.colors.primary,
+    fontSize: 14,
+  },
+
+  // Footer
+  footer: {
+    alignItems: 'center',
+    gap: 20,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  switchText: {
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
+    fontSize: 14,
+  },
+  switchHighlight: {
+    ...theme.typography.body,
+    color: theme.colors.primary,
+    fontFamily: theme.fonts.semiBold,
+    fontSize: 14,
+  },
+  privacyBtn: {
+    paddingVertical: 4,
   },
   privacyText: {
-    ...theme.typography.caption,
+    ...theme.typography.small,
     color: theme.colors.textSecondary,
     textDecorationLine: 'underline',
     fontSize: 13,
