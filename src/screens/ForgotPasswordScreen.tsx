@@ -102,7 +102,7 @@ export const ForgotPasswordScreen = ({ navigation }: { navigation: NavigationPro
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'height' : 'padding'}
     >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
