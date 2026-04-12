@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
   },
   addRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 10,
   },
   addInputWrap: {
