@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../services/supabase';
+import { useExpenseStore } from './expenseStore';
+import { useCategoryStore } from './categoryStore';
 
 interface AuthState {
   session: Session | null;
@@ -30,7 +32,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (event === 'PASSWORD_RECOVERY') {
         set({ pendingPasswordReset: true });
       }
+      // Clear cached data when user signs out or a different user signs in
+      if (event === 'SIGNED_OUT' || event === 'SIGNED_IN') {
+        useExpenseStore.getState().reset();
+        useCategoryStore.getState().reset();
+      }
     });
   },
 }));
-

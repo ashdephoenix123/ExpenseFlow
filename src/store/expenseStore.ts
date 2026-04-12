@@ -17,6 +17,7 @@ interface ExpenseState {
   addExpense: (expense: NewExpense) => Promise<void>;
   updateExpense: (id: string, updates: Partial<NewExpense>) => Promise<void>;
   deleteExpense: (id: string) => Promise<void>;
+  reset: () => void;
 }
 
 export const useExpenseStore = create<ExpenseState>((set, get) => ({
@@ -113,4 +114,16 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       throw error;
     }
   },
+
+  reset: () =>
+    set({
+      dailyExpenses: [],
+      monthlyExpenses: [],
+      currentDailyDate: null,
+      currentMonthlyKey: null,
+      newEntryVersion: 0,
+      monthlySyncedEntryVersion: -1,
+      isLoading: false,
+      error: null,
+    }),
 }));

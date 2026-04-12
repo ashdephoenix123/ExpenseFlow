@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React, { useEffect } from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
+import { AddCategoryScreen } from '../screens/AddCategoryScreen';
 import { AddExpenseScreen } from '../screens/AddExpenseScreen';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
 import { AuthScreen } from '../screens/AuthScreen';
@@ -22,8 +23,10 @@ export type RootStackParamList = {
         editAmount?: number;
         editCategory?: string;
         editNote?: string;
+        newCategory?: string;
       }
     | undefined;
+  AddCategory: undefined;
   Auth: undefined;
   ResetPassword: undefined;
 };
@@ -147,6 +150,18 @@ export const AppNavigator = () => {
                 options={{
                   headerShown: true,
                   title: 'Add Expense',
+                  headerStyle: { backgroundColor: theme.colors.surface },
+                  headerTintColor: theme.colors.text,
+                  presentation: 'modal',
+                  headerTitleStyle: theme.typography.h3,
+                }}
+              />
+              <Stack.Screen
+                name="AddCategory"
+                component={AddCategoryScreen}
+                options={{
+                  headerShown: true,
+                  title: 'New Category',
                   headerStyle: { backgroundColor: theme.colors.surface },
                   headerTintColor: theme.colors.text,
                   presentation: 'modal',
