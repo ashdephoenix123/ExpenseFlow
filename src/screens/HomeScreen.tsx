@@ -20,11 +20,15 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
 
 export const HomeScreen = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { dailyExpenses, isLoading, fetchDailyExpenses } = useExpenseStore();
+  const { dailyExpenses, currentDailyDate, isLoading, fetchDailyExpenses } =
+    useExpenseStore();
 
   const refreshTodayExpenses = useCallback(() => {
-    fetchDailyExpenses(getTodayFormatted());
-  }, [fetchDailyExpenses]);
+    const today = getTodayFormatted();
+    if (currentDailyDate !== today) {
+      fetchDailyExpenses(today);
+    }
+  }, [currentDailyDate, fetchDailyExpenses]);
 
   useFocusEffect(
     useCallback(() => {

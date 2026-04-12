@@ -155,11 +155,9 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({
           </View>
           <View style={styles.details}>
             <Text style={styles.category}>{category}</Text>
-            {note ? (
-              <Text style={styles.note} numberOfLines={1}>
-                {note}
-              </Text>
-            ) : null}
+            <Text style={styles.note} numberOfLines={1}>
+              {note ?? ''}
+            </Text>
             {date ? <Text style={styles.date}>{date}</Text> : null}
           </View>
         </View>

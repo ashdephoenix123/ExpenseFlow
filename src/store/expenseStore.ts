@@ -6,9 +6,12 @@ interface ExpenseState {
   dailyExpenses: Expense[];
   monthlyExpenses: Expense[];
   currentDailyDate: string | null;
+  currentMonthlyKey: string | null;
+  newEntryVersion: number;
+  monthlySyncedEntryVersion: number;
   isLoading: boolean;
   error: string | null;
-  
+
   fetchDailyExpenses: (date: string) => Promise<void>;
   fetchMonthlyExpenses: (year: number, month: number) => Promise<void>;
   addExpense: (expense: NewExpense) => Promise<void>;
@@ -20,6 +23,9 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
   dailyExpenses: [],
   monthlyExpenses: [],
   currentDailyDate: null,
+  currentMonthlyKey: null,
+  newEntryVersion: 0,
+  monthlySyncedEntryVersion: -1,
   isLoading: false,
   error: null,
 
@@ -37,7 +43,14 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const data = await expenseService.getMonthlyExpenses(year, month);
-      set({ monthlyExpenses: data, isLoading: false });
+      const currentVersion = get().newEntryVersion;
+      const monthKey = `${year}-${String(month).padStart(2, '0')}`;
+      set({
+        monthlyExpenses: data,
+        currentMonthlyKey: monthKey,
+        monthlySyncedEntryVersion: currentVersion,
+        isLoading: false,
+      });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
     }
@@ -51,9 +64,13 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       const currentDaily = get().dailyExpenses;
       const currentDailyDate = get().currentDailyDate;
       const shouldPrependToDaily = newExp.spent_on === currentDailyDate;
-      set({ 
-        dailyExpenses: shouldPrependToDaily ? [newExp, ...currentDaily] : currentDaily,
-        isLoading: false 
+      const nextVersion = get().newEntryVersion + 1;
+      set({
+        dailyExpenses: shouldPrependToDaily
+          ? [newExp, ...currentDaily]
+          : currentDaily,
+        newEntryVersion: nextVersion,
+        isLoading: false,
       });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
@@ -65,10 +82,16 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const updated = await expenseService.updateExpense(id, updates);
+      const nextVersion = get().newEntryVersion + 1;
       set({
-        dailyExpenses: get().dailyExpenses.map(e => e.id === id ? updated : e),
-        monthlyExpenses: get().monthlyExpenses.map(e => e.id === id ? updated : e),
+        dailyExpenses: get().dailyExpenses.map(e =>
+          e.id === id ? updated : e,
+        ),
+        monthlyExpenses: get().monthlyExpenses.map(e =>
+          e.id === id ? updated : e,
+        ),
         isLoading: false,
+        newEntryVersion: nextVersion,
       });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
@@ -83,11 +106,11 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       set({
         dailyExpenses: get().dailyExpenses.filter(e => e.id !== id),
         monthlyExpenses: get().monthlyExpenses.filter(e => e.id !== id),
-        isLoading: false
+        isLoading: false,
       });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
       throw error;
     }
-  }
+  },
 }));

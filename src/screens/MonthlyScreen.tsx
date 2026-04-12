@@ -35,17 +35,40 @@ type MonthlyListItem =
   | { type: 'expense'; id: string; expense: Expense };
 
 export const MonthlyScreen = () => {
-  const { monthlyExpenses, isLoading, fetchMonthlyExpenses } =
-    useExpenseStore();
+  const {
+    monthlyExpenses,
+    currentMonthlyKey,
+    newEntryVersion,
+    monthlySyncedEntryVersion,
+    isLoading,
+    fetchMonthlyExpenses,
+  } = useExpenseStore();
 
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 1-12
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
-  // Refetch whenever the tab gains focus OR month/year changes
+  // Fetch once for the selected month, and refetch only if a new entry was added since the last monthly sync.
   useFocusEffect(
     useCallback(() => {
-      fetchMonthlyExpenses(selectedYear, selectedMonth);
-    }, [fetchMonthlyExpenses, selectedYear, selectedMonth]),
+      const monthKey = `${selectedYear}-${String(selectedMonth).padStart(
+        2,
+        '0',
+      )}`;
+      const shouldFetch =
+        currentMonthlyKey !== monthKey ||
+        monthlySyncedEntryVersion !== newEntryVersion;
+
+      if (shouldFetch) {
+        fetchMonthlyExpenses(selectedYear, selectedMonth);
+      }
+    }, [
+      currentMonthlyKey,
+      fetchMonthlyExpenses,
+      monthlySyncedEntryVersion,
+      newEntryVersion,
+      selectedMonth,
+      selectedYear,
+    ]),
   );
 
   const totalSpent = useMemo(() => {
