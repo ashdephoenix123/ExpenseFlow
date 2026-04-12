@@ -7,6 +7,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { AddCategoryScreen } from '../screens/AddCategoryScreen';
 import { AddExpenseScreen } from '../screens/AddExpenseScreen';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
+import { ManageCategoriesScreen } from '../screens/ManageCategoriesScreen';
 import { AuthScreen } from '../screens/AuthScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { MonthlyScreen } from '../screens/MonthlyScreen';
@@ -27,6 +28,7 @@ export type RootStackParamList = {
       }
     | undefined;
   AddCategory: undefined;
+  ManageCategories: undefined;
   Auth: undefined;
   ResetPassword: undefined;
 };
@@ -165,6 +167,17 @@ export const AppNavigator = () => {
                   headerStyle: { backgroundColor: theme.colors.surface },
                   headerTintColor: theme.colors.text,
                   presentation: 'modal',
+                  headerTitleStyle: theme.typography.h3,
+                }}
+              />
+              <Stack.Screen
+                name="ManageCategories"
+                component={ManageCategoriesScreen}
+                options={{
+                  headerShown: true,
+                  title: 'Manage Categories',
+                  headerStyle: { backgroundColor: theme.colors.surface },
+                  headerTintColor: theme.colors.text,
                   headerTitleStyle: theme.typography.h3,
                 }}
               />

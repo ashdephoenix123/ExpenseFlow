@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Alert, ScrollView, TouchableOpacity } from 'react-native';
 import { TextInput, Modal, Portal } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { theme } from '../theme/theme';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../services/supabase';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Button } from '../components/Button';
 
+
 export const SettingsScreen = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user } = useAuthStore();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [confirmText, setConfirmText] = useState('');
@@ -86,6 +91,27 @@ export const SettingsScreen = () => {
                   : '—'}
               </Text>
             </View>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Manage Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Manage</Text>
+        <View style={styles.card}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('ManageCategories')}
+          >
+            <View style={styles.menuIconContainer}>
+              <Icon name="tag-multiple" size={20} color={theme.colors.primary} />
+            </View>
+            <View style={styles.menuContent}>
+              <Text style={styles.menuLabel}>Categories</Text>
+              <Text style={styles.menuHint}>Add or remove custom categories</Text>
+            </View>
+            <Icon name="chevron-right" size={22} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         </View>
       </View>
