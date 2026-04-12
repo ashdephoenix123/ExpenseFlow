@@ -84,10 +84,10 @@ export const SettingsScreen = () => {
               <Text style={styles.menuValue}>
                 {user?.created_at
                   ? new Date(user.created_at).toLocaleDateString('en-IN', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })
                   : '—'}
               </Text>
             </View>
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
   // Menu items
   menuItem: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
@@ -320,7 +320,6 @@ const styles = StyleSheet.create({
     ...theme.typography.caption,
     color: theme.colors.textSecondary,
     fontSize: 13,
-    marginTop: 1,
   },
   menuHint: {
     ...theme.typography.small,
