@@ -50,7 +50,7 @@ export const SettingsScreen = () => {
             <Icon name="account" size={40} color={theme.colors.primary} />
           </View>
         </View>
-        <Text style={styles.userName}>User</Text>
+        <Text style={styles.userName}>{user?.user_metadata?.name || 'User'}</Text>
         <Text style={styles.userEmail}>{user?.email}</Text>
       </View>
 

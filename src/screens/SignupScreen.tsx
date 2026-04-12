@@ -31,6 +31,7 @@ const paperTheme = {
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Signup'>;
 
 export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -39,6 +40,10 @@ export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => 
   const [loading, setLoading] = useState(false);
 
   const handleSignUp = async () => {
+    if (!name.trim()) {
+      Alert.alert('Error', 'Please enter your name');
+      return;
+    }
     if (!email || !password) {
       Alert.alert('Error', 'Please enter email and password');
       return;
@@ -52,7 +57,10 @@ export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => 
       email,
       password,
       options: {
-        emailRedirectTo: 'expenseflow://auth-callback'
+        emailRedirectTo: 'expenseflow://auth-callback',
+        data: {
+          name: name.trim(),
+        },
       }
     });
     if (error) {
@@ -83,6 +91,17 @@ export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => 
 
         {/* Form Card */}
         <View style={styles.card}>
+          <TextInput
+            label="Full Name"
+            value={name}
+            onChangeText={setName}
+            autoCapitalize="words"
+            left={<TextInput.Icon icon="account-outline" color={theme.colors.textSecondary} />}
+            style={styles.input}
+            theme={paperTheme}
+            textColor={theme.colors.text}
+            contentStyle={styles.inputContent}
+          />
           <TextInput
             label="Email"
             value={email}
