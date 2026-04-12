@@ -2,14 +2,15 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { DarkTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React, { useEffect } from 'react';
+import { Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
 import { AddCategoryScreen } from '../screens/AddCategoryScreen';
 import { AddExpenseScreen } from '../screens/AddExpenseScreen';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
-import { ManageCategoriesScreen } from '../screens/ManageCategoriesScreen';
 import { AuthScreen } from '../screens/AuthScreen';
 import { HomeScreen } from '../screens/HomeScreen';
+import { ManageCategoriesScreen } from '../screens/ManageCategoriesScreen';
 import { MonthlyScreen } from '../screens/MonthlyScreen';
 import { ResetPasswordScreen } from '../screens/ResetPasswordScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
@@ -19,14 +20,14 @@ import { theme } from '../theme/theme';
 export type RootStackParamList = {
   MainTabs: undefined;
   AddExpense:
-    | {
-        editId?: string;
-        editAmount?: number;
-        editCategory?: string;
-        editNote?: string;
-        newCategory?: string;
-      }
-    | undefined;
+  | {
+    editId?: string;
+    editAmount?: number;
+    editCategory?: string;
+    editNote?: string;
+    newCategory?: string;
+  }
+  | undefined;
   AddCategory: undefined;
   ManageCategories: undefined;
   Auth: undefined;
@@ -44,6 +45,9 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const TabNavigator = () => {
+  const insets = useSafeAreaInsets();
+  const bottomPadding = Math.max(insets.bottom, 10);
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -61,9 +65,9 @@ const TabNavigator = () => {
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.border,
-          paddingBottom: 10,
+          paddingBottom: bottomPadding,
           paddingTop: 10,
-          height: 80,
+          height: 60 + bottomPadding,
         },
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.textSecondary,
@@ -79,6 +83,16 @@ const TabNavigator = () => {
           else if (route.name === 'Settings') iconName = 'cog';
           return <Icon name={iconName} size={size + 2} color={color} />;
         },
+        tabBarButton: ({ style, children, onPress, onLongPress, ...rest }) => (
+          <Pressable
+            style={style as any}
+            onPress={onPress}
+            onLongPress={onLongPress}
+            android_ripple={{ color: 'transparent' }}
+          >
+            {children}
+          </Pressable>
+        ),
       })}
     >
       <Tab.Screen
