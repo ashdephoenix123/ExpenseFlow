@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { theme } from '../theme/theme';
 import { useExpenseStore } from '../store/expenseStore';
 import { formatDateDisplay } from '../utils/dateUtils';
@@ -19,8 +20,29 @@ const CATEGORY_COLORS = [
 ];
 
 export const AnalyticsScreen = () => {
-  const { monthlyExpenses } = useExpenseStore();
+  const {
+    monthlyExpenses,
+    currentMonthlyKey,
+    newEntryVersion,
+    monthlySyncedEntryVersion,
+    fetchMonthlyExpenses,
+  } = useExpenseStore();
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+
+  // Refetch monthly data if a new expense was added since last sync
+  useFocusEffect(
+    useCallback(() => {
+      if (monthlySyncedEntryVersion !== newEntryVersion && currentMonthlyKey) {
+        const [year, month] = currentMonthlyKey.split('-').map(Number);
+        fetchMonthlyExpenses(year, month);
+      }
+    }, [
+      currentMonthlyKey,
+      fetchMonthlyExpenses,
+      monthlySyncedEntryVersion,
+      newEntryVersion,
+    ]),
+  );
 
   const totalMonthly = useMemo(
     () => monthlyExpenses.reduce((sum, e) => sum + Number(e.amount), 0),
