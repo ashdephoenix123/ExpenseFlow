@@ -113,6 +113,23 @@ export const SettingsScreen = () => {
             </View>
             <Icon name="chevron-right" size={22} color={theme.colors.textSecondary} />
           </TouchableOpacity>
+
+          <View style={styles.divider} />
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('AiUsage')}
+          >
+            <View style={styles.menuIconContainer}>
+              <Icon name="robot-happy-outline" size={20} color={theme.colors.primary} />
+            </View>
+            <View style={styles.menuContent}>
+              <Text style={styles.menuLabel}>AI Usage</Text>
+              <Text style={styles.menuHint}>Daily token usage and fair-use limit</Text>
+            </View>
+            <Icon name="chevron-right" size={22} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
         </View>
       </View>
 

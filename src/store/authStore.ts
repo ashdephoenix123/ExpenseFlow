@@ -3,6 +3,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../services/supabase';
 import { useExpenseStore } from './expenseStore';
 import { useCategoryStore } from './categoryStore';
+import { useAiChatStore } from './aiChatStore';
 
 interface AuthState {
   session: Session | null;
@@ -36,6 +37,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (event === 'SIGNED_OUT' || event === 'SIGNED_IN') {
         useExpenseStore.getState().reset();
         useCategoryStore.getState().reset();
+        useAiChatStore.getState().clearChat();
       }
     });
   },

@@ -7,7 +7,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { AddCategoryScreen } from '../screens/AddCategoryScreen';
 import { AddExpenseScreen } from '../screens/AddExpenseScreen';
+import { AiUsageScreen } from '../screens/AiUsageScreen';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
+import { AskAiScreen } from '../screens/AskAiScreen';
 import { AuthScreen } from '../screens/AuthScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { ManageCategoriesScreen } from '../screens/ManageCategoriesScreen';
@@ -30,6 +32,7 @@ export type RootStackParamList = {
   | undefined;
   AddCategory: undefined;
   ManageCategories: undefined;
+  AiUsage: undefined;
   Auth: undefined;
   ResetPassword: undefined;
 };
@@ -37,6 +40,7 @@ export type RootStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   Monthly: undefined;
+  AskAi: undefined;
   Analytics: undefined;
   Settings: undefined;
 };
@@ -79,11 +83,12 @@ const TabNavigator = () => {
           let iconName = 'home';
           if (route.name === 'Home') iconName = 'view-dashboard';
           else if (route.name === 'Monthly') iconName = 'calendar-month';
+          else if (route.name === 'AskAi') iconName = 'creation';
           else if (route.name === 'Analytics') iconName = 'chart-pie';
           else if (route.name === 'Settings') iconName = 'cog';
           return <Icon name={iconName} size={size + 2} color={color} />;
         },
-        tabBarButton: ({ style, children, onPress, onLongPress, ...rest }) => (
+        tabBarButton: ({ style, children, onPress, onLongPress }) => (
           <Pressable
             style={style as any}
             onPress={onPress}
@@ -104,6 +109,11 @@ const TabNavigator = () => {
         name="Monthly"
         component={MonthlyScreen}
         options={{ title: 'Monthly View' }}
+      />
+      <Tab.Screen
+        name="AskAi"
+        component={AskAiScreen}
+        options={{ title: 'Ask AI' }}
       />
       <Tab.Screen
         name="Analytics"
@@ -190,6 +200,17 @@ export const AppNavigator = () => {
                 options={{
                   headerShown: true,
                   title: 'Manage Categories',
+                  headerStyle: { backgroundColor: theme.colors.surface },
+                  headerTintColor: theme.colors.text,
+                  headerTitleStyle: theme.typography.h3,
+                }}
+              />
+              <Stack.Screen
+                name="AiUsage"
+                component={AiUsageScreen}
+                options={{
+                  headerShown: true,
+                  title: 'AI Usage',
                   headerStyle: { backgroundColor: theme.colors.surface },
                   headerTintColor: theme.colors.text,
                   headerTitleStyle: theme.typography.h3,
