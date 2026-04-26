@@ -131,7 +131,7 @@ export const LoginScreen = ({ navigation }: { navigation: NavigationProp }) => {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => Linking.openURL('https://ashdephoenix123.github.io/ExpenseFlow/')}
+            onPress={() => Linking.openURL('https://ashdephoenix123.github.io/ExpenseFlow/privacy-policy.html')}
             style={styles.privacyBtn}
           >
             <Text style={styles.privacyText}>Privacy Policy</Text>
