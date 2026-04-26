@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="ExpenseFlow helps you track daily spending, manage categories, and understand your budget with clear analytics.">
+    <title>ExpenseFlow | Expense Tracking App</title>
+    <style>
+        :root {
+            --bg: #0b1020;
+            --surface: #111a2f;
+            --surface-soft: #14203a;
+            --text: #eff4ff;
+            --muted: #b4c0db;
+            --line: #273555;
+            --primary: #4f9cf9;
+            --primary-strong: #2d7fe6;
+            --secondary: #2fc7a1;
+            --radius: 8px;
+            --maxw: 1060px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Inter, "Segoe UI", Roboto, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        a {
+            color: inherit;
+        }
+
+        .container {
+            width: min(var(--maxw), 92vw);
+            margin: 0 auto;
+        }
+
+        .hero {
+            padding: 64px 0 42px;
+            border-bottom: 1px solid var(--line);
+            background: linear-gradient(180deg, #0f1830 0%, #0b1020 100%);
+        }
+
+        .hero-wrap {
+            display: grid;
+            gap: 28px;
+            align-items: center;
+            grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+        }
+
+        .eyebrow {
+            font-size: 12px;
+            color: var(--secondary);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+
+        h1 {
+            margin: 8px 0 14px;
+            font-size: clamp(30px, 4vw, 46px);
+            line-height: 1.15;
+        }
+
+        .subtitle {
+            margin: 0;
+            color: var(--muted);
+            font-size: 17px;
+            max-width: 56ch;
+        }
+
+        .cta-row {
+            margin-top: 26px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            padding: 0 18px;
+            border-radius: var(--radius);
+            font-weight: 600;
+            text-decoration: none;
+            border: 1px solid transparent;
+        }
+
+        .button.primary {
+            background: #000000;
+            color: #ffffff;
+            border-color: #5f6368;
+            border-radius: 10px;
+            min-height: 52px;
+            padding: 8px 16px 8px 12px;
+        }
+
+        .button.primary:hover {
+            background: #111111;
+            border-color: #9aa0a6;
+        }
+
+        .play-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .play-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .play-icon img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
+        }
+
+        .play-copy {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            line-height: 1.1;
+            white-space: nowrap;
+        }
+
+        .play-kicker {
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.06em;
+        }
+
+        .play-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .button.secondary {
+            background: transparent;
+            border-color: var(--line);
+            color: var(--text);
+        }
+
+        .button.secondary:hover {
+            background: var(--surface);
+        }
+
+        .logo-panel {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            min-height: 230px;
+            display: grid;
+            place-items: center;
+            padding: 22px;
+        }
+
+        .logo-panel img {
+            max-width: 100%;
+            width: min(240px, 72%);
+            height: auto;
+            object-fit: contain;
+        }
+
+        section {
+            padding: 44px 0;
+            border-bottom: 1px solid var(--line);
+        }
+
+        h2 {
+            margin: 0 0 18px;
+            font-size: clamp(22px, 3vw, 28px);
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .feature {
+            background: var(--surface-soft);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 16px;
+        }
+
+        .feature h3 {
+            margin: 0 0 6px;
+            font-size: 17px;
+        }
+
+        .feature p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        .links-list {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .link-chip {
+            display: inline-flex;
+            align-items: center;
+            min-height: 40px;
+            border-radius: var(--radius);
+            border: 1px solid var(--line);
+            padding: 0 14px;
+            text-decoration: none;
+            background: var(--surface);
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .link-chip:hover {
+            border-color: var(--primary);
+        }
+
+        .contact-line {
+            margin: 0;
+            color: var(--muted);
+            font-size: 15px;
+        }
+
+        footer {
+            padding: 20px 0 34px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        @media (max-width: 960px) {
+            .hero-wrap {
+                grid-template-columns: 1fr;
+            }
+
+            .logo-panel {
+                min-height: 180px;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .features {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="hero">
+        <div class="container hero-wrap">
+            <div>
+                <div class="eyebrow">Personal Finance</div>
+                <h1>ExpenseFlow</h1>
+                <p class="subtitle">
+                    Track every expense, stay on budget, and make better money decisions with a clean, fast mobile
+                    experience.
+                </p>
+                <div class="cta-row">
+                    <a class="button primary play-badge" href="https://play.google.com/store/apps/details?id=com.expenseflow"
+                        target="_blank" rel="noopener noreferrer" aria-label="Get it on Google Play">
+                        <span class="play-icon" aria-hidden="true">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/Google_Play_Arrow_logo.svg"
+                                alt="">
+                        </span>
+                        <span class="play-copy">
+                            <span class="play-kicker">GET IT ON</span>
+                            <span class="play-title">Google Play</span>
+                        </span>
+                    </a>
+                    <a class="button secondary" href="#about">Learn more</a>
+                </div>
+            </div>
+            <div class="logo-panel">
+                <img src="../Logo-removebg-preview.png" alt="ExpenseFlow app logo">
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section id="about">
+            <div class="container">
+                <h2>Everything you need to manage expenses</h2>
+                <div class="features">
+                    <article class="feature">
+                        <h3>Quick Entry</h3>
+                        <p>Add expenses in seconds with category, amount, and notes.</p>
+                    </article>
+                    <article class="feature">
+                        <h3>Clear Insights</h3>
+                        <p>View monthly summaries and trends so you can spot spending patterns.</p>
+                    </article>
+                    <article class="feature">
+                        <h3>Ask AI</h3>
+                        <p>Use natural language to get practical insights from your expense history.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section id="support">
+            <div class="container">
+                <h2>Support and policies</h2>
+                <div class="links-list">
+                    <a class="link-chip" href="./delete-account.html">Delete Account</a>
+                    <a class="link-chip" href="./index.html">Privacy Policy</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact">
+            <div class="container">
+                <h2>Contact</h2>
+                <p class="contact-line">Questions or feedback: <a
+                        href="mailto:akashsarki12345@gmail.com">akashsarki12345@gmail.com</a></p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">&copy; 2026 ExpenseFlow. All rights reserved.</div>
+    </footer>
+</body>
+
+</html>
