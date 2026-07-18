@@ -5,6 +5,7 @@
  * @format
  */
 
+import { useEffect } from 'react';
 import { StatusBar, Text, TextInput, useColorScheme } from 'react-native';
 import {
   SafeAreaProvider,
@@ -14,6 +15,7 @@ import { Provider as PaperProvider } from 'react-native-paper';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { Linking } from 'react-native';
 import { supabase } from './src/services/supabase';
+import { updateService } from './src/services/updateService';
 
 import { useAuthStore } from './src/store/authStore';
 
@@ -72,6 +74,11 @@ TextInput.defaultProps.style = [{ fontFamily: defaultFontFamily, includeFontPadd
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
+
+  // Pull any published JS update in the background; it applies on next launch.
+  useEffect(() => {
+    updateService.syncInBackground();
+  }, []);
 
   return (
     <PaperProvider>

@@ -1,4 +1,23 @@
 {
   "name": "ExpenseFlow",
-  "displayName": "ExpenseFlow"
+  "displayName": "ExpenseFlow",
+  "expo": {
+    "name": "ExpenseFlow",
+    "slug": "expenseflow",
+    "version": "1.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "android": {
+      "package": "com.expenseflow"
+    },
+    "ios": {
+      "bundleIdentifier": "com.expenseflow"
+    },
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    }
+  }
 }
