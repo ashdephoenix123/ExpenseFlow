@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   Alert,
   Animated,
+  Modal,
+  ScrollView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -20,6 +22,8 @@ interface ExpenseItemProps {
   category: string;
   note?: string;
   date?: string;
+  accountName?: string;
+  accountId?: string;
 }
 
 const ACTION_WIDTH = 180; // Width of the actions panel (two buttons)
@@ -30,11 +34,14 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({
   category,
   note,
   date,
+  accountName,
+  accountId,
 }) => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const deleteExpense = useExpenseStore(state => state.deleteExpense);
   const [actionsVisible, setActionsVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(0)).current;
 
   const toggleActions = () => {
@@ -65,6 +72,7 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({
       editAmount: amount,
       editCategory: category,
       editNote: note,
+      editAccountId: accountId,
     });
   };
 
@@ -140,47 +148,115 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({
       <Animated.View
         style={[styles.container, { transform: [{ translateX: slideAnim }] }]}
       >
-        <View style={styles.leftContent}>
-          <View
-            style={[
-              styles.iconContainer,
-              { backgroundColor: getCategoryColor(category) + '20' },
-            ]}
-          >
-            <Icon
-              name={getCategoryIcon(category)}
-              size={24}
-              color={getCategoryColor(category)}
-            />
+        <TouchableOpacity
+          style={styles.touchableContent}
+          onPress={() => setModalVisible(true)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.leftContent}>
+            <View
+              style={[
+                styles.iconContainer,
+                { backgroundColor: getCategoryColor(category) + '20' },
+              ]}
+            >
+              <Icon
+                name={getCategoryIcon(category)}
+                size={24}
+                color={getCategoryColor(category)}
+              />
+            </View>
+            <View style={styles.details}>
+              <Text style={styles.category}>{category}</Text>
+              {accountName ? (
+                <View style={styles.accountBadge}>
+                  <Icon name="wallet-outline" size={12} color={theme.colors.textSecondary} />
+                  <Text style={styles.accountBadgeText}>{accountName}</Text>
+                </View>
+              ) : null}
+              <Text style={styles.note} numberOfLines={1}>
+                {note ?? ''}
+              </Text>
+              {date ? <Text style={styles.date}>{date}</Text> : null}
+            </View>
           </View>
-          <View style={styles.details}>
-            <Text style={styles.category}>{category}</Text>
-            <Text style={styles.note} numberOfLines={1}>
-              {note ?? ''}
-            </Text>
-            {date ? <Text style={styles.date}>{date}</Text> : null}
-          </View>
-        </View>
 
-        <View style={styles.rightContent}>
           <View style={styles.amountContainer}>
             <Text style={styles.amount}>
               ₹ {amount.toLocaleString('en-IN')}
             </Text>
           </View>
-          <TouchableOpacity
-            onPress={toggleActions}
-            style={styles.moreBtn}
-            activeOpacity={0.6}
-          >
-            <Icon
-              name={actionsVisible ? 'close' : 'dots-vertical'}
-              size={22}
-              color={theme.colors.textSecondary}
-            />
-          </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={toggleActions}
+          style={styles.moreBtn}
+          activeOpacity={0.6}
+        >
+          <Icon
+            name={actionsVisible ? 'close' : 'dots-vertical'}
+            size={22}
+            color={theme.colors.textSecondary}
+          />
+        </TouchableOpacity>
       </Animated.View>
+
+      {/* Details Modal */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setModalVisible(false)}
+        >
+          <TouchableOpacity activeOpacity={1} style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View
+                style={[
+                  styles.modalIconContainer,
+                  { backgroundColor: getCategoryColor(category) + '20' },
+                ]}
+              >
+                <Icon
+                  name={getCategoryIcon(category)}
+                  size={32}
+                  color={getCategoryColor(category)}
+                />
+              </View>
+              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.modalCloseBtn}>
+                <Icon name="close" size={24} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+              <Text style={styles.modalAmount}>₹ {amount.toLocaleString('en-IN')}</Text>
+              <Text style={styles.modalCategory}>{category}</Text>
+              
+              {accountName && (
+                <View style={styles.modalAccountBadge}>
+                  <Icon name="wallet-outline" size={16} color={theme.colors.textSecondary} />
+                  <Text style={styles.modalAccountText}>{accountName}</Text>
+                </View>
+              )}
+              
+              {date && (
+                <Text style={styles.modalDate}>{date}</Text>
+              )}
+
+              {note ? (
+                <View style={styles.modalNoteContainer}>
+                  <Text style={styles.modalNoteLabel}>Note</Text>
+                  <Text style={styles.modalNoteText}>{note}</Text>
+                </View>
+              ) : null}
+            </ScrollView>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
@@ -227,6 +303,12 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.md,
     backgroundColor: theme.colors.background,
     gap: 10,
+  },
+  touchableContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
   },
   leftContent: {
     flexDirection: 'row',
@@ -275,5 +357,96 @@ const styles = StyleSheet.create({
     ...theme.typography.small,
     color: theme.colors.textSecondary,
     marginTop: -10,
+  },
+  accountBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginTop: 2,
+    marginBottom: 1,
+  },
+  accountBadgeText: {
+    ...theme.typography.small,
+    fontSize: 11,
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.medium,
+    marginBottom: -6,
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    padding: theme.spacing.lg,
+  },
+  modalContent: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    maxHeight: '80%',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: theme.spacing.md,
+  },
+  modalIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCloseBtn: {
+    padding: theme.spacing.xs,
+  },
+  modalBody: {
+    flexShrink: 1,
+  },
+  modalAmount: {
+    ...theme.typography.h1,
+    fontSize: 36,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
+  },
+  modalCategory: {
+    ...theme.typography.h3,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.sm,
+  },
+  modalAccountBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: theme.spacing.sm,
+  },
+  modalAccountText: {
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.medium,
+  },
+  modalDate: {
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.md,
+  },
+  modalNoteContainer: {
+    marginTop: theme.spacing.md,
+    paddingTop: theme.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  modalNoteLabel: {
+    ...theme.typography.caption,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xs,
+  },
+  modalNoteText: {
+    ...theme.typography.body,
+    color: theme.colors.text,
+    lineHeight: 24,
   },
 });

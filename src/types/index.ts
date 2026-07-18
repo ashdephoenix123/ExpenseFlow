@@ -3,6 +3,7 @@ export interface Expense {
   amount: number;
   category: string;
   note?: string;
+  account_id?: string | null;
   spent_on: string; // ISO format string 'YYYY-MM-DD'
   created_at?: string;
   user_id?: string;
@@ -34,4 +35,12 @@ export interface AiUsageOverview {
   usagePercent: number;
   usdPer1kTokens: number;
   daily: AiUsageDay[];
+}
+
+export interface Account {
+  id: string;
+  name: string;
+  is_primary: boolean;
+  user_id: string;
+  created_at?: string;
 }

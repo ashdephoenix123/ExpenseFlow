@@ -5,13 +5,13 @@ import React, { useEffect } from 'react';
 import { Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { AddCategoryScreen } from '../screens/AddCategoryScreen';
 import { AddExpenseScreen } from '../screens/AddExpenseScreen';
 import { AiUsageScreen } from '../screens/AiUsageScreen';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
 import { AskAiScreen } from '../screens/AskAiScreen';
 import { AuthScreen } from '../screens/AuthScreen';
 import { HomeScreen } from '../screens/HomeScreen';
+import { ManageAccountsScreen } from '../screens/ManageAccountsScreen';
 import { ManageCategoriesScreen } from '../screens/ManageCategoriesScreen';
 import { MonthlyScreen } from '../screens/MonthlyScreen';
 import { ResetPasswordScreen } from '../screens/ResetPasswordScreen';
@@ -27,11 +27,11 @@ export type RootStackParamList = {
     editAmount?: number;
     editCategory?: string;
     editNote?: string;
-    newCategory?: string;
+    editAccountId?: string;
   }
   | undefined;
-  AddCategory: undefined;
   ManageCategories: undefined;
+  ManageAccounts: undefined;
   AiUsage: undefined;
   Auth: undefined;
   ResetPassword: undefined;
@@ -81,7 +81,7 @@ const TabNavigator = () => {
         },
         tabBarIcon: ({ color, size }) => {
           let iconName = 'home';
-          if (route.name === 'Home') iconName = 'view-dashboard';
+          if (route.name === 'Home') iconName = 'plus-circle';
           else if (route.name === 'Monthly') iconName = 'calendar-month';
           else if (route.name === 'AskAi') iconName = 'creation';
           else if (route.name === 'Analytics') iconName = 'chart-pie';
@@ -103,7 +103,7 @@ const TabNavigator = () => {
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{ title: 'Daily Expenses' }}
+        options={{ title: 'Add Expense' }}
       />
       <Tab.Screen
         name="Monthly"
@@ -175,19 +175,7 @@ export const AppNavigator = () => {
                 component={AddExpenseScreen}
                 options={{
                   headerShown: true,
-                  title: 'Add Expense',
-                  headerStyle: { backgroundColor: theme.colors.surface },
-                  headerTintColor: theme.colors.text,
-                  presentation: 'modal',
-                  headerTitleStyle: theme.typography.h3,
-                }}
-              />
-              <Stack.Screen
-                name="AddCategory"
-                component={AddCategoryScreen}
-                options={{
-                  headerShown: true,
-                  title: 'New Category',
+                  title: 'Edit Expense',
                   headerStyle: { backgroundColor: theme.colors.surface },
                   headerTintColor: theme.colors.text,
                   presentation: 'modal',
@@ -200,6 +188,17 @@ export const AppNavigator = () => {
                 options={{
                   headerShown: true,
                   title: 'Manage Categories',
+                  headerStyle: { backgroundColor: theme.colors.surface },
+                  headerTintColor: theme.colors.text,
+                  headerTitleStyle: theme.typography.h3,
+                }}
+              />
+              <Stack.Screen
+                name="ManageAccounts"
+                component={ManageAccountsScreen}
+                options={{
+                  headerShown: true,
+                  title: 'Manage Accounts',
                   headerStyle: { backgroundColor: theme.colors.surface },
                   headerTintColor: theme.colors.text,
                   headerTitleStyle: theme.typography.h3,

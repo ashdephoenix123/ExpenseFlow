@@ -119,6 +119,23 @@ export const SettingsScreen = () => {
           <TouchableOpacity
             style={styles.menuItem}
             activeOpacity={0.7}
+            onPress={() => navigation.navigate('ManageAccounts')}
+          >
+            <View style={styles.menuIconContainer}>
+              <Icon name="bank-outline" size={20} color={theme.colors.primary} />
+            </View>
+            <View style={styles.menuContent}>
+              <Text style={styles.menuLabel}>Accounts</Text>
+              <Text style={styles.menuHint}>Manage payment accounts & set primary</Text>
+            </View>
+            <Icon name="chevron-right" size={22} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+
+          <View style={styles.divider} />
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            activeOpacity={0.7}
             onPress={() => navigation.navigate('AiUsage')}
           >
             <View style={styles.menuIconContainer}>

@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,15 @@ import {
   FlatList,
   ActivityIndicator,
   TouchableOpacity,
+  Modal,
+  ScrollView,
+  SafeAreaView,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { theme } from '../theme/theme';
 import { useExpenseStore } from '../store/expenseStore';
+import { useAccountStore } from '../store/accountStore';
+import { useCategoryStore } from '../store/categoryStore';
 import { ExpenseItem } from '../components/ExpenseItem';
 import { formatDateDisplay } from '../utils/dateUtils';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -44,8 +49,35 @@ export const MonthlyScreen = () => {
     fetchMonthlyExpenses,
   } = useExpenseStore();
 
+  const { accounts, fetchAccounts } = useAccountStore();
+
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 1-12
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [isPickerVisible, setIsPickerVisible] = useState(false);
+  const [pickerYear, setPickerYear] = useState(selectedYear);
+
+  // Build a lookup map: account_id -> account_name
+  const accountMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    accounts.forEach(a => { map[a.id] = a.name; });
+    return map;
+  }, [accounts]);
+
+  const { categories, fetchCategories } = useCategoryStore();
+
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
+
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [activeFilterTab, setActiveFilterTab] = useState<'category' | 'account'>('category');
+  const [tempCategory, setTempCategory] = useState<string | null>(null);
+  const [tempAccount, setTempAccount] = useState<string | null>(null);
+
+  // Fetch data on mount
+  useEffect(() => {
+    fetchAccounts();
+    fetchCategories();
+  }, [fetchAccounts, fetchCategories]);
 
   // Fetch once for the selected month, and refetch only if a new entry was added since the last monthly sync.
   useFocusEffect(
@@ -71,23 +103,31 @@ export const MonthlyScreen = () => {
     ]),
   );
 
+  const filteredExpenses = useMemo(() => {
+    return monthlyExpenses.filter(expense => {
+      const categoryMatch = selectedCategory ? expense.category === selectedCategory : true;
+      const accountMatch = selectedAccount ? expense.account_id === selectedAccount : true;
+      return categoryMatch && accountMatch;
+    });
+  }, [monthlyExpenses, selectedCategory, selectedAccount]);
+
   const totalSpent = useMemo(() => {
-    return monthlyExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
-  }, [monthlyExpenses]);
+    return filteredExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
+  }, [filteredExpenses]);
 
   const dayTotals = useMemo(() => {
-    return monthlyExpenses.reduce<Record<string, number>>((acc, expense) => {
+    return filteredExpenses.reduce<Record<string, number>>((acc, expense) => {
       const date = expense.spent_on;
       acc[date] = (acc[date] ?? 0) + Number(expense.amount);
       return acc;
     }, {});
-  }, [monthlyExpenses]);
+  }, [filteredExpenses]);
 
   const listItems = useMemo<MonthlyListItem[]>(() => {
     const items: MonthlyListItem[] = [];
     let currentDate = '';
 
-    monthlyExpenses.forEach(expense => {
+    filteredExpenses.forEach(expense => {
       if (expense.spent_on !== currentDate) {
         currentDate = expense.spent_on;
         items.push({
@@ -107,45 +147,68 @@ export const MonthlyScreen = () => {
     return items;
   }, [monthlyExpenses]);
 
-  const handlePrevMonth = () => {
-    if (selectedMonth === 1) {
-      setSelectedMonth(12);
-      setSelectedYear(y => y - 1);
-    } else {
-      setSelectedMonth(m => m - 1);
-    }
+  const selectMonth = (monthIndex: number) => {
+    setSelectedMonth(monthIndex + 1);
+    setSelectedYear(pickerYear);
+    setIsPickerVisible(false);
   };
 
-  const handleNextMonth = () => {
-    if (selectedMonth === 12) {
-      setSelectedMonth(1);
-      setSelectedYear(y => y + 1);
-    } else {
-      setSelectedMonth(m => m + 1);
-    }
+  const resetToCurrentMonth = () => {
+    const today = new Date();
+    setSelectedMonth(today.getMonth() + 1);
+    setSelectedYear(today.getFullYear());
+    setIsPickerVisible(false);
+  };
+
+  const openFilterModal = () => {
+    setTempCategory(selectedCategory);
+    setTempAccount(selectedAccount);
+    setActiveFilterTab('category');
+    setIsFilterModalOpen(true);
+  };
+
+  const applyFilters = () => {
+    setSelectedCategory(tempCategory);
+    setSelectedAccount(tempAccount);
+    setIsFilterModalOpen(false);
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.selector}>
-          <TouchableOpacity onPress={handlePrevMonth} style={styles.iconBtn}>
-            <Icon name="chevron-left" size={28} color={theme.colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.dateText}>
-            {MONTHS[selectedMonth - 1]} {selectedYear}
-          </Text>
-          <TouchableOpacity onPress={handleNextMonth} style={styles.iconBtn}>
-            <Icon name="chevron-right" size={28} color={theme.colors.text} />
-          </TouchableOpacity>
+        <View style={styles.headerTop}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.totalAmount}>
+              ₹ {totalSpent.toLocaleString('en-IN')}
+            </Text>
+            <Text style={styles.subText}>Total Spent this Month</Text>
+          </View>
+
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={styles.selectorBtn}
+              activeOpacity={0.7}
+              onPress={() => {
+                setPickerYear(selectedYear);
+                setIsPickerVisible(true);
+              }}
+            >
+              <Text style={styles.dateText}>
+                {MONTHS[selectedMonth - 1]} {selectedYear}
+              </Text>
+              <Icon name="chevron-down" size={20} color={theme.colors.primary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.filterIconBtn} 
+              activeOpacity={0.7} 
+              onPress={openFilterModal}
+            >
+              <Icon name="filter-variant" size={24} color={(selectedCategory || selectedAccount) ? theme.colors.primary : theme.colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
         </View>
-
-        <Text style={styles.totalAmount}>
-          ₹ {totalSpent.toLocaleString('en-IN')}
-        </Text>
-        <Text style={styles.subText}>Total Spent this Month</Text>
       </View>
-
       <View style={styles.listContainer}>
         {isLoading ? (
           <ActivityIndicator
@@ -178,6 +241,8 @@ export const MonthlyScreen = () => {
                   amount={item.expense.amount}
                   category={item.expense.category}
                   note={item.expense.note}
+                  accountId={item.expense.account_id ?? undefined}
+                  accountName={item.expense.account_id ? accountMap[item.expense.account_id] : undefined}
                 />
               );
             }}
@@ -192,6 +257,155 @@ export const MonthlyScreen = () => {
           />
         )}
       </View>
+
+      {/* Month/Year Picker Modal */}
+      <Modal
+        visible={isPickerVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsPickerVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setIsPickerVisible(false)}
+        >
+          <TouchableOpacity activeOpacity={1} style={styles.pickerContainer}>
+            <View style={styles.pickerHeader}>
+              <TouchableOpacity onPress={() => setPickerYear(y => y - 1)} style={styles.pickerIconBtn}>
+                <Icon name="chevron-left" size={28} color={theme.colors.text} />
+              </TouchableOpacity>
+              <Text style={styles.pickerYearText}>{pickerYear}</Text>
+              <TouchableOpacity onPress={() => setPickerYear(y => y + 1)} style={styles.pickerIconBtn}>
+                <Icon name="chevron-right" size={28} color={theme.colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.monthsGrid}>
+              {MONTHS.map((month, index) => {
+                const isSelected = selectedMonth === index + 1 && selectedYear === pickerYear;
+                return (
+                  <TouchableOpacity
+                    key={month}
+                    style={[styles.monthChip, isSelected && styles.monthChipSelected]}
+                    onPress={() => selectMonth(index)}
+                  >
+                    <Text style={[styles.monthChipText, isSelected && styles.monthChipTextSelected]}>
+                      {month}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <TouchableOpacity 
+              style={styles.resetBtn} 
+              onPress={resetToCurrentMonth}
+              activeOpacity={0.7}
+            >
+              <Icon name="calendar-today" size={20} color={theme.colors.primary} />
+              <Text style={styles.resetBtnText}>Jump to Current Month</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Category/Account Filter Modal */}
+      <Modal
+        visible={isFilterModalOpen}
+        animationType="slide"
+        onRequestClose={() => setIsFilterModalOpen(false)}
+      >
+        <SafeAreaView style={styles.fullScreenFilterContainer}>
+          <View style={[styles.filterModalHeader, { borderBottomWidth: 1 }]}>
+            <Text style={styles.pickerYearText}>Filters</Text>
+          </View>
+
+            <View style={styles.filterModalBody}>
+              {/* Left Column: Tabs */}
+              <View style={styles.filterTabsCol}>
+                <TouchableOpacity
+                  style={[styles.filterTabBtn, activeFilterTab === 'category' && styles.filterTabBtnActive]}
+                  onPress={() => setActiveFilterTab('category')}
+                >
+                  <Text style={[styles.filterTabText, activeFilterTab === 'category' && styles.filterTabTextActive]}>Category</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.filterTabBtn, activeFilterTab === 'account' && styles.filterTabBtnActive]}
+                  onPress={() => setActiveFilterTab('account')}
+                >
+                  <Text style={[styles.filterTabText, activeFilterTab === 'account' && styles.filterTabTextActive]}>Account</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Right Column: Options */}
+              <View style={styles.filterOptionsCol}>
+                <ScrollView contentContainerStyle={styles.filterOptionsList}>
+                  <TouchableOpacity
+                    style={styles.filterOptionItem}
+                    onPress={() => {
+                      if (activeFilterTab === 'category') setTempCategory(null);
+                      if (activeFilterTab === 'account') setTempAccount(null);
+                    }}
+                  >
+                    <Icon
+                      name={
+                        (activeFilterTab === 'category' ? !tempCategory : !tempAccount)
+                          ? "radiobox-marked"
+                          : "radiobox-blank"
+                      }
+                      size={20}
+                      color={(activeFilterTab === 'category' ? !tempCategory : !tempAccount) ? theme.colors.primary : theme.colors.textSecondary}
+                    />
+                    <Text style={styles.filterOptionItemText}>
+                      All {activeFilterTab === 'category' ? 'Categories' : 'Accounts'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {activeFilterTab === 'category' && categories.map(cat => (
+                    <TouchableOpacity
+                      key={cat.id}
+                      style={styles.filterOptionItem}
+                      onPress={() => setTempCategory(cat.name)}
+                    >
+                      <Icon
+                        name={tempCategory === cat.name ? "radiobox-marked" : "radiobox-blank"}
+                        size={20}
+                        color={tempCategory === cat.name ? theme.colors.primary : theme.colors.textSecondary}
+                      />
+                      <Text style={styles.filterOptionItemText}>{cat.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+
+                  {activeFilterTab === 'account' && accounts.map(acc => (
+                    <TouchableOpacity
+                      key={acc.id}
+                      style={styles.filterOptionItem}
+                      onPress={() => setTempAccount(acc.id)}
+                    >
+                      <Icon
+                        name={tempAccount === acc.id ? "radiobox-marked" : "radiobox-blank"}
+                        size={20}
+                        color={tempAccount === acc.id ? theme.colors.primary : theme.colors.textSecondary}
+                      />
+                      <Text style={styles.filterOptionItemText}>{acc.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            </View>
+
+            <View style={styles.filterModalFooter}>
+              <TouchableOpacity style={styles.filterCancelBtn} onPress={() => setIsFilterModalOpen(false)}>
+                <Text style={styles.filterCancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.filterApplyBtn} onPress={applyFilters}>
+                <Text style={styles.filterApplyBtnText}>Apply</Text>
+              </TouchableOpacity>
+            </View>
+        </SafeAreaView>
+      </Modal>
     </View>
   );
 };
@@ -202,10 +416,8 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   header: {
-    padding: theme.spacing.xl,
-    paddingTop: theme.spacing.lg,
+    padding: theme.spacing.lg,
     backgroundColor: theme.colors.surface,
-    alignItems: 'center',
     borderBottomLeftRadius: theme.borderRadius.lg,
     borderBottomRightRadius: theme.borderRadius.lg,
     elevation: 4,
@@ -213,27 +425,48 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
+    zIndex: 10,
   },
-  selector: {
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: theme.spacing.md,
   },
-  iconBtn: {
+  filterIconBtn: {
     padding: theme.spacing.sm,
+    marginLeft: theme.spacing.xs,
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.round,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  selectorBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.background,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.round,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    marginLeft: theme.spacing.md,
   },
   dateText: {
     ...theme.typography.h3,
     color: theme.colors.primary,
-    marginHorizontal: theme.spacing.md,
-    width: 120,
-    textAlign: 'center',
+    marginRight: theme.spacing.sm,
   },
   totalAmount: {
-    ...theme.typography.h1,
+    ...theme.typography.h2,
     color: theme.colors.text,
-    fontSize: 36,
-    marginBottom: theme.spacing.xs,
+    marginBottom: 4,
   },
   subText: {
     ...theme.typography.caption,
@@ -244,6 +477,10 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: theme.spacing.md,
+    paddingBottom: 100,
+  },
+  loader: {
+    marginTop: theme.spacing.xl,
   },
   dayHeader: {
     flexDirection: 'row',
@@ -261,9 +498,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     fontFamily: theme.fonts.medium,
   },
-  loader: {
-    marginTop: theme.spacing.xl,
-  },
+
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -277,5 +512,156 @@ const styles = StyleSheet.create({
   emptySubText: {
     ...theme.typography.body,
     color: theme.colors.textSecondary,
+  },
+  // Picker Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spacing.lg,
+  },
+  pickerContainer: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    width: '100%',
+    maxWidth: 340,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  pickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
+  },
+  pickerIconBtn: {
+    padding: theme.spacing.xs,
+  },
+  pickerYearText: {
+    ...theme.typography.h2,
+    color: theme.colors.text,
+  },
+  monthsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  monthChip: {
+    width: '30%',
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.background,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  monthChipSelected: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  monthChipText: {
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.medium,
+  },
+  monthChipTextSelected: {
+    color: '#000000',
+    fontFamily: theme.fonts.semiBold,
+  },
+  filterModalHeader: {
+    padding: theme.spacing.lg,
+    borderBottomColor: theme.colors.border,
+    alignItems: 'center',
+  },
+  filterModalBody: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  fullScreenFilterContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  filterTabsCol: {
+    width: '35%',
+    borderRightWidth: 1,
+    borderRightColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
+  },
+  filterTabBtn: {
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
+    borderLeftWidth: 3,
+    borderLeftColor: 'transparent',
+  },
+  filterTabBtnActive: {
+    borderLeftColor: theme.colors.primary,
+    backgroundColor: theme.colors.surface,
+  },
+  filterTabText: {
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
+  },
+  filterTabTextActive: {
+    color: theme.colors.primary,
+    fontFamily: theme.fonts.semiBold,
+  },
+  filterOptionsCol: {
+    width: '65%',
+  },
+  filterOptionsList: {
+    padding: theme.spacing.md,
+  },
+  filterOptionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.md,
+    gap: 12,
+  },
+  filterOptionItemText: {
+    ...theme.typography.body,
+    color: theme.colors.text,
+  },
+  filterModalFooter: {
+    flexDirection: 'row',
+    padding: theme.spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  filterCancelBtn: {
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  filterCancelBtnText: {
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
+  },
+  filterApplyBtn: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.xl,
+    borderRadius: theme.borderRadius.md,
+  },
+  filterApplyBtnText: {
+    ...theme.typography.body,
+    color: '#000000',
+    fontFamily: theme.fonts.semiBold,
+  },
+  resetBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: theme.spacing.xl,
+    paddingVertical: theme.spacing.sm,
+    gap: 8,
+  },
+  resetBtnText: {
+    ...theme.typography.body,
+    color: theme.colors.primary,
+    fontFamily: theme.fonts.medium,
   },
 });
