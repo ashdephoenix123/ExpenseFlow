@@ -145,7 +145,7 @@ export const MonthlyScreen = () => {
     });
 
     return items;
-  }, [monthlyExpenses]);
+  }, [filteredExpenses]);
 
   const selectMonth = (monthIndex: number) => {
     setSelectedMonth(monthIndex + 1);
@@ -176,15 +176,15 @@ export const MonthlyScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View style={styles.headerLeft}>
+        <View style={styles.headerRow}>
+          <View style={styles.totalBlock}>
             <Text style={styles.totalAmount}>
               ₹ {totalSpent.toLocaleString('en-IN')}
             </Text>
             <Text style={styles.subText}>Total Spent this Month</Text>
           </View>
 
-          <View style={styles.headerRight}>
+          <View style={styles.controlsRow}>
             <TouchableOpacity
               style={styles.selectorBtn}
               activeOpacity={0.7}
@@ -199,9 +199,9 @@ export const MonthlyScreen = () => {
               <Icon name="chevron-down" size={20} color={theme.colors.primary} />
             </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={styles.filterIconBtn} 
-              activeOpacity={0.7} 
+            <TouchableOpacity
+              style={styles.filterIconBtn}
+              activeOpacity={0.7}
               onPress={openFilterModal}
             >
               <Icon name="filter-variant" size={24} color={(selectedCategory || selectedAccount) ? theme.colors.primary : theme.colors.textSecondary} />
@@ -427,21 +427,24 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     zIndex: 10,
   },
-  headerTop: {
+  headerRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: theme.spacing.md,
   },
-  headerLeft: {
+  totalBlock: {
     flex: 1,
   },
-  headerRight: {
+  controlsRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: theme.spacing.sm,
   },
   filterIconBtn: {
-    padding: theme.spacing.sm,
-    marginLeft: theme.spacing.xs,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: theme.colors.background,
     borderRadius: theme.borderRadius.round,
     borderWidth: 1,
@@ -450,27 +453,31 @@ const styles = StyleSheet.create({
   selectorBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    height: 40,
     backgroundColor: theme.colors.background,
     paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
     borderRadius: theme.borderRadius.round,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    marginLeft: theme.spacing.md,
   },
   dateText: {
     ...theme.typography.h3,
+    fontSize: 16,
     color: theme.colors.primary,
     marginRight: theme.spacing.sm,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   totalAmount: {
     ...theme.typography.h2,
     color: theme.colors.text,
-    marginBottom: 4,
+    marginBottom: 2,
+    includeFontPadding: false,
   },
   subText: {
     ...theme.typography.caption,
     color: theme.colors.textSecondary,
+    includeFontPadding: false,
   },
   listContainer: {
     flex: 1,

@@ -314,14 +314,16 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.border,
   },
   currencySymbol: {
-    ...theme.typography.h1,
-    fontSize: 36,
+    fontSize: 40,
+    lineHeight: 48,
     color: theme.colors.textSecondary,
     marginRight: theme.spacing.sm,
+    fontFamily: theme.fonts.regular,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   amountInput: {
-    ...theme.typography.h1,
-    fontSize: 42,
+    fontSize: 40,
     lineHeight: 48,
     color: theme.colors.text,
     flex: 1,
@@ -329,6 +331,7 @@ const styles = StyleSheet.create({
     margin: 0,
     fontFamily: theme.fonts.regular,
     includeFontPadding: false,
+    textAlignVertical: 'center',
   },
 
   // Account
