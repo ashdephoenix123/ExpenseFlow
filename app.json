@@ -5,9 +5,7 @@
     "name": "ExpenseFlow",
     "slug": "expenseflow",
     "version": "1.0",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": "1.0",
     "android": {
       "package": "com.expenseflow"
     },
