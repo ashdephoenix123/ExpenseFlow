@@ -5,15 +5,18 @@ import { expenseService } from '../services/expenseService';
 interface ExpenseState {
   dailyExpenses: Expense[];
   monthlyExpenses: Expense[];
+  reminderExpenses: Expense[];
   currentDailyDate: string | null;
   currentMonthlyKey: string | null;
   newEntryVersion: number;
   monthlySyncedEntryVersion: number;
+  reminderSyncedEntryVersion: number;
   isLoading: boolean;
   error: string | null;
 
   fetchDailyExpenses: (date: string) => Promise<void>;
   fetchMonthlyExpenses: (year: number, month: number) => Promise<void>;
+  fetchReminderExpenses: () => Promise<void>;
   addExpense: (expense: NewExpense) => Promise<void>;
   updateExpense: (id: string, updates: Partial<NewExpense>) => Promise<void>;
   deleteExpense: (id: string) => Promise<void>;
@@ -23,10 +26,12 @@ interface ExpenseState {
 export const useExpenseStore = create<ExpenseState>((set, get) => ({
   dailyExpenses: [],
   monthlyExpenses: [],
+  reminderExpenses: [],
   currentDailyDate: null,
   currentMonthlyKey: null,
   newEntryVersion: 0,
   monthlySyncedEntryVersion: -1,
+  reminderSyncedEntryVersion: -1,
   isLoading: false,
   error: null,
 
@@ -50,6 +55,20 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
         monthlyExpenses: data,
         currentMonthlyKey: monthKey,
         monthlySyncedEntryVersion: currentVersion,
+        isLoading: false,
+      });
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
+
+  fetchReminderExpenses: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const data = await expenseService.getReminderExpenses();
+      set({
+        reminderExpenses: data,
+        reminderSyncedEntryVersion: get().newEntryVersion,
         isLoading: false,
       });
     } catch (error: any) {
@@ -91,6 +110,10 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
         monthlyExpenses: get().monthlyExpenses.map(e =>
           e.id === id ? updated : e,
         ),
+        // Reflect the edit, then drop it if it was just un-flagged as a reminder.
+        reminderExpenses: get()
+          .reminderExpenses.map(e => (e.id === id ? updated : e))
+          .filter(e => e.is_reminder),
         isLoading: false,
         newEntryVersion: nextVersion,
       });
@@ -107,6 +130,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       set({
         dailyExpenses: get().dailyExpenses.filter(e => e.id !== id),
         monthlyExpenses: get().monthlyExpenses.filter(e => e.id !== id),
+        reminderExpenses: get().reminderExpenses.filter(e => e.id !== id),
         isLoading: false,
       });
     } catch (error: any) {
@@ -119,10 +143,12 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
     set({
       dailyExpenses: [],
       monthlyExpenses: [],
+      reminderExpenses: [],
       currentDailyDate: null,
       currentMonthlyKey: null,
       newEntryVersion: 0,
       monthlySyncedEntryVersion: -1,
+      reminderSyncedEntryVersion: -1,
       isLoading: false,
       error: null,
     }),

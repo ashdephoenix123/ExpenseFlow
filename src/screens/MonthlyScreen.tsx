@@ -10,7 +10,9 @@ import {
   ScrollView,
   SafeAreaView,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { theme } from '../theme/theme';
 import { useExpenseStore } from '../store/expenseStore';
 import { useAccountStore } from '../store/accountStore';
@@ -50,6 +52,9 @@ export const MonthlyScreen = () => {
   } = useExpenseStore();
 
   const { accounts, fetchAccounts } = useAccountStore();
+
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 1-12
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -206,6 +211,14 @@ export const MonthlyScreen = () => {
             >
               <Icon name="filter-variant" size={24} color={(selectedCategory || selectedAccount) ? theme.colors.primary : theme.colors.textSecondary} />
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.filterIconBtn}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('Reminders')}
+            >
+              <Icon name="bell-outline" size={24} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -243,6 +256,7 @@ export const MonthlyScreen = () => {
                   note={item.expense.note}
                   accountId={item.expense.account_id ?? undefined}
                   accountName={item.expense.account_id ? accountMap[item.expense.account_id] : undefined}
+                  isReminder={item.expense.is_reminder}
                 />
               );
             }}

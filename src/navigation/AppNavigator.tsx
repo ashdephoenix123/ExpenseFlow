@@ -14,6 +14,7 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { ManageAccountsScreen } from '../screens/ManageAccountsScreen';
 import { ManageCategoriesScreen } from '../screens/ManageCategoriesScreen';
 import { MonthlyScreen } from '../screens/MonthlyScreen';
+import { ReminderScreen } from '../screens/ReminderScreen';
 import { ResetPasswordScreen } from '../screens/ResetPasswordScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { useAuthStore } from '../store/authStore';
@@ -28,10 +29,12 @@ export type RootStackParamList = {
     editCategory?: string;
     editNote?: string;
     editAccountId?: string;
+    editIsReminder?: boolean;
   }
   | undefined;
   ManageCategories: undefined;
   ManageAccounts: undefined;
+  Reminders: undefined;
   AiUsage: undefined;
   Auth: undefined;
   ResetPassword: undefined;
@@ -202,6 +205,18 @@ export const AppNavigator = () => {
                   headerStyle: { backgroundColor: theme.colors.surface },
                   headerTintColor: theme.colors.text,
                   headerTitleStyle: theme.typography.h3,
+                }}
+              />
+              <Stack.Screen
+                name="Reminders"
+                component={ReminderScreen}
+                options={{
+                  headerShown: true,
+                  title: 'Reminders',
+                  headerStyle: { backgroundColor: theme.colors.surface },
+                  headerTintColor: theme.colors.text,
+                  headerTitleStyle: theme.typography.h3,
+                  presentation: 'card',
                 }}
               />
               <Stack.Screen

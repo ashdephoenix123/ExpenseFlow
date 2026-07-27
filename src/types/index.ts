@@ -5,6 +5,7 @@ export interface Expense {
   note?: string;
   account_id?: string | null;
   spent_on: string; // ISO format string 'YYYY-MM-DD'
+  is_reminder?: boolean;
   created_at?: string;
   user_id?: string;
 }

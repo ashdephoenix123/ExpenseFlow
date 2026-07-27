@@ -44,6 +44,7 @@ export const HomeScreen = () => {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [note, setNote] = useState('');
+  const [isReminder, setIsReminder] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -117,12 +118,14 @@ export const HomeScreen = () => {
         note,
         account_id: selectedAccountId,
         spent_on: getTodayFormatted(),
+        is_reminder: isReminder,
       });
 
       // Reset form
       setAmount('');
       setCategory('');
       setNote('');
+      setIsReminder(false);
       // Keep selectedAccountId as is (primary stays selected)
 
       showSuccessAnimation();
@@ -296,6 +299,30 @@ export const HomeScreen = () => {
             numberOfLines={2}
           />
         </View>
+
+        {/* Reminder Toggle */}
+        <TouchableOpacity
+          style={[styles.reminderToggle, isReminder && styles.reminderToggleActive]}
+          onPress={() => setIsReminder(v => !v)}
+          activeOpacity={0.8}>
+          <Icon
+            name={isReminder ? 'bell' : 'bell-outline'}
+            size={18}
+            color={isReminder ? theme.colors.primary : theme.colors.textSecondary}
+          />
+          <Text
+            style={[
+              styles.reminderToggleText,
+              isReminder && styles.reminderToggleTextActive,
+            ]}>
+            Mark as reminder
+          </Text>
+          <Icon
+            name={isReminder ? 'checkbox-marked-circle' : 'checkbox-blank-circle-outline'}
+            size={22}
+            color={isReminder ? theme.colors.primary : theme.colors.textSecondary}
+          />
+        </TouchableOpacity>
 
         {/* Save Button */}
         <Button
@@ -489,6 +516,34 @@ const styles = StyleSheet.create({
     minHeight: 60,
     textAlignVertical: 'top',
     fontSize: 15,
+  },
+
+  // Reminder toggle
+  reminderToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    paddingVertical: 12,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    marginBottom: theme.spacing.md,
+  },
+  reminderToggleActive: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary + '1A',
+  },
+  reminderToggleText: {
+    ...theme.typography.body,
+    flex: 1,
+    color: theme.colors.textSecondary,
+    fontSize: 15,
+  },
+  reminderToggleTextActive: {
+    color: theme.colors.text,
+    fontFamily: theme.fonts.semiBold,
   },
 
   // Save

@@ -24,6 +24,7 @@ interface ExpenseItemProps {
   date?: string;
   accountName?: string;
   accountId?: string;
+  isReminder?: boolean;
 }
 
 const ACTION_WIDTH = 180; // Width of the actions panel (two buttons)
@@ -36,6 +37,7 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({
   date,
   accountName,
   accountId,
+  isReminder,
 }) => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -73,6 +75,7 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({
       editCategory: category,
       editNote: note,
       editAccountId: accountId,
+      editIsReminder: isReminder,
     });
   };
 
@@ -167,7 +170,17 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({
               />
             </View>
             <View style={styles.details}>
-              <Text style={styles.category}>{category}</Text>
+              <View style={styles.categoryRow}>
+                <Text style={styles.category}>{category}</Text>
+                {isReminder ? (
+                  <Icon
+                    name="bell"
+                    size={13}
+                    color={theme.colors.primary}
+                    style={styles.reminderBell}
+                  />
+                ) : null}
+              </View>
               {accountName ? (
                 <View style={styles.accountBadge}>
                   <Icon name="wallet-outline" size={12} color={theme.colors.textSecondary} />
@@ -328,10 +341,18 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
+  categoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
   category: {
     ...theme.typography.body,
     fontWeight: '600',
     color: theme.colors.text,
+  },
+  reminderBell: {
+    marginTop: 1,
   },
   note: {
     ...theme.typography.small,

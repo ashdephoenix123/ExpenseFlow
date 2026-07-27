@@ -59,6 +59,9 @@ export const AddExpenseScreen = () => {
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(
     isEditing && route.params?.editAccountId ? route.params.editAccountId : null,
   );
+  const [isReminder, setIsReminder] = useState(
+    isEditing ? !!route.params?.editIsReminder : false,
+  );
   const [loading, setLoading] = useState(false);
   const [showAddAccountInput, setShowAddAccountInput] = useState(false);
   const [newAccountName, setNewAccountName] = useState('');
@@ -110,6 +113,7 @@ export const AddExpenseScreen = () => {
           category,
           note,
           account_id: selectedAccountId,
+          is_reminder: isReminder,
         });
       }
       navigation.goBack();
@@ -282,6 +286,30 @@ export const AddExpenseScreen = () => {
             numberOfLines={3}
           />
         </View>
+
+        {/* Reminder Toggle */}
+        <TouchableOpacity
+          style={[styles.reminderToggle, isReminder && styles.reminderToggleActive]}
+          onPress={() => setIsReminder(v => !v)}
+          activeOpacity={0.8}>
+          <Icon
+            name={isReminder ? 'bell' : 'bell-outline'}
+            size={18}
+            color={isReminder ? theme.colors.primary : theme.colors.textSecondary}
+          />
+          <Text
+            style={[
+              styles.reminderToggleText,
+              isReminder && styles.reminderToggleTextActive,
+            ]}>
+            Mark as reminder
+          </Text>
+          <Icon
+            name={isReminder ? 'checkbox-marked-circle' : 'checkbox-blank-circle-outline'}
+            size={22}
+            color={isReminder ? theme.colors.primary : theme.colors.textSecondary}
+          />
+        </TouchableOpacity>
 
         <Button
           disabled={!isFormValid}
@@ -459,5 +487,31 @@ const styles = StyleSheet.create({
   // Save
   saveBtn: {
     marginTop: theme.spacing.xl,
+  },
+  reminderToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    paddingVertical: 12,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    marginTop: theme.spacing.md,
+  },
+  reminderToggleActive: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary + '1A',
+  },
+  reminderToggleText: {
+    ...theme.typography.body,
+    flex: 1,
+    color: theme.colors.textSecondary,
+    fontSize: 15,
+  },
+  reminderToggleTextActive: {
+    color: theme.colors.text,
+    fontFamily: theme.fonts.semiBold,
   },
 });

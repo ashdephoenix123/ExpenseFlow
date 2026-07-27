@@ -42,6 +42,18 @@ export const expenseService = {
     return data as Expense[];
   },
 
+  async getReminderExpenses(): Promise<Expense[]> {
+    const { data, error } = await supabase
+      .from('expenses')
+      .select('*')
+      .eq('is_reminder', true)
+      .order('spent_on', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data as Expense[];
+  },
+
   async getAllExpenses(): Promise<Expense[]> {
     const { data, error } = await supabase
       .from('expenses')
