@@ -55,7 +55,12 @@ react {
     //
     // Added by install-expo-modules
     entryFile = file(["node", "-e", "require('expo/scripts/resolveAppEntry')", rootDir.getAbsoluteFile().getParentFile().getAbsolutePath(), "android", "absolute"].execute(null, rootDir).text.trim())
-    cliFile = new File(["node", "--print", "require.resolve('@expo/cli')"].execute(null, rootDir).text.trim())
+    // @expo/cli is nested under the expo package (not hoisted), so resolve it
+    // relative to expo like settings.gradle does. Without the paths option the
+    // resolve fails, .text comes back empty, and new File("") degrades to the
+    // app directory — which poisons the bundle task's cliFile input and makes
+    // Gradle 9 flag every task under android/app as an implicit dependency.
+    cliFile = new File(["node", "--print", "require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })"].execute(null, rootDir).text.trim())
     bundleCommand = "export:embed"
 }
 
@@ -87,7 +92,7 @@ android {
         applicationId "com.expenseflow"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 4
+        versionCode 6
         versionName "1.0"
     }
     signingConfigs {
