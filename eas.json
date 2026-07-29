@@ -27,6 +27,12 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "./expenseflow-503912-5c27be7d0a32.json",
+        "track": "production",
+        "releaseStatus": "draft"
+      }
+    }
   }
 }

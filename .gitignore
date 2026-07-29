@@ -84,3 +84,6 @@ replay_pid*.log
 .expo
 dist/
 web-build/
+
+# files
+expenseflow-503912-5c27be7d0a32.json
