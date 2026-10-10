@@ -15,7 +15,7 @@ import { theme } from '../theme/theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from './AuthScreen';
 import { Button } from '../components/Button';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 
 const paperTheme = {
   colors: {

@@ -21,7 +21,7 @@ import { useCategoryStore } from '../store/categoryStore';
 import { useAccountStore } from '../store/accountStore';
 import { AutocompleteInput } from '../components/AutocompleteInput';
 import { Account } from '../types';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'AddExpense'>;
 

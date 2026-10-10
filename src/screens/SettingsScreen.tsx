@@ -7,7 +7,7 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { theme } from '../theme/theme';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../services/supabase';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 import { Button } from '../components/Button';
 
 

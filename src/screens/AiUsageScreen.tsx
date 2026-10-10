@@ -7,7 +7,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 import { theme } from '../theme/theme';
 import { aiUsageService } from '../services/aiUsageService';
 import { AiUsageOverview } from '../types';

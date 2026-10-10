@@ -15,7 +15,7 @@ import { theme } from '../theme/theme';
 import { useCategoryStore } from '../store/categoryStore';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ManageCategories'>;
 

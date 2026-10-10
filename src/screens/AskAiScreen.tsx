@@ -11,7 +11,7 @@ import {
   Animated,
   Keyboard,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 import Markdown from 'react-native-markdown-display';
 import { theme } from '../theme/theme';
 import { useAiChatStore } from '../store/aiChatStore';
