@@ -9,6 +9,7 @@ import { AppNavigator } from './src/navigation/AppNavigator';
 import { supabase } from './src/services/supabase';
 import { updateService } from './src/services/updateService';
 import { useAuthStore } from './src/store/authStore';
+import * as Sentry from '@sentry/react-native';
 
 // Keep splash screen visible until initial resources are loaded
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -58,6 +59,14 @@ Linking.getInitialURL().then((url) => {
   if (url) handleDeepLinkUrl(url);
 });
 
+Sentry.init({
+  dsn: 'https://c0bfd3b14403ee70c22127bb88bc820d@o4512232925691904.ingest.de.sentry.io/4512232929558608',
+  tracesSampleRate: 1.0,
+  _experiments: {
+    profilesSampleRate: 1.0,
+  },
+});
+
 function App() {
   const [fontsLoaded] = useFonts({
     'GoogleSans-Regular': require('./assets/fonts/GoogleSans-Regular.ttf'),
@@ -91,4 +100,4 @@ function App() {
   );
 }
 
-export default App;
+export default Sentry.wrap(App); 

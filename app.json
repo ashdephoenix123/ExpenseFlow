@@ -2,15 +2,15 @@
   "expo": {
     "name": "ExpenseFlow",
     "slug": "expenseflow",
-    "version": "1.0",
+    "version": "1.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "expenseflow",
     "userInterfaceStyle": "automatic",
-    "runtimeVersion": "1.0",
+    "runtimeVersion": "1.1",
     "android": {
       "package": "com.expenseflow",
-      "versionCode": 8,
+      "versionCode": 9,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -55,7 +55,8 @@
             "./assets/fonts/PlayfairDisplay-Bold.ttf"
           ]
         }
-      ]
+      ],
+      "@sentry/react-native/expo"
     ]
   }
 }
