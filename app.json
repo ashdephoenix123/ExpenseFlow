@@ -10,7 +10,7 @@
     "runtimeVersion": "1.1",
     "android": {
       "package": "com.expenseflow",
-      "versionCode": 9,
+      "versionCode": 11,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -56,7 +56,13 @@
           ]
         }
       ],
-      "@sentry/react-native/expo"
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "expenseflow-62",
+          "project": "expenseflow"
+        }
+      ]
     ]
   }
 }
