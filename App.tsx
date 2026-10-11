@@ -1,27 +1,20 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
 import { useEffect } from 'react';
-import { StatusBar, Text, TextInput, useColorScheme } from 'react-native';
-import {
-  SafeAreaProvider,
-} from 'react-native-safe-area-context';
+import { StatusBar, useColorScheme, Linking } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider as PaperProvider } from 'react-native-paper';
+import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
 
 import { AppNavigator } from './src/navigation/AppNavigator';
-import { Linking } from 'react-native';
 import { supabase } from './src/services/supabase';
 import { updateService } from './src/services/updateService';
-
 import { useAuthStore } from './src/store/authStore';
+import * as Sentry from '@sentry/react-native';
 
-// Listen for deep links
-Linking.addEventListener('url', async (event) => {
-  const url = event.url;
+// Keep splash screen visible until initial resources are loaded
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
+async function handleDeepLinkUrl(url: string) {
   console.log('[DeepLink] Received URL:', url);
 
   if (url.includes('access_token') && url.includes('refresh_token')) {
@@ -44,8 +37,6 @@ Linking.addEventListener('url', async (event) => {
     console.log('[DeepLink] isRecovery:', isRecovery, 'fragmentType:', fragmentType, 'queryType:', queryType);
 
     if (accessToken && refreshToken) {
-      // Flag password reset BEFORE setting session to avoid race condition
-      // (setSession triggers onAuthStateChange which re-renders the navigator)
       if (isRecovery) {
         useAuthStore.getState().setPendingPasswordReset(true);
       }
@@ -56,29 +47,48 @@ Linking.addEventListener('url', async (event) => {
       });
     }
   }
+}
+
+// Listen for deep links
+Linking.addEventListener('url', async (event) => {
+  handleDeepLinkUrl(event.url);
 });
 
+// Also check cold start initial URL
+Linking.getInitialURL().then((url) => {
+  if (url) handleDeepLinkUrl(url);
+});
 
-// Set default font globally for all Text and TextInput components
-const defaultFontFamily = 'GoogleSans-Regular';
-
-// @ts-ignore – overriding defaultProps is a common RN pattern
-Text.defaultProps = Text.defaultProps || {};
-// @ts-ignore
-Text.defaultProps.style = [{ fontFamily: defaultFontFamily, includeFontPadding: false }, Text.defaultProps.style];
-
-// @ts-ignore
-TextInput.defaultProps = TextInput.defaultProps || {};
-// @ts-ignore
-TextInput.defaultProps.style = [{ fontFamily: defaultFontFamily, includeFontPadding: false }, TextInput.defaultProps.style];
+Sentry.init({
+  dsn: 'https://c0bfd3b14403ee70c22127bb88bc820d@o4512232925691904.ingest.de.sentry.io/4512232929558608',
+  tracesSampleRate: 1.0,
+  _experiments: {
+    profilesSampleRate: 1.0,
+  },
+});
 
 function App() {
+  const [fontsLoaded] = useFonts({
+    'GoogleSans-Regular': require('./assets/fonts/GoogleSans-Regular.ttf'),
+    'GoogleSans-Medium': require('./assets/fonts/GoogleSans-Medium.ttf'),
+    'GoogleSans-SemiBold': require('./assets/fonts/GoogleSans-SemiBold.ttf'),
+    'GoogleSans-Bold': require('./assets/fonts/GoogleSans-Bold.ttf'),
+    'PlayfairDisplay-Regular': require('./assets/fonts/PlayfairDisplay-Regular.ttf'),
+    'PlayfairDisplay-Medium': require('./assets/fonts/PlayfairDisplay-Medium.ttf'),
+    'PlayfairDisplay-SemiBold': require('./assets/fonts/PlayfairDisplay-SemiBold.ttf'),
+    'PlayfairDisplay-Bold': require('./assets/fonts/PlayfairDisplay-Bold.ttf'),
+  });
+
   const isDarkMode = useColorScheme() === 'dark';
 
   // Pull any published JS update in the background; it applies on next launch.
   useEffect(() => {
     updateService.syncInBackground();
   }, []);
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   return (
     <PaperProvider>
@@ -90,4 +100,4 @@ function App() {
   );
 }
 
-export default App;
+export default Sentry.wrap(App); 

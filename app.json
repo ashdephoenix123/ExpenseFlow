@@ -1,17 +1,24 @@
 {
-  "name": "ExpenseFlow",
-  "displayName": "ExpenseFlow",
   "expo": {
     "name": "ExpenseFlow",
     "slug": "expenseflow",
-    "version": "1.0",
-    "runtimeVersion": "1.0",
+    "version": "1.1",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "expenseflow",
+    "userInterfaceStyle": "automatic",
+    "runtimeVersion": "1.1",
     "android": {
       "package": "com.expenseflow",
-      "versionCode": 8
+      "versionCode": 11,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
     },
     "ios": {
-      "bundleIdentifier": "com.expenseflow"
+      "bundleIdentifier": "com.expenseflow",
+      "supportsTablet": false
     },
     "updates": {
       "enabled": true,
@@ -23,6 +30,39 @@
       "eas": {
         "projectId": "10ef4f55-d0ea-404e-8e72-cc64e92cb5ed"
       }
-    }
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/GoogleSans-Regular.ttf",
+            "./assets/fonts/GoogleSans-Medium.ttf",
+            "./assets/fonts/GoogleSans-SemiBold.ttf",
+            "./assets/fonts/GoogleSans-Bold.ttf",
+            "./assets/fonts/PlayfairDisplay-Regular.ttf",
+            "./assets/fonts/PlayfairDisplay-Medium.ttf",
+            "./assets/fonts/PlayfairDisplay-SemiBold.ttf",
+            "./assets/fonts/PlayfairDisplay-Bold.ttf"
+          ]
+        }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "expenseflow-62",
+          "project": "expenseflow"
+        }
+      ]
+    ]
   }
 }

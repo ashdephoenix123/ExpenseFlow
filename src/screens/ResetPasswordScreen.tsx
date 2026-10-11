@@ -14,7 +14,7 @@ import { supabase } from '../services/supabase';
 import { theme } from '../theme/theme';
 import { useAuthStore } from '../store/authStore';
 import { Button } from '../components/Button';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 
 const paperTheme = {
   colors: {

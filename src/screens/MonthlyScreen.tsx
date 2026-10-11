@@ -19,7 +19,7 @@ import { useAccountStore } from '../store/accountStore';
 import { useCategoryStore } from '../store/categoryStore';
 import { ExpenseItem } from '../components/ExpenseItem';
 import { formatDateDisplay } from '../utils/dateUtils';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 import { Expense } from '../types';
 
 const MONTHS = [

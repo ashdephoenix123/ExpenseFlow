@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 import { theme } from '../theme/theme';
 import { useExpenseStore } from '../store/expenseStore';
 import { useAccountStore } from '../store/accountStore';

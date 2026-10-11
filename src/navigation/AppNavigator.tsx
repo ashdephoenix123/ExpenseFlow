@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React, { useEffect } from 'react';
 import { Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 import { AddExpenseScreen } from '../screens/AddExpenseScreen';
 import { AiUsageScreen } from '../screens/AiUsageScreen';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
@@ -83,7 +83,7 @@ const TabNavigator = () => {
           fontSize: 10,
         },
         tabBarIcon: ({ color, size }) => {
-          let iconName = 'home';
+          let iconName: React.ComponentProps<typeof Icon>['name'] = 'home';
           if (route.name === 'Home') iconName = 'plus-circle';
           else if (route.name === 'Monthly') iconName = 'calendar-month';
           else if (route.name === 'AskAi') iconName = 'creation';
@@ -131,8 +131,7 @@ const TabNavigator = () => {
     </Tab.Navigator>
   );
 };
-
-import BootSplash from 'react-native-bootsplash';
+import * as SplashScreen from 'expo-splash-screen';
 
 export const AppNavigator = () => {
   const { session, initialized, initialize, pendingPasswordReset } =
@@ -159,7 +158,9 @@ export const AppNavigator = () => {
   return (
     <NavigationContainer
       theme={MyTheme}
-      onReady={() => BootSplash.hide({ fade: true })}
+      onReady={() => {
+        SplashScreen.hideAsync().catch(() => {});
+      }}
     >
       <Stack.Navigator
         screenOptions={{ headerShown: false, presentation: 'modal' }}

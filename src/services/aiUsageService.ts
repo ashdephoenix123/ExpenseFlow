@@ -1,4 +1,4 @@
-import { ASK_AI_DAILY_TOKEN_QUOTA, ASK_AI_ESTIMATED_USD_PER_1K_TOKENS } from '@env';
+import { ASK_AI_DAILY_TOKEN_QUOTA, ASK_AI_ESTIMATED_USD_PER_1K_TOKENS } from '../config/env';
 import { supabase } from './supabase';
 import { AiUsageDay, AiUsageOverview } from '../types';
 

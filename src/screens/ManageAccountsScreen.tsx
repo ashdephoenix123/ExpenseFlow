@@ -10,7 +10,7 @@ import {
   TextInput,
 } from 'react-native';
 import { Modal, Portal } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 import { theme } from '../theme/theme';
 import { useAccountStore } from '../store/accountStore';
 import { Button } from '../components/Button';
