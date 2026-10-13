@@ -14,6 +14,7 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { ManageAccountsScreen } from '../screens/ManageAccountsScreen';
 import { ManageCategoriesScreen } from '../screens/ManageCategoriesScreen';
 import { MonthlyScreen } from '../screens/MonthlyScreen';
+import { OverviewScreen } from '../screens/OverviewScreen';
 import { ReminderScreen } from '../screens/ReminderScreen';
 import { ResetPasswordScreen } from '../screens/ResetPasswordScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
@@ -41,8 +42,9 @@ export type RootStackParamList = {
 };
 
 export type MainTabParamList = {
-  Timeline: undefined;
-  Analytics: undefined;
+  Overview: undefined;
+  Timeline?: undefined;
+  Analytics?: undefined;
   Add: undefined;
   AskAi: undefined;
   Settings: undefined;
@@ -59,7 +61,7 @@ const TabNavigator = () => {
 
   return (
     <Tab.Navigator
-      initialRouteName="Timeline"
+      initialRouteName="Overview"
       screenOptions={({ route }) => ({
         headerStyle: {
           backgroundColor: '#FFFFFF',
@@ -95,19 +97,10 @@ const TabNavigator = () => {
           marginTop: 2,
         },
         tabBarIcon: ({ color, focused }) => {
-          if (route.name === 'Timeline') {
+          if (route.name === 'Overview' || route.name === 'Timeline') {
             return (
               <Icon
-                name={focused ? 'calendar-month' : 'calendar-month-outline'}
-                size={24}
-                color={color}
-              />
-            );
-          }
-          if (route.name === 'Analytics') {
-            return (
-              <Icon
-                name="chart-timeline-variant"
+                name={focused ? 'view-dashboard' : 'view-dashboard-outline'}
                 size={24}
                 color={color}
               />
@@ -162,14 +155,9 @@ const TabNavigator = () => {
       })}
     >
       <Tab.Screen
-        name="Timeline"
-        component={MonthlyScreen}
-        options={{ title: 'Timeline', headerShown: false }}
-      />
-      <Tab.Screen
-        name="Analytics"
-        component={AnalyticsScreen}
-        options={{ title: 'Analytics', headerShown: false }}
+        name="Overview"
+        component={OverviewScreen}
+        options={{ title: 'Overview', headerShown: false }}
       />
       <Tab.Screen
         name="Add"

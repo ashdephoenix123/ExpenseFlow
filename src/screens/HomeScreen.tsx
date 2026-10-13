@@ -195,8 +195,8 @@ export const HomeScreen = () => {
       setIsReminder(false);
       setSpentOn(getTodayFormatted());
 
-      // Navigate to Timeline to see the added expense!
-      navigation.navigate('Timeline' as any);
+      // Navigate to Overview to see the added expense!
+      navigation.navigate('Overview' as any);
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to add expense.');
     } finally {
@@ -218,12 +218,12 @@ export const HomeScreen = () => {
             setCategorySearch('');
             setNote('');
             setIsReminder(false);
-            navigation.navigate('Timeline' as any);
+            navigation.navigate('Overview' as any);
           },
         },
       ]);
     } else {
-      navigation.navigate('Timeline' as any);
+      navigation.navigate('Overview' as any);
     }
   };
 
