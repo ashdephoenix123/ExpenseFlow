@@ -11,16 +11,13 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 import { theme } from '../theme/theme';
 import { useExpenseStore } from '../store/expenseStore';
+import { useBudgetStore } from '../store/budgetStore';
 import { useAuthStore } from '../store/authStore';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { formatDateDisplay } from '../utils/dateUtils';
-
-const BUDGET_CAP_STORAGE_KEY = '@monthly_budget_cap';
-const DEFAULT_BUDGET_CAP = 24000;
 
 const CATEGORY_BAR_COLORS = [
   '#18181B', // 1st: Black
@@ -47,29 +44,23 @@ export const AnalyticsScreen = () => {
   } = useExpenseStore();
 
   const { user } = useAuthStore();
+  const { currentBudget: budgetCap, loadBudgetForMonth } = useBudgetStore();
 
   const [timeFilter, setTimeFilter] = useState<'month' | '30d' | 'year'>('month');
-  const [budgetCap, setBudgetCap] = useState<number>(DEFAULT_BUDGET_CAP);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
-  // Load saved budget cap
+  // Load saved budget cap for current month
   useEffect(() => {
-    const loadCap = async () => {
-      try {
-        const saved = await AsyncStorage.getItem(BUDGET_CAP_STORAGE_KEY);
-        if (saved) {
-          const val = Number(saved);
-          if (!isNaN(val) && val > 0) setBudgetCap(val);
-        }
-      } catch {}
-    };
-    loadCap();
+    const now = new Date();
+    loadBudgetForMonth(now.getFullYear(), now.getMonth() + 1);
     fetchReminderExpenses();
-  }, [fetchReminderExpenses]);
+  }, [fetchReminderExpenses, loadBudgetForMonth]);
 
   // Refetch if new expense was recorded
   useFocusEffect(
     useCallback(() => {
+      const now = new Date();
+      loadBudgetForMonth(now.getFullYear(), now.getMonth() + 1);
       if (monthlySyncedEntryVersion !== newEntryVersion && currentMonthlyKey) {
         const [year, month] = currentMonthlyKey.split('-').map(Number);
         fetchMonthlyExpenses(year, month);
@@ -77,6 +68,7 @@ export const AnalyticsScreen = () => {
     }, [
       currentMonthlyKey,
       fetchMonthlyExpenses,
+      loadBudgetForMonth,
       monthlySyncedEntryVersion,
       newEntryVersion,
     ]),

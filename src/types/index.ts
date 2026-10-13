@@ -45,3 +45,13 @@ export interface Account {
   user_id: string;
   created_at?: string;
 }
+
+export interface MonthlyBudget {
+  id?: string;
+  user_id?: string;
+  month_key: string; // 'YYYY-MM'
+  amount: number;
+  created_at?: string;
+  updated_at?: string;
+}
+

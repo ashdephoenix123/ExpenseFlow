@@ -248,31 +248,12 @@ export const HomeScreen = () => {
     <View style={[styles.screenContainer, { paddingTop: Math.max(insets.top, 10) }]}>
       {/* Top Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={handleClose}
-          style={styles.closeBtn}
-          activeOpacity={0.7}
-        >
-          <Icon name="close" size={22} color="#111827" />
-        </TouchableOpacity>
 
         <View style={styles.headerTitleContainer}>
           <Text style={styles.headerTitle}>Add Expense</Text>
-          <Text style={styles.headerSubtitle}>{fiscalYearText}</Text>
+          {/* <Text style={styles.headerSubtitle}>{fiscalYearText}</Text> */}
         </View>
 
-        <TouchableOpacity
-          style={styles.scanBtn}
-          activeOpacity={0.7}
-          onPress={() => {
-            Alert.alert(
-              'Receipt Scanner',
-              'Smart AI Receipt Scanner will be available in upcoming update.',
-            );
-          }}
-        >
-          <Icon name="line-scan" size={20} color="#111827" />
-        </TouchableOpacity>
       </View>
 
       <KeyboardAwareScrollView

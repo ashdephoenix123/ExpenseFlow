@@ -10,17 +10,16 @@ import {
   ScrollView,
   Image,
   TextInput,
-  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { theme } from '../theme/theme';
 import { useExpenseStore } from '../store/expenseStore';
 import { useAccountStore } from '../store/accountStore';
 import { useCategoryStore } from '../store/categoryStore';
+import { useBudgetStore } from '../store/budgetStore';
 import { useAuthStore } from '../store/authStore';
 import { ExpenseItem } from '../components/ExpenseItem';
 import { formatDateDisplay } from '../utils/dateUtils';
@@ -41,9 +40,6 @@ const MONTHS = [
   'Nov',
   'Dec',
 ];
-
-const BUDGET_CAP_STORAGE_KEY = '@monthly_budget_cap';
-const DEFAULT_BUDGET_CAP = 20000;
 
 interface DateGroup {
   date: string;
@@ -69,6 +65,13 @@ export const MonthlyScreen = () => {
 
   const { accounts, fetchAccounts } = useAccountStore();
   const { categories, fetchCategories } = useCategoryStore();
+  const {
+    currentBudget: budgetCap,
+    isCustomBudget,
+    isSaving: isSavingBudget,
+    loadBudgetForMonth,
+    setBudgetForMonth,
+  } = useBudgetStore();
   const { user } = useAuthStore();
 
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 1-12
@@ -76,10 +79,9 @@ export const MonthlyScreen = () => {
   const [isPickerVisible, setIsPickerVisible] = useState(false);
   const [pickerYear, setPickerYear] = useState(selectedYear);
 
-  // Budget cap state
-  const [budgetCap, setBudgetCap] = useState<number>(DEFAULT_BUDGET_CAP);
+  // Budget modal state
   const [isBudgetModalVisible, setIsBudgetModalVisible] = useState(false);
-  const [tempBudgetInput, setTempBudgetInput] = useState(String(DEFAULT_BUDGET_CAP));
+  const [tempBudgetInput, setTempBudgetInput] = useState(String(budgetCap));
 
   // Filters
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -89,34 +91,26 @@ export const MonthlyScreen = () => {
   const [tempCategory, setTempCategory] = useState<string | null>(null);
   const [tempAccount, setTempAccount] = useState<string | null>(null);
 
-  // Load saved budget cap from AsyncStorage
+  // Load monthly budget for the selected month/year
   useEffect(() => {
-    const loadBudgetCap = async () => {
-      try {
-        const saved = await AsyncStorage.getItem(BUDGET_CAP_STORAGE_KEY);
-        if (saved) {
-          const parsed = Number(saved);
-          if (!isNaN(parsed) && parsed > 0) {
-            setBudgetCap(parsed);
-            setTempBudgetInput(String(parsed));
-          }
-        }
-      } catch {
-        // Fallback to default
-      }
-    };
-    loadBudgetCap();
-  }, []);
+    loadBudgetForMonth(selectedYear, selectedMonth);
+  }, [selectedYear, selectedMonth, loadBudgetForMonth]);
+
+  const handleOpenBudgetModal = () => {
+    setTempBudgetInput(String(budgetCap));
+    setIsBudgetModalVisible(true);
+  };
 
   const saveBudgetCap = async () => {
     const parsed = Number(tempBudgetInput);
     if (!isNaN(parsed) && parsed > 0) {
-      setBudgetCap(parsed);
       try {
-        await AsyncStorage.setItem(BUDGET_CAP_STORAGE_KEY, String(parsed));
-      } catch {}
+        await setBudgetForMonth(selectedYear, selectedMonth, parsed);
+        setIsBudgetModalVisible(false);
+      } catch (err) {
+        console.warn('Failed to save monthly budget:', err);
+      }
     }
-    setIsBudgetModalVisible(false);
   };
 
   // Build a lookup map: account_id -> account_name
@@ -149,9 +143,11 @@ export const MonthlyScreen = () => {
       if (shouldFetch) {
         fetchMonthlyExpenses(selectedYear, selectedMonth);
       }
+      loadBudgetForMonth(selectedYear, selectedMonth);
     }, [
       currentMonthlyKey,
       fetchMonthlyExpenses,
+      loadBudgetForMonth,
       monthlySyncedEntryVersion,
       newEntryVersion,
       selectedMonth,
@@ -178,7 +174,7 @@ export const MonthlyScreen = () => {
   }, [filteredExpenses]);
 
   // Calculate Daily Average & Projected Run-Rate
-  const { dailyAverage, projectedRunRate, daysPassed, daysInMonth } = useMemo(() => {
+  const { dailyAverage, projectedRunRate } = useMemo(() => {
     const dInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
     const today = new Date();
     const isCurrentMonth =
@@ -195,8 +191,6 @@ export const MonthlyScreen = () => {
     return {
       dailyAverage: avg,
       projectedRunRate: runRate,
-      daysPassed: dPassed,
-      daysInMonth: dInMonth,
     };
   }, [selectedYear, selectedMonth, totalSpent]);
 
@@ -377,10 +371,7 @@ export const MonthlyScreen = () => {
               {/* Main Amount & Cap */}
               <TouchableOpacity
                 activeOpacity={0.8}
-                onPress={() => {
-                  setTempBudgetInput(String(budgetCap));
-                  setIsBudgetModalVisible(true);
-                }}
+                onPress={handleOpenBudgetModal}
                 style={styles.amountRow}
               >
                 <Text style={styles.mainAmountText}>
@@ -390,6 +381,10 @@ export const MonthlyScreen = () => {
                   {' '}
                   / ₹{budgetCap.toLocaleString('en-IN')}
                 </Text>
+                <View style={styles.budgetEditPill}>
+                  <Icon name="pencil-outline" size={13} color="#4B5563" />
+                  <Text style={styles.budgetEditPillText}>Edit</Text>
+                </View>
               </TouchableOpacity>
 
               {/* Progress Bar */}
@@ -812,10 +807,49 @@ export const MonthlyScreen = () => {
           onPress={() => setIsBudgetModalVisible(false)}
         >
           <TouchableOpacity activeOpacity={1} style={styles.budgetModalCard}>
-            <Text style={styles.budgetModalTitle}>Monthly Budget Cap</Text>
-            <Text style={styles.budgetModalSub}>
-              Set your target monthly spending limit
-            </Text>
+            <View style={styles.budgetModalHeaderRow}>
+              <View style={styles.budgetModalHeaderTexts}>
+                <Text style={styles.budgetModalTitle}>Monthly Budget</Text>
+                <Text style={styles.budgetModalSub}>
+                  {MONTHS[selectedMonth - 1]} {selectedYear} spending target
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setIsBudgetModalVisible(false)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={styles.budgetModalCloseBtn}
+              >
+                <Icon name="close" size={20} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Carry-forward info banner */}
+            <View
+              style={[
+                styles.budgetBadgeRow,
+                isCustomBudget
+                  ? styles.budgetBadgeRowCustom
+                  : styles.budgetBadgeRowCarried,
+              ]}
+            >
+              <Icon
+                name={isCustomBudget ? 'check-circle-outline' : 'repeat'}
+                size={16}
+                color={isCustomBudget ? '#15803D' : '#4B5563'}
+              />
+              <Text
+                style={[
+                  styles.budgetBadgeText,
+                  isCustomBudget
+                    ? styles.budgetBadgeTextCustom
+                    : styles.budgetBadgeTextCarried,
+                ]}
+              >
+                {isCustomBudget
+                  ? `Custom budget set for ${MONTHS[selectedMonth - 1]} ${selectedYear}`
+                  : `Carried forward from previous month. Customizing will apply from this month onward.`}
+              </Text>
+            </View>
 
             <View style={styles.budgetInputContainer}>
               <Text style={styles.budgetInputCurrency}>₹</Text>
@@ -830,18 +864,54 @@ export const MonthlyScreen = () => {
               />
             </View>
 
+            {/* Quick Presets */}
+            <View style={styles.budgetPresetsRow}>
+              {[15000, 20000, 25000, 30000, 50000].map(val => {
+                const isSelected = tempBudgetInput === String(val);
+                return (
+                  <TouchableOpacity
+                    key={val}
+                    style={[
+                      styles.budgetPresetChip,
+                      isSelected && styles.budgetPresetChipActive,
+                    ]}
+                    onPress={() => setTempBudgetInput(String(val))}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.budgetPresetText,
+                        isSelected && styles.budgetPresetTextActive,
+                      ]}
+                    >
+                      ₹{(val / 1000).toFixed(0)}k
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
             <View style={styles.budgetModalActions}>
               <TouchableOpacity
                 style={styles.budgetCancelBtn}
                 onPress={() => setIsBudgetModalVisible(false)}
+                disabled={isSavingBudget}
               >
                 <Text style={styles.budgetCancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.budgetSaveBtn}
                 onPress={saveBudgetCap}
+                disabled={isSavingBudget}
+                activeOpacity={0.8}
               >
-                <Text style={styles.budgetSaveText}>Save Cap</Text>
+                {isSavingBudget ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.budgetSaveText}>
+                    Save for {MONTHS[selectedMonth - 1]}
+                  </Text>
+                )}
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
@@ -1332,6 +1402,21 @@ const styles = StyleSheet.create({
   },
 
   // Budget Modal
+  budgetEditPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginLeft: 10,
+    gap: 4,
+  },
+  budgetEditPillText: {
+    fontSize: 12,
+    fontFamily: theme.fonts.medium,
+    color: '#4B5563',
+  },
   budgetModalCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
@@ -1341,17 +1426,55 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#F0F1F3',
   },
+  budgetModalHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  budgetModalHeaderTexts: {
+    flex: 1,
+  },
+  budgetModalCloseBtn: {
+    padding: 4,
+  },
   budgetModalTitle: {
     fontSize: 18,
     fontFamily: theme.fonts.bold,
     color: '#111827',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   budgetModalSub: {
     fontSize: 13,
     fontFamily: theme.fonts.regular,
     color: '#6B7280',
+  },
+  budgetBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
     marginBottom: 16,
+  },
+  budgetBadgeRowCustom: {
+    backgroundColor: '#ECFDF5',
+  },
+  budgetBadgeRowCarried: {
+    backgroundColor: '#F3F4F6',
+  },
+  budgetBadgeText: {
+    fontSize: 12,
+    fontFamily: theme.fonts.medium,
+    flex: 1,
+    lineHeight: 16,
+  },
+  budgetBadgeTextCustom: {
+    color: '#15803D',
+  },
+  budgetBadgeTextCarried: {
+    color: '#4B5563',
   },
   budgetInputContainer: {
     flexDirection: 'row',
@@ -1360,7 +1483,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    marginBottom: 20,
+    marginBottom: 14,
   },
   budgetInputCurrency: {
     fontSize: 22,
@@ -1374,6 +1497,32 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.bold,
     color: '#111827',
     padding: 0,
+  },
+  budgetPresetsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 20,
+  },
+  budgetPresetChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  budgetPresetChipActive: {
+    backgroundColor: '#18181B',
+    borderColor: '#18181B',
+  },
+  budgetPresetText: {
+    fontSize: 12,
+    fontFamily: theme.fonts.medium,
+    color: '#4B5563',
+  },
+  budgetPresetTextActive: {
+    color: '#FFFFFF',
   },
   budgetModalActions: {
     flexDirection: 'row',
@@ -1392,8 +1541,10 @@ const styles = StyleSheet.create({
   budgetSaveBtn: {
     backgroundColor: '#18181B',
     paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
     borderRadius: 10,
+    minWidth: 100,
+    alignItems: 'center',
   },
   budgetSaveText: {
     fontSize: 14,
