@@ -2,7 +2,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { DarkTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React, { useEffect } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 import { AddExpenseScreen } from '../screens/AddExpenseScreen';
@@ -41,11 +41,13 @@ export type RootStackParamList = {
 };
 
 export type MainTabParamList = {
-  Home: undefined;
-  Monthly: undefined;
-  AskAi: undefined;
+  Timeline: undefined;
   Analytics: undefined;
+  Add: undefined;
+  AskAi: undefined;
   Settings: undefined;
+  Home?: undefined;
+  Monthly?: undefined;
 };
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -57,39 +59,95 @@ const TabNavigator = () => {
 
   return (
     <Tab.Navigator
+      initialRouteName="Timeline"
       screenOptions={({ route }) => ({
         headerStyle: {
-          backgroundColor: theme.colors.surface,
+          backgroundColor: '#FFFFFF',
           elevation: 0,
           shadowOpacity: 0,
           borderBottomWidth: 1,
-          borderBottomColor: theme.colors.border,
+          borderBottomColor: '#F1F3F5',
         },
-        headerTintColor: theme.colors.text,
+        headerTintColor: '#111827',
         headerTitleStyle: {
-          ...theme.typography.h2,
+          fontFamily: theme.fonts.bold,
+          fontSize: 18,
+          color: '#111827',
         },
         tabBarStyle: {
-          backgroundColor: theme.colors.surface,
-          borderTopColor: theme.colors.border,
+          backgroundColor: '#FFFFFF',
+          borderTopColor: '#F1F3F5',
+          borderTopWidth: 1,
           paddingBottom: bottomPadding,
-          paddingTop: 10,
+          paddingTop: 8,
           height: 60 + bottomPadding,
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.04,
+          shadowRadius: 6,
         },
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textSecondary,
+        tabBarActiveTintColor: '#18181B',
+        tabBarInactiveTintColor: '#71717A',
         tabBarLabelStyle: {
-          fontFamily: theme.fonts.displaySemiBold,
-          fontSize: 10,
+          fontFamily: theme.fonts.medium,
+          fontSize: 11,
+          marginTop: 2,
         },
-        tabBarIcon: ({ color, size }) => {
-          let iconName: React.ComponentProps<typeof Icon>['name'] = 'home';
-          if (route.name === 'Home') iconName = 'plus-circle';
-          else if (route.name === 'Monthly') iconName = 'calendar-month';
-          else if (route.name === 'AskAi') iconName = 'creation';
-          else if (route.name === 'Analytics') iconName = 'chart-pie';
-          else if (route.name === 'Settings') iconName = 'cog';
-          return <Icon name={iconName} size={size + 2} color={color} />;
+        tabBarIcon: ({ color, focused }) => {
+          if (route.name === 'Timeline') {
+            return (
+              <Icon
+                name={focused ? 'calendar-month' : 'calendar-month-outline'}
+                size={24}
+                color={color}
+              />
+            );
+          }
+          if (route.name === 'Analytics') {
+            return (
+              <Icon
+                name="chart-timeline-variant"
+                size={24}
+                color={color}
+              />
+            );
+          }
+          if (route.name === 'Add') {
+            return (
+              <View
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  backgroundColor: '#18181B',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Icon name="plus" size={20} color="#FFFFFF" />
+              </View>
+            );
+          }
+          if (route.name === 'AskAi') {
+            return (
+              <Icon
+                name={focused ? 'creation' : 'creation-outline'}
+                size={24}
+                color={color}
+              />
+            );
+          }
+          if (route.name === 'Settings') {
+            return (
+              <Icon
+                name={focused ? 'cog' : 'cog-outline'}
+                size={24}
+                color={color}
+              />
+            );
+          }
+          return <Icon name="circle" size={24} color={color} />;
         },
         tabBarButton: ({ style, children, onPress, onLongPress }) => (
           <Pressable
@@ -104,24 +162,24 @@ const TabNavigator = () => {
       })}
     >
       <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{ title: 'Add Expense' }}
+        name="Timeline"
+        component={MonthlyScreen}
+        options={{ title: 'Timeline', headerShown: false }}
       />
       <Tab.Screen
-        name="Monthly"
-        component={MonthlyScreen}
-        options={{ title: 'Monthly View' }}
+        name="Analytics"
+        component={AnalyticsScreen}
+        options={{ title: 'Analytics', headerShown: false }}
+      />
+      <Tab.Screen
+        name="Add"
+        component={HomeScreen}
+        options={{ title: 'Add', headerShown: false }}
       />
       <Tab.Screen
         name="AskAi"
         component={AskAiScreen}
         options={{ title: 'Ask AI' }}
-      />
-      <Tab.Screen
-        name="Analytics"
-        component={AnalyticsScreen}
-        options={{ title: 'Analytics' }}
       />
       <Tab.Screen
         name="Settings"
@@ -145,11 +203,11 @@ export const AppNavigator = () => {
     ...DarkTheme,
     colors: {
       ...DarkTheme.colors,
-      background: theme.colors.background,
-      card: theme.colors.surface,
-      text: theme.colors.text,
-      border: theme.colors.border,
-      primary: theme.colors.primary,
+      background: '#F8F9FA',
+      card: '#FFFFFF',
+      text: '#111827',
+      border: '#F1F3F5',
+      primary: '#18181B',
     },
   };
 
@@ -178,12 +236,8 @@ export const AppNavigator = () => {
                 name="AddExpense"
                 component={AddExpenseScreen}
                 options={{
-                  headerShown: true,
-                  title: 'Edit Expense',
-                  headerStyle: { backgroundColor: theme.colors.surface },
-                  headerTintColor: theme.colors.text,
+                  headerShown: false,
                   presentation: 'modal',
-                  headerTitleStyle: theme.typography.h3,
                 }}
               />
               <Stack.Screen
@@ -192,9 +246,13 @@ export const AppNavigator = () => {
                 options={{
                   headerShown: true,
                   title: 'Manage Categories',
-                  headerStyle: { backgroundColor: theme.colors.surface },
-                  headerTintColor: theme.colors.text,
-                  headerTitleStyle: theme.typography.h3,
+                  headerStyle: { backgroundColor: '#FFFFFF' },
+                  headerTintColor: '#111827',
+                  headerTitleStyle: {
+                    fontFamily: theme.fonts.bold,
+                    fontSize: 18,
+                    color: '#111827',
+                  },
                 }}
               />
               <Stack.Screen
@@ -203,9 +261,13 @@ export const AppNavigator = () => {
                 options={{
                   headerShown: true,
                   title: 'Manage Accounts',
-                  headerStyle: { backgroundColor: theme.colors.surface },
-                  headerTintColor: theme.colors.text,
-                  headerTitleStyle: theme.typography.h3,
+                  headerStyle: { backgroundColor: '#FFFFFF' },
+                  headerTintColor: '#111827',
+                  headerTitleStyle: {
+                    fontFamily: theme.fonts.bold,
+                    fontSize: 18,
+                    color: '#111827',
+                  },
                 }}
               />
               <Stack.Screen
@@ -214,9 +276,13 @@ export const AppNavigator = () => {
                 options={{
                   headerShown: true,
                   title: 'Reminders',
-                  headerStyle: { backgroundColor: theme.colors.surface },
-                  headerTintColor: theme.colors.text,
-                  headerTitleStyle: theme.typography.h3,
+                  headerStyle: { backgroundColor: '#FFFFFF' },
+                  headerTintColor: '#111827',
+                  headerTitleStyle: {
+                    fontFamily: theme.fonts.bold,
+                    fontSize: 18,
+                    color: '#111827',
+                  },
                   presentation: 'card',
                 }}
               />
@@ -226,9 +292,13 @@ export const AppNavigator = () => {
                 options={{
                   headerShown: true,
                   title: 'AI Usage',
-                  headerStyle: { backgroundColor: theme.colors.surface },
-                  headerTintColor: theme.colors.text,
-                  headerTitleStyle: theme.typography.h3,
+                  headerStyle: { backgroundColor: '#FFFFFF' },
+                  headerTintColor: '#111827',
+                  headerTitleStyle: {
+                    fontFamily: theme.fonts.bold,
+                    fontSize: 18,
+                    color: '#111827',
+                  },
                 }}
               />
             </>

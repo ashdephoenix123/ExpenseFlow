@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,15 +8,20 @@ import {
   TouchableOpacity,
   Modal,
   ScrollView,
-  SafeAreaView,
+  Image,
+  TextInput,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { theme } from '../theme/theme';
 import { useExpenseStore } from '../store/expenseStore';
 import { useAccountStore } from '../store/accountStore';
 import { useCategoryStore } from '../store/categoryStore';
+import { useAuthStore } from '../store/authStore';
 import { ExpenseItem } from '../components/ExpenseItem';
 import { formatDateDisplay } from '../utils/dateUtils';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
@@ -37,52 +42,98 @@ const MONTHS = [
   'Dec',
 ];
 
-type MonthlyListItem =
-  | { type: 'date_header'; id: string; date: string }
-  | { type: 'expense'; id: string; expense: Expense };
+const BUDGET_CAP_STORAGE_KEY = '@monthly_budget_cap';
+const DEFAULT_BUDGET_CAP = 20000;
+
+interface DateGroup {
+  date: string;
+  total: number;
+  expenses: Expense[];
+}
 
 export const MonthlyScreen = () => {
+  const insets = useSafeAreaInsets();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
   const {
     monthlyExpenses,
     currentMonthlyKey,
     newEntryVersion,
     monthlySyncedEntryVersion,
+    reminderExpenses,
     isLoading,
     fetchMonthlyExpenses,
+    fetchReminderExpenses,
   } = useExpenseStore();
 
   const { accounts, fetchAccounts } = useAccountStore();
-
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { categories, fetchCategories } = useCategoryStore();
+  const { user } = useAuthStore();
 
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 1-12
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [isPickerVisible, setIsPickerVisible] = useState(false);
   const [pickerYear, setPickerYear] = useState(selectedYear);
 
-  // Build a lookup map: account_id -> account_name
-  const accountMap = useMemo(() => {
-    const map: Record<string, string> = {};
-    accounts.forEach(a => { map[a.id] = a.name; });
-    return map;
-  }, [accounts]);
+  // Budget cap state
+  const [budgetCap, setBudgetCap] = useState<number>(DEFAULT_BUDGET_CAP);
+  const [isBudgetModalVisible, setIsBudgetModalVisible] = useState(false);
+  const [tempBudgetInput, setTempBudgetInput] = useState(String(DEFAULT_BUDGET_CAP));
 
-  const { categories, fetchCategories } = useCategoryStore();
-
+  // Filters
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
-
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [activeFilterTab, setActiveFilterTab] = useState<'category' | 'account'>('category');
   const [tempCategory, setTempCategory] = useState<string | null>(null);
   const [tempAccount, setTempAccount] = useState<string | null>(null);
 
+  // Load saved budget cap from AsyncStorage
+  useEffect(() => {
+    const loadBudgetCap = async () => {
+      try {
+        const saved = await AsyncStorage.getItem(BUDGET_CAP_STORAGE_KEY);
+        if (saved) {
+          const parsed = Number(saved);
+          if (!isNaN(parsed) && parsed > 0) {
+            setBudgetCap(parsed);
+            setTempBudgetInput(String(parsed));
+          }
+        }
+      } catch {
+        // Fallback to default
+      }
+    };
+    loadBudgetCap();
+  }, []);
+
+  const saveBudgetCap = async () => {
+    const parsed = Number(tempBudgetInput);
+    if (!isNaN(parsed) && parsed > 0) {
+      setBudgetCap(parsed);
+      try {
+        await AsyncStorage.setItem(BUDGET_CAP_STORAGE_KEY, String(parsed));
+      } catch {}
+    }
+    setIsBudgetModalVisible(false);
+  };
+
+  // Build a lookup map: account_id -> account_name
+  const accountMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    accounts.forEach(a => {
+      map[a.id] = a.name;
+    });
+    return map;
+  }, [accounts]);
+
   // Fetch data on mount
   useEffect(() => {
     fetchAccounts();
     fetchCategories();
-  }, [fetchAccounts, fetchCategories]);
+    fetchReminderExpenses();
+  }, [fetchAccounts, fetchCategories, fetchReminderExpenses]);
 
   // Fetch once for the selected month, and refetch only if a new entry was added since the last monthly sync.
   useFocusEffect(
@@ -108,49 +159,75 @@ export const MonthlyScreen = () => {
     ]),
   );
 
+  // Filtered expenses based on category and account
   const filteredExpenses = useMemo(() => {
     return monthlyExpenses.filter(expense => {
-      const categoryMatch = selectedCategory ? expense.category === selectedCategory : true;
-      const accountMatch = selectedAccount ? expense.account_id === selectedAccount : true;
+      const categoryMatch = selectedCategory
+        ? (expense.category || '').toLowerCase() === selectedCategory.toLowerCase()
+        : true;
+      const accountMatch = selectedAccount
+        ? expense.account_id === selectedAccount
+        : true;
       return categoryMatch && accountMatch;
     });
   }, [monthlyExpenses, selectedCategory, selectedAccount]);
 
+  // Total spent this month
   const totalSpent = useMemo(() => {
     return filteredExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
   }, [filteredExpenses]);
 
-  const dayTotals = useMemo(() => {
-    return filteredExpenses.reduce<Record<string, number>>((acc, expense) => {
-      const date = expense.spent_on;
-      acc[date] = (acc[date] ?? 0) + Number(expense.amount);
-      return acc;
-    }, {});
-  }, [filteredExpenses]);
+  // Calculate Daily Average & Projected Run-Rate
+  const { dailyAverage, projectedRunRate, daysPassed, daysInMonth } = useMemo(() => {
+    const dInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
+    const today = new Date();
+    const isCurrentMonth =
+      selectedYear === today.getFullYear() &&
+      selectedMonth === today.getMonth() + 1;
 
-  const listItems = useMemo<MonthlyListItem[]>(() => {
-    const items: MonthlyListItem[] = [];
-    let currentDate = '';
+    const dPassed = isCurrentMonth
+      ? Math.max(1, today.getDate())
+      : dInMonth;
 
+    const avg = Math.round(totalSpent / dPassed);
+    const runRate = Math.round(avg * dInMonth);
+
+    return {
+      dailyAverage: avg,
+      projectedRunRate: runRate,
+      daysPassed: dPassed,
+      daysInMonth: dInMonth,
+    };
+  }, [selectedYear, selectedMonth, totalSpent]);
+
+  // Group filtered expenses by date
+  const dateGroups = useMemo<DateGroup[]>(() => {
+    const groups: Record<string, Expense[]> = {};
     filteredExpenses.forEach(expense => {
-      if (expense.spent_on !== currentDate) {
-        currentDate = expense.spent_on;
-        items.push({
-          type: 'date_header',
-          id: `date-${currentDate}`,
-          date: currentDate,
-        });
+      const d = expense.spent_on;
+      if (!groups[d]) {
+        groups[d] = [];
       }
-
-      items.push({
-        type: 'expense',
-        id: expense.id,
-        expense,
-      });
+      groups[d].push(expense);
     });
 
-    return items;
+    const sortedDates = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+
+    return sortedDates.map(date => {
+      const expenses = groups[date];
+      const total = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
+      return {
+        date,
+        total,
+        expenses,
+      };
+    });
   }, [filteredExpenses]);
+
+  // Budget calculations
+  const utilizationPercent = budgetCap > 0 ? (totalSpent / budgetCap) * 100 : 0;
+  const remainingBudget = budgetCap - totalSpent;
+  const isOnTrack = totalSpent <= budgetCap;
 
   const selectMonth = (monthIndex: number) => {
     setSelectedMonth(monthIndex + 1);
@@ -162,6 +239,7 @@ export const MonthlyScreen = () => {
     const today = new Date();
     setSelectedMonth(today.getMonth() + 1);
     setSelectedYear(today.getFullYear());
+    setPickerYear(today.getFullYear());
     setIsPickerVisible(false);
   };
 
@@ -178,99 +256,317 @@ export const MonthlyScreen = () => {
     setIsFilterModalOpen(false);
   };
 
+  // Distinct category chips for horizontal filter row
+  const categoryChips = useMemo(() => {
+    const chipSet = new Set<string>();
+    categories.forEach(c => chipSet.add(c.name));
+    // Also include default common categories if none present
+    if (chipSet.size === 0) {
+      chipSet.add('Food');
+      chipSet.add('Shopping');
+      chipSet.add('Transport');
+      chipSet.add('Bills');
+    }
+    return Array.from(chipSet);
+  }, [categories]);
+
+  // User avatar display
+  const userAvatarUrl =
+    user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  const userName = user?.user_metadata?.name || user?.email || 'U';
+  const userInitial = userName.charAt(0).toUpperCase();
+
+  const hasReminders = reminderExpenses.length > 0;
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <View style={styles.totalBlock}>
-            <Text style={styles.totalAmount}>
-              ₹ {totalSpent.toLocaleString('en-IN')}
+    <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
+      {/* Top Header Row */}
+      <View style={styles.topHeader}>
+        <View style={styles.topHeaderLeft}>
+          {/* Avatar */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('Settings' as any)}
+            style={styles.avatarWrapper}
+          >
+            {userAvatarUrl ? (
+              <Image source={{ uri: userAvatarUrl }} style={styles.avatarImage} />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarInitial}>{userInitial}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          {/* Month/Year selector dropdown pill */}
+          <TouchableOpacity
+            style={styles.monthPill}
+            activeOpacity={0.7}
+            onPress={() => {
+              setPickerYear(selectedYear);
+              setIsPickerVisible(true);
+            }}
+          >
+            <Text style={styles.monthPillText}>
+              {MONTHS[selectedMonth - 1]} {selectedYear}
             </Text>
-            <Text style={styles.subText}>Total Spent this Month</Text>
-          </View>
+            <Icon name="chevron-down" size={18} color="#6B7280" />
+          </TouchableOpacity>
+        </View>
 
-          <View style={styles.controlsRow}>
-            <TouchableOpacity
-              style={styles.selectorBtn}
-              activeOpacity={0.7}
-              onPress={() => {
-                setPickerYear(selectedYear);
-                setIsPickerVisible(true);
-              }}
-            >
-              <Text style={styles.dateText}>
-                {MONTHS[selectedMonth - 1]} {selectedYear}
-              </Text>
-              <Icon name="chevron-down" size={20} color={theme.colors.primary} />
-            </TouchableOpacity>
+        <View style={styles.topHeaderRight}>
+          {/* Filter Tune Icon */}
+          <TouchableOpacity
+            style={styles.iconButton}
+            activeOpacity={0.7}
+            onPress={openFilterModal}
+          >
+            <Icon
+              name="tune-variant"
+              size={22}
+              color={selectedCategory || selectedAccount ? '#18181B' : '#4B5563'}
+            />
+            {(selectedCategory || selectedAccount) && (
+              <View style={styles.activeFilterDot} />
+            )}
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.filterIconBtn}
-              activeOpacity={0.7}
-              onPress={openFilterModal}
-            >
-              <Icon name="filter-variant" size={24} color={(selectedCategory || selectedAccount) ? theme.colors.primary : theme.colors.textSecondary} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.filterIconBtn}
-              activeOpacity={0.7}
-              onPress={() => navigation.navigate('Reminders')}
-            >
-              <Icon name="bell-outline" size={24} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
+          {/* Notification Bell Icon */}
+          <TouchableOpacity
+            style={styles.iconButton}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Reminders')}
+          >
+            <Icon name="bell-outline" size={22} color="#4B5563" />
+            {hasReminders && <View style={styles.bellBadgeDot} />}
+          </TouchableOpacity>
         </View>
       </View>
-      <View style={styles.listContainer}>
-        {isLoading ? (
-          <ActivityIndicator
-            size="large"
-            color={theme.colors.primary}
-            style={styles.loader}
-          />
-        ) : (
-          <FlatList
-            data={listItems}
-            keyExtractor={item => item.id}
-            contentContainerStyle={styles.listContent}
-            renderItem={({ item }) => {
-              if (item.type === 'date_header') {
-                return (
-                  <View style={styles.dayHeader}>
-                    <Text style={styles.dayHeaderText}>
-                      {formatDateDisplay(item.date)}
-                    </Text>
-                    <Text style={styles.dayHeaderAmount}>
-                      ₹ {(dayTotals[item.date] ?? 0).toLocaleString('en-IN')}
-                    </Text>
-                  </View>
-                );
-              }
 
-              return (
-                <ExpenseItem
-                  id={item.expense.id}
-                  amount={item.expense.amount}
-                  category={item.expense.category}
-                  note={item.expense.note}
-                  accountId={item.expense.account_id ?? undefined}
-                  accountName={item.expense.account_id ? accountMap[item.expense.account_id] : undefined}
-                  isReminder={item.expense.is_reminder}
+      {/* Main List with Header */}
+      <FlatList
+        data={dateGroups}
+        keyExtractor={item => item.date}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          <View>
+            {/* Total Spent Summary Card */}
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryTopRow}>
+                <Text style={styles.summaryLabel}>TOTAL SPENT THIS MONTH</Text>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    isOnTrack ? styles.statusBadgeOnTrack : styles.statusBadgeOver,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.statusBadgeText,
+                      isOnTrack
+                        ? styles.statusBadgeTextOnTrack
+                        : styles.statusBadgeTextOver,
+                    ]}
+                  >
+                    • {isOnTrack ? 'On Track' : 'Over Cap'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Main Amount & Cap */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => {
+                  setTempBudgetInput(String(budgetCap));
+                  setIsBudgetModalVisible(true);
+                }}
+                style={styles.amountRow}
+              >
+                <Text style={styles.mainAmountText}>
+                  ₹{totalSpent.toLocaleString('en-IN')}
+                </Text>
+                <Text style={styles.capAmountText}>
+                  {' '}
+                  / ₹{budgetCap.toLocaleString('en-IN')}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Progress Bar */}
+              <View style={styles.progressBarTrack}>
+                <View
+                  style={[
+                    styles.progressBarFill,
+                    {
+                      width: `${Math.min(100, Math.max(0, utilizationPercent))}%`,
+                      backgroundColor: isOnTrack ? '#18181B' : '#DC2626',
+                    },
+                  ]}
                 />
-              );
-            }}
-            ListEmptyComponent={
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>No expenses found.</Text>
-                <Text style={styles.emptySubText}>
-                  Try selecting a different month.
+              </View>
+
+              {/* Utilization & Remaining Info */}
+              <View style={styles.progressInfoRow}>
+                <Text style={styles.progressUtilizedText}>
+                  {utilizationPercent.toFixed(1)}% of cap utilized
+                </Text>
+                <Text
+                  style={[
+                    styles.progressRemainingText,
+                    { color: remainingBudget >= 0 ? '#15803D' : '#DC2626' },
+                  ]}
+                >
+                  ₹{Math.abs(remainingBudget).toLocaleString('en-IN')}{' '}
+                  {remainingBudget >= 0 ? 'remaining' : 'over cap'}
                 </Text>
               </View>
-            }
-          />
+
+              {/* Stat Boxes (Daily Average & Projected Run-Rate) */}
+              <View style={styles.statCardsRow}>
+                <View style={styles.statBox}>
+                  <Text style={styles.statBoxLabel}>Daily Average</Text>
+                  <View style={styles.statBoxValueRow}>
+                    <Text style={styles.statBoxValue}>
+                      ₹{dailyAverage.toLocaleString('en-IN')}
+                    </Text>
+                    <Text style={styles.statBoxSub}> / day</Text>
+                  </View>
+                </View>
+
+                <View style={styles.statBox}>
+                  <Text style={styles.statBoxLabel}>Projected Run-Rate</Text>
+                  <View style={styles.statBoxValueRow}>
+                    <Text style={styles.statBoxValue}>
+                      ₹{projectedRunRate.toLocaleString('en-IN')}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Horizontal Category Chips Row */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryChipsScroll}
+            >
+              {/* All Chip */}
+              <TouchableOpacity
+                style={[
+                  styles.categoryChip,
+                  selectedCategory === null
+                    ? styles.categoryChipActive
+                    : styles.categoryChipInactive,
+                ]}
+                activeOpacity={0.8}
+                onPress={() => setSelectedCategory(null)}
+              >
+                <Text
+                  style={[
+                    styles.categoryChipText,
+                    selectedCategory === null
+                      ? styles.categoryChipTextActive
+                      : styles.categoryChipTextInactive,
+                  ]}
+                >
+                  All
+                </Text>
+              </TouchableOpacity>
+
+              {/* Categories */}
+              {categoryChips.map(cat => {
+                const isActive =
+                  selectedCategory?.toLowerCase() === cat.toLowerCase();
+                return (
+                  <TouchableOpacity
+                    key={cat}
+                    style={[
+                      styles.categoryChip,
+                      isActive
+                        ? styles.categoryChipActive
+                        : styles.categoryChipInactive,
+                    ]}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      if (isActive) {
+                        setSelectedCategory(null);
+                      } else {
+                        setSelectedCategory(cat);
+                      }
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.categoryChipText,
+                        isActive
+                          ? styles.categoryChipTextActive
+                          : styles.categoryChipTextInactive,
+                      ]}
+                    >
+                      {cat}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        }
+        renderItem={({ item: group }) => (
+          <View style={styles.dateGroupContainer}>
+            {/* Date Header */}
+            <View style={styles.dayHeader}>
+              <Text style={styles.dayHeaderText}>
+                {formatDateDisplay(group.date)}
+              </Text>
+              <Text style={styles.dayHeaderAmount}>
+                ₹{group.total.toLocaleString('en-IN')}
+              </Text>
+            </View>
+
+            {/* Date Card enclosing items */}
+            <View style={styles.dateCard}>
+              {group.expenses.map((expense, idx) => (
+                <View key={expense.id}>
+                  {idx > 0 && <View style={styles.itemDivider} />}
+                  <ExpenseItem
+                    id={expense.id}
+                    amount={expense.amount}
+                    category={expense.category}
+                    note={expense.note}
+                    accountId={expense.account_id ?? undefined}
+                    accountName={
+                      expense.account_id
+                        ? accountMap[expense.account_id]
+                        : undefined
+                    }
+                    isReminder={expense.is_reminder}
+                    createdAt={expense.created_at}
+                  />
+                </View>
+              ))}
+            </View>
+          </View>
         )}
-      </View>
+        ListEmptyComponent={
+          isLoading ? (
+            <ActivityIndicator
+              size="large"
+              color="#18181B"
+              style={styles.loader}
+            />
+          ) : (
+            <View style={styles.emptyState}>
+              <Icon name="receipt" size={48} color="#9CA3AF" />
+              <Text style={styles.emptyText}>No expenses found</Text>
+              <Text style={styles.emptySubText}>
+                {selectedCategory
+                  ? `No expenses in "${selectedCategory}" category.`
+                  : 'Try selecting a different month.'}
+              </Text>
+            </View>
+          )
+        }
+      />
 
       {/* Month/Year Picker Modal */}
       <Modal
@@ -286,25 +582,40 @@ export const MonthlyScreen = () => {
         >
           <TouchableOpacity activeOpacity={1} style={styles.pickerContainer}>
             <View style={styles.pickerHeader}>
-              <TouchableOpacity onPress={() => setPickerYear(y => y - 1)} style={styles.pickerIconBtn}>
-                <Icon name="chevron-left" size={28} color={theme.colors.text} />
+              <TouchableOpacity
+                onPress={() => setPickerYear(y => y - 1)}
+                style={styles.pickerIconBtn}
+              >
+                <Icon name="chevron-left" size={28} color="#111827" />
               </TouchableOpacity>
               <Text style={styles.pickerYearText}>{pickerYear}</Text>
-              <TouchableOpacity onPress={() => setPickerYear(y => y + 1)} style={styles.pickerIconBtn}>
-                <Icon name="chevron-right" size={28} color={theme.colors.text} />
+              <TouchableOpacity
+                onPress={() => setPickerYear(y => y + 1)}
+                style={styles.pickerIconBtn}
+              >
+                <Icon name="chevron-right" size={28} color="#111827" />
               </TouchableOpacity>
             </View>
 
             <View style={styles.monthsGrid}>
               {MONTHS.map((month, index) => {
-                const isSelected = selectedMonth === index + 1 && selectedYear === pickerYear;
+                const isSelected =
+                  selectedMonth === index + 1 && selectedYear === pickerYear;
                 return (
                   <TouchableOpacity
                     key={month}
-                    style={[styles.monthChip, isSelected && styles.monthChipSelected]}
+                    style={[
+                      styles.monthChip,
+                      isSelected && styles.monthChipSelected,
+                    ]}
                     onPress={() => selectMonth(index)}
                   >
-                    <Text style={[styles.monthChipText, isSelected && styles.monthChipTextSelected]}>
+                    <Text
+                      style={[
+                        styles.monthChipText,
+                        isSelected && styles.monthChipTextSelected,
+                      ]}
+                    >
                       {month}
                     </Text>
                   </TouchableOpacity>
@@ -312,113 +623,229 @@ export const MonthlyScreen = () => {
               })}
             </View>
 
-            <TouchableOpacity 
-              style={styles.resetBtn} 
+            <TouchableOpacity
+              style={styles.resetBtn}
               onPress={resetToCurrentMonth}
               activeOpacity={0.7}
             >
-              <Icon name="calendar-today" size={20} color={theme.colors.primary} />
+              <Icon name="calendar-today" size={18} color="#18181B" />
               <Text style={styles.resetBtnText}>Jump to Current Month</Text>
             </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
 
-      {/* Category/Account Filter Modal */}
+      {/* Category / Account Filter Modal */}
       <Modal
         visible={isFilterModalOpen}
         animationType="slide"
         onRequestClose={() => setIsFilterModalOpen(false)}
       >
-        <SafeAreaView style={styles.fullScreenFilterContainer}>
-          <View style={[styles.filterModalHeader, { borderBottomWidth: 1 }]}>
-            <Text style={styles.pickerYearText}>Filters</Text>
+        <View
+          style={[
+            styles.fullScreenFilterContainer,
+            { paddingTop: Math.max(insets.top, 16) },
+          ]}
+        >
+          <View style={styles.filterModalHeader}>
+            <Text style={styles.filterModalTitle}>Filters</Text>
+            <TouchableOpacity
+              onPress={() => setIsFilterModalOpen(false)}
+              style={styles.filterCloseBtn}
+            >
+              <Icon name="close" size={22} color="#111827" />
+            </TouchableOpacity>
           </View>
 
-            <View style={styles.filterModalBody}>
-              {/* Left Column: Tabs */}
-              <View style={styles.filterTabsCol}>
-                <TouchableOpacity
-                  style={[styles.filterTabBtn, activeFilterTab === 'category' && styles.filterTabBtnActive]}
-                  onPress={() => setActiveFilterTab('category')}
+          <View style={styles.filterModalBody}>
+            {/* Left Tabs */}
+            <View style={styles.filterTabsCol}>
+              <TouchableOpacity
+                style={[
+                  styles.filterTabBtn,
+                  activeFilterTab === 'category' && styles.filterTabBtnActive,
+                ]}
+                onPress={() => setActiveFilterTab('category')}
+              >
+                <Text
+                  style={[
+                    styles.filterTabText,
+                    activeFilterTab === 'category' && styles.filterTabTextActive,
+                  ]}
                 >
-                  <Text style={[styles.filterTabText, activeFilterTab === 'category' && styles.filterTabTextActive]}>Category</Text>
+                  Category
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.filterTabBtn,
+                  activeFilterTab === 'account' && styles.filterTabBtnActive,
+                ]}
+                onPress={() => setActiveFilterTab('account')}
+              >
+                <Text
+                  style={[
+                    styles.filterTabText,
+                    activeFilterTab === 'account' && styles.filterTabTextActive,
+                  ]}
+                >
+                  Account
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Right Options */}
+            <View style={styles.filterOptionsCol}>
+              <ScrollView contentContainerStyle={styles.filterOptionsList}>
+                <TouchableOpacity
+                  style={styles.filterOptionItem}
+                  onPress={() => {
+                    if (activeFilterTab === 'category') setTempCategory(null);
+                    if (activeFilterTab === 'account') setTempAccount(null);
+                  }}
+                >
+                  <Icon
+                    name={
+                      (activeFilterTab === 'category'
+                        ? !tempCategory
+                        : !tempAccount)
+                        ? 'radiobox-marked'
+                        : 'radiobox-blank'
+                    }
+                    size={22}
+                    color={
+                      (activeFilterTab === 'category'
+                        ? !tempCategory
+                        : !tempAccount)
+                        ? '#18181B'
+                        : '#9CA3AF'
+                    }
+                  />
+                  <Text style={styles.filterOptionItemText}>
+                    All{' '}
+                    {activeFilterTab === 'category' ? 'Categories' : 'Accounts'}
+                  </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={[styles.filterTabBtn, activeFilterTab === 'account' && styles.filterTabBtnActive]}
-                  onPress={() => setActiveFilterTab('account')}
-                >
-                  <Text style={[styles.filterTabText, activeFilterTab === 'account' && styles.filterTabTextActive]}>Account</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Right Column: Options */}
-              <View style={styles.filterOptionsCol}>
-                <ScrollView contentContainerStyle={styles.filterOptionsList}>
-                  <TouchableOpacity
-                    style={styles.filterOptionItem}
-                    onPress={() => {
-                      if (activeFilterTab === 'category') setTempCategory(null);
-                      if (activeFilterTab === 'account') setTempAccount(null);
-                    }}
-                  >
-                    <Icon
-                      name={
-                        (activeFilterTab === 'category' ? !tempCategory : !tempAccount)
-                          ? "radiobox-marked"
-                          : "radiobox-blank"
-                      }
-                      size={20}
-                      color={(activeFilterTab === 'category' ? !tempCategory : !tempAccount) ? theme.colors.primary : theme.colors.textSecondary}
-                    />
-                    <Text style={styles.filterOptionItemText}>
-                      All {activeFilterTab === 'category' ? 'Categories' : 'Accounts'}
-                    </Text>
-                  </TouchableOpacity>
-
-                  {activeFilterTab === 'category' && categories.map(cat => (
+                {activeFilterTab === 'category' &&
+                  categories.map(cat => (
                     <TouchableOpacity
                       key={cat.id}
                       style={styles.filterOptionItem}
                       onPress={() => setTempCategory(cat.name)}
                     >
                       <Icon
-                        name={tempCategory === cat.name ? "radiobox-marked" : "radiobox-blank"}
-                        size={20}
-                        color={tempCategory === cat.name ? theme.colors.primary : theme.colors.textSecondary}
+                        name={
+                          tempCategory === cat.name
+                            ? 'radiobox-marked'
+                            : 'radiobox-blank'
+                        }
+                        size={22}
+                        color={
+                          tempCategory === cat.name ? '#18181B' : '#9CA3AF'
+                        }
                       />
-                      <Text style={styles.filterOptionItemText}>{cat.name}</Text>
+                      <Text style={styles.filterOptionItemText}>
+                        {cat.name}
+                      </Text>
                     </TouchableOpacity>
                   ))}
 
-                  {activeFilterTab === 'account' && accounts.map(acc => (
+                {activeFilterTab === 'account' &&
+                  accounts.map(acc => (
                     <TouchableOpacity
                       key={acc.id}
                       style={styles.filterOptionItem}
                       onPress={() => setTempAccount(acc.id)}
                     >
                       <Icon
-                        name={tempAccount === acc.id ? "radiobox-marked" : "radiobox-blank"}
-                        size={20}
-                        color={tempAccount === acc.id ? theme.colors.primary : theme.colors.textSecondary}
+                        name={
+                          tempAccount === acc.id
+                            ? 'radiobox-marked'
+                            : 'radiobox-blank'
+                        }
+                        size={22}
+                        color={tempAccount === acc.id ? '#18181B' : '#9CA3AF'}
                       />
-                      <Text style={styles.filterOptionItemText}>{acc.name}</Text>
+                      <Text style={styles.filterOptionItemText}>
+                        {acc.name}
+                      </Text>
                     </TouchableOpacity>
                   ))}
-                </ScrollView>
-              </View>
+              </ScrollView>
+            </View>
+          </View>
+
+          <View
+            style={[
+              styles.filterModalFooter,
+              { paddingBottom: Math.max(insets.bottom, 16) },
+            ]}
+          >
+            <TouchableOpacity
+              style={styles.filterCancelBtn}
+              onPress={() => setIsFilterModalOpen(false)}
+            >
+              <Text style={styles.filterCancelBtnText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.filterApplyBtn}
+              onPress={applyFilters}
+            >
+              <Text style={styles.filterApplyBtnText}>Apply</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Budget Cap Customization Modal */}
+      <Modal
+        visible={isBudgetModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsBudgetModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setIsBudgetModalVisible(false)}
+        >
+          <TouchableOpacity activeOpacity={1} style={styles.budgetModalCard}>
+            <Text style={styles.budgetModalTitle}>Monthly Budget Cap</Text>
+            <Text style={styles.budgetModalSub}>
+              Set your target monthly spending limit
+            </Text>
+
+            <View style={styles.budgetInputContainer}>
+              <Text style={styles.budgetInputCurrency}>₹</Text>
+              <TextInput
+                style={styles.budgetInput}
+                keyboardType="numeric"
+                value={tempBudgetInput}
+                onChangeText={setTempBudgetInput}
+                placeholder="20000"
+                placeholderTextColor="#9CA3AF"
+                autoFocus
+              />
             </View>
 
-            <View style={styles.filterModalFooter}>
-              <TouchableOpacity style={styles.filterCancelBtn} onPress={() => setIsFilterModalOpen(false)}>
-                <Text style={styles.filterCancelBtnText}>Cancel</Text>
+            <View style={styles.budgetModalActions}>
+              <TouchableOpacity
+                style={styles.budgetCancelBtn}
+                onPress={() => setIsBudgetModalVisible(false)}
+              >
+                <Text style={styles.budgetCancelText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.filterApplyBtn} onPress={applyFilters}>
-                <Text style={styles.filterApplyBtnText}>Apply</Text>
+              <TouchableOpacity
+                style={styles.budgetSaveBtn}
+                onPress={saveBudgetCap}
+              >
+                <Text style={styles.budgetSaveText}>Save Cap</Text>
               </TouchableOpacity>
             </View>
-        </SafeAreaView>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
     </View>
   );
@@ -427,262 +854,550 @@ export const MonthlyScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: '#F8F9FA',
   },
-  header: {
-    padding: theme.spacing.lg,
-    backgroundColor: theme.colors.surface,
-    borderBottomLeftRadius: theme.borderRadius.lg,
-    borderBottomRightRadius: theme.borderRadius.lg,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    zIndex: 10,
-  },
-  headerRow: {
+  // Top Header Row
+  topHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.md,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
   },
-  totalBlock: {
-    flex: 1,
-  },
-  controlsRow: {
+  topHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.sm,
+    gap: 12,
   },
-  filterIconBtn: {
-    width: 40,
-    height: 40,
+  avatarWrapper: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    overflow: 'hidden',
+    backgroundColor: '#E5E7EB',
+    borderWidth: 1.5,
+    borderColor: '#D1D5DB',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+  },
+  avatarPlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#E5E7EB',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.colors.background,
-    borderRadius: theme.borderRadius.round,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
   },
-  selectorBtn: {
+  avatarInitial: {
+    fontSize: 16,
+    fontFamily: theme.fonts.bold,
+    color: '#374151',
+  },
+  monthPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 40,
-    backgroundColor: theme.colors.background,
-    paddingHorizontal: theme.spacing.md,
-    borderRadius: theme.borderRadius.round,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    gap: 4,
   },
-  dateText: {
-    ...theme.typography.h3,
+  monthPillText: {
     fontSize: 16,
-    color: theme.colors.primary,
-    marginRight: theme.spacing.sm,
-    includeFontPadding: false,
-    textAlignVertical: 'center',
+    fontFamily: theme.fonts.semiBold,
+    color: '#111827',
   },
-  totalAmount: {
-    ...theme.typography.h2,
-    color: theme.colors.text,
-    marginBottom: 2,
-    includeFontPadding: false,
+  topHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  subText: {
-    ...theme.typography.caption,
-    color: theme.colors.textSecondary,
-    includeFontPadding: false,
+  iconButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
   },
-  listContainer: {
-    flex: 1,
+  activeFilterDot: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#18181B',
   },
+  bellBadgeDot: {
+    position: 'absolute',
+    top: 6,
+    right: 8,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#F97316',
+  },
+
+  // Main List
   listContent: {
-    padding: theme.spacing.md,
-    paddingBottom: 100,
+    paddingBottom: 40,
   },
-  loader: {
-    marginTop: theme.spacing.xl,
+
+  // Summary Card
+  summaryCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#F0F1F3',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  summaryTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  summaryLabel: {
+    fontSize: 12,
+    fontFamily: theme.fonts.bold,
+    color: '#374151',
+    letterSpacing: 0.5,
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusBadgeOnTrack: {
+    backgroundColor: '#ECFDF5',
+  },
+  statusBadgeOver: {
+    backgroundColor: '#FEE2E2',
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontFamily: theme.fonts.medium,
+  },
+  statusBadgeTextOnTrack: {
+    color: '#15803D',
+  },
+  statusBadgeTextOver: {
+    color: '#DC2626',
+  },
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 14,
+  },
+  mainAmountText: {
+    fontSize: 32,
+    fontFamily: theme.fonts.bold,
+    color: '#111827',
+  },
+  capAmountText: {
+    fontSize: 20,
+    fontFamily: theme.fonts.regular,
+    color: '#6B7280',
+  },
+  progressBarTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#F3F4F6',
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  progressInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  progressUtilizedText: {
+    fontSize: 12,
+    fontFamily: theme.fonts.medium,
+    color: '#4B5563',
+  },
+  progressRemainingText: {
+    fontSize: 12,
+    fontFamily: theme.fonts.medium,
+  },
+  statCardsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 14,
+    padding: 12,
+  },
+  statBoxLabel: {
+    fontSize: 12,
+    fontFamily: theme.fonts.medium,
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  statBoxValueRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  statBoxValue: {
+    fontSize: 18,
+    fontFamily: theme.fonts.bold,
+    color: '#111827',
+  },
+  statBoxSub: {
+    fontSize: 13,
+    fontFamily: theme.fonts.regular,
+    color: '#6B7280',
+  },
+
+  // Category Chips
+  categoryChipsScroll: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    gap: 8,
+  },
+  categoryChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  categoryChipActive: {
+    backgroundColor: '#18181B',
+  },
+  categoryChipInactive: {
+    backgroundColor: '#F3F4F6',
+  },
+  categoryChipText: {
+    fontSize: 14,
+    fontFamily: theme.fonts.medium,
+  },
+  categoryChipTextActive: {
+    color: '#FFFFFF',
+  },
+  categoryChipTextInactive: {
+    color: '#374151',
+  },
+
+  // Date Groups
+  dateGroupContainer: {
+    marginHorizontal: 16,
+    marginBottom: 14,
   },
   dayHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.xs,
+    paddingVertical: 10,
+    paddingHorizontal: 2,
   },
   dayHeaderText: {
-    ...theme.typography.caption,
-    color: theme.colors.textSecondary,
+    fontSize: 15,
+    fontFamily: theme.fonts.semiBold,
+    color: '#111827',
   },
   dayHeaderAmount: {
-    ...theme.typography.caption,
-    color: theme.colors.textSecondary,
-    fontFamily: theme.fonts.medium,
+    fontSize: 15,
+    fontFamily: theme.fonts.semiBold,
+    color: '#111827',
+  },
+  dateCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#F0F1F3',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  itemDivider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
   },
 
+  // Empty State & Loader
+  loader: {
+    marginTop: 40,
+  },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 60,
+    marginTop: 50,
+    paddingHorizontal: 24,
   },
   emptyText: {
-    ...theme.typography.h3,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.sm,
+    fontSize: 18,
+    fontFamily: theme.fonts.semiBold,
+    color: '#374151',
+    marginTop: 12,
+    marginBottom: 4,
   },
   emptySubText: {
-    ...theme.typography.body,
-    color: theme.colors.textSecondary,
+    fontSize: 14,
+    fontFamily: theme.fonts.regular,
+    color: '#6B7280',
+    textAlign: 'center',
   },
-  // Picker Modal Styles
+
+  // Month Picker Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: theme.spacing.lg,
+    padding: 24,
   },
   pickerContainer: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.lg,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
     width: '100%',
     maxWidth: 340,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: '#F0F1F3',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
   },
   pickerHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: theme.spacing.lg,
+    marginBottom: 18,
   },
   pickerIconBtn: {
-    padding: theme.spacing.xs,
+    padding: 4,
   },
   pickerYearText: {
-    ...theme.typography.h2,
-    color: theme.colors.text,
+    fontSize: 20,
+    fontFamily: theme.fonts.bold,
+    color: '#111827',
   },
   monthsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: 10,
   },
   monthChip: {
     width: '30%',
     paddingVertical: 12,
     alignItems: 'center',
-    borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.background,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderRadius: 12,
+    backgroundColor: '#F3F4F6',
   },
   monthChipSelected: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
+    backgroundColor: '#18181B',
   },
   monthChipText: {
-    ...theme.typography.body,
-    color: theme.colors.textSecondary,
+    fontSize: 14,
     fontFamily: theme.fonts.medium,
+    color: '#4B5563',
   },
   monthChipTextSelected: {
-    color: '#000000',
-    fontFamily: theme.fonts.semiBold,
+    color: '#FFFFFF',
+    fontFamily: theme.fonts.bold,
+  },
+  resetBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  resetBtnText: {
+    fontSize: 14,
+    color: '#18181B',
+    fontFamily: theme.fonts.medium,
+  },
+
+  // Filter Modal
+  fullScreenFilterContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
   },
   filterModalHeader: {
-    padding: theme.spacing.lg,
-    borderBottomColor: theme.colors.border,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  filterModalTitle: {
+    fontSize: 18,
+    fontFamily: theme.fonts.bold,
+    color: '#111827',
+  },
+  filterCloseBtn: {
+    padding: 4,
   },
   filterModalBody: {
     flex: 1,
     flexDirection: 'row',
   },
-  fullScreenFilterContainer: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
   filterTabsCol: {
     width: '35%',
     borderRightWidth: 1,
-    borderRightColor: theme.colors.border,
-    backgroundColor: theme.colors.background,
+    borderRightColor: '#F3F4F6',
+    backgroundColor: '#F9FAFB',
   },
   filterTabBtn: {
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.md,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     borderLeftWidth: 3,
     borderLeftColor: 'transparent',
   },
   filterTabBtnActive: {
-    borderLeftColor: theme.colors.primary,
-    backgroundColor: theme.colors.surface,
+    borderLeftColor: '#18181B',
+    backgroundColor: '#FFFFFF',
   },
   filterTabText: {
-    ...theme.typography.body,
-    color: theme.colors.textSecondary,
+    fontSize: 14,
+    fontFamily: theme.fonts.regular,
+    color: '#6B7280',
   },
   filterTabTextActive: {
-    color: theme.colors.primary,
+    color: '#18181B',
     fontFamily: theme.fonts.semiBold,
   },
   filterOptionsCol: {
     width: '65%',
   },
   filterOptionsList: {
-    padding: theme.spacing.md,
+    padding: 16,
   },
   filterOptionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: theme.spacing.md,
+    paddingVertical: 12,
     gap: 12,
   },
   filterOptionItemText: {
-    ...theme.typography.body,
-    color: theme.colors.text,
+    fontSize: 14,
+    fontFamily: theme.fonts.medium,
+    color: '#1F2937',
   },
   filterModalFooter: {
     flexDirection: 'row',
-    padding: theme.spacing.lg,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
+    borderTopColor: '#F3F4F6',
     justifyContent: 'flex-end',
     gap: 12,
   },
   filterCancelBtn: {
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 10,
   },
   filterCancelBtnText: {
-    ...theme.typography.body,
-    color: theme.colors.textSecondary,
+    fontSize: 14,
+    fontFamily: theme.fonts.medium,
+    color: '#6B7280',
   },
   filterApplyBtn: {
-    backgroundColor: theme.colors.primary,
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.xl,
-    borderRadius: theme.borderRadius.md,
+    backgroundColor: '#18181B',
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 10,
   },
   filterApplyBtnText: {
-    ...theme.typography.body,
-    color: '#000000',
+    fontSize: 14,
+    color: '#FFFFFF',
     fontFamily: theme.fonts.semiBold,
   },
-  resetBtn: {
+
+  // Budget Modal
+  budgetModalCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 340,
+    borderWidth: 1,
+    borderColor: '#F0F1F3',
+  },
+  budgetModalTitle: {
+    fontSize: 18,
+    fontFamily: theme.fonts.bold,
+    color: '#111827',
+    marginBottom: 4,
+  },
+  budgetModalSub: {
+    fontSize: 13,
+    fontFamily: theme.fonts.regular,
+    color: '#6B7280',
+    marginBottom: 16,
+  },
+  budgetInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: theme.spacing.xl,
-    paddingVertical: theme.spacing.sm,
-    gap: 8,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginBottom: 20,
   },
-  resetBtnText: {
-    ...theme.typography.body,
-    color: theme.colors.primary,
+  budgetInputCurrency: {
+    fontSize: 22,
+    fontFamily: theme.fonts.bold,
+    color: '#111827',
+    marginRight: 6,
+  },
+  budgetInput: {
+    flex: 1,
+    fontSize: 22,
+    fontFamily: theme.fonts.bold,
+    color: '#111827',
+    padding: 0,
+  },
+  budgetModalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  budgetCancelBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  budgetCancelText: {
+    fontSize: 14,
     fontFamily: theme.fonts.medium,
+    color: '#6B7280',
+  },
+  budgetSaveBtn: {
+    backgroundColor: '#18181B',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
+  budgetSaveText: {
+    fontSize: 14,
+    fontFamily: theme.fonts.semiBold,
+    color: '#FFFFFF',
   },
 });
