@@ -182,32 +182,6 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
     });
   }, [monthlyExpenses, selectedCategory, selectedAccount]);
 
-  // Total spent this month
-  const totalSpent = useMemo(() => {
-    return filteredExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
-  }, [filteredExpenses]);
-
-  // Calculate Daily Average & Projected Run-Rate for Timeline
-  const { dailyAverage, projectedRunRate } = useMemo(() => {
-    const dInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
-    const today = new Date();
-    const isCurrentMonth =
-      selectedYear === today.getFullYear() &&
-      selectedMonth === today.getMonth() + 1;
-
-    const dPassed = isCurrentMonth
-      ? Math.max(1, today.getDate())
-      : dInMonth;
-
-    const avg = Math.round(totalSpent / dPassed);
-    const runRate = Math.round(avg * dInMonth);
-
-    return {
-      dailyAverage: avg,
-      projectedRunRate: runRate,
-    };
-  }, [selectedYear, selectedMonth, totalSpent]);
-
   // Group filtered expenses by date for Timeline
   const dateGroups = useMemo<DateGroup[]>(() => {
     const groups: Record<string, Expense[]> = {};
@@ -231,11 +205,6 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
       };
     });
   }, [filteredExpenses]);
-
-  // Budget calculations
-  const utilizationPercent = budgetCap > 0 ? (totalSpent / budgetCap) * 100 : 0;
-  const remainingBudget = budgetCap - totalSpent;
-  const isOnTrack = totalSpent <= budgetCap;
 
   const selectMonth = (monthIndex: number) => {
     const newMonth = monthIndex + 1;
@@ -289,7 +258,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
             });
           } catch {
             flatListRef.current?.scrollToOffset({
-              offset: Math.max(0, targetIndex * 120 + 350),
+              offset: Math.max(0, targetIndex * 120 + 50),
               animated: true,
             });
           }
@@ -477,167 +446,70 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
             }, 100);
           }}
           ListHeaderComponent={
-            <View>
-              {/* Total Spent Summary Card */}
-              <View style={styles.summaryCard}>
-                <View style={styles.summaryTopRow}>
-                  <Text style={styles.summaryLabel}>TOTAL SPENT THIS MONTH</Text>
-                  <View
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryChipsScroll}
+            >
+              {/* All Chip */}
+              <TouchableOpacity
+                style={[
+                  styles.categoryChip,
+                  selectedCategory === null
+                    ? styles.categoryChipActive
+                    : styles.categoryChipInactive,
+                ]}
+                activeOpacity={0.8}
+                onPress={() => setSelectedCategory(null)}
+              >
+                <Text
+                  style={[
+                    styles.categoryChipText,
+                    selectedCategory === null
+                      ? styles.categoryChipTextActive
+                      : styles.categoryChipTextInactive,
+                  ]}
+                >
+                  All
+                </Text>
+              </TouchableOpacity>
+
+              {/* Categories */}
+              {categoryChips.map(cat => {
+                const isActive =
+                  selectedCategory?.toLowerCase() === cat.toLowerCase();
+                return (
+                  <TouchableOpacity
+                    key={cat}
                     style={[
-                      styles.statusBadge,
-                      isOnTrack ? styles.statusBadgeOnTrack : styles.statusBadgeOver,
+                      styles.categoryChip,
+                      isActive
+                        ? styles.categoryChipActive
+                        : styles.categoryChipInactive,
                     ]}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      if (isActive) {
+                        setSelectedCategory(null);
+                      } else {
+                        setSelectedCategory(cat);
+                      }
+                    }}
                   >
                     <Text
                       style={[
-                        styles.statusBadgeText,
-                        isOnTrack
-                          ? styles.statusBadgeTextOnTrack
-                          : styles.statusBadgeTextOver,
-                      ]}
-                    >
-                      • {isOnTrack ? 'On Track' : 'Over Cap'}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Main Amount & Cap */}
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={handleOpenBudgetModal}
-                  style={styles.amountRow}
-                >
-                  <Text style={styles.mainAmountText}>
-                    ₹{totalSpent.toLocaleString('en-IN')}
-                  </Text>
-                  <Text style={styles.capAmountText}>
-                    {' '}
-                    / ₹{budgetCap.toLocaleString('en-IN')}
-                  </Text>
-                  <View style={styles.budgetEditPill}>
-                    <Icon name="pencil-outline" size={13} color="#4B5563" />
-                    <Text style={styles.budgetEditPillText}>Edit</Text>
-                  </View>
-                </TouchableOpacity>
-
-                {/* Progress Bar */}
-                <View style={styles.progressBarTrack}>
-                  <View
-                    style={[
-                      styles.progressBarFill,
-                      {
-                        width: `${Math.min(100, Math.max(0, utilizationPercent))}%`,
-                        backgroundColor: isOnTrack ? '#18181B' : '#DC2626',
-                      },
-                    ]}
-                  />
-                </View>
-
-                {/* Utilization & Remaining Info */}
-                <View style={styles.progressInfoRow}>
-                  <Text style={styles.progressUtilizedText}>
-                    {utilizationPercent.toFixed(1)}% of cap utilized
-                  </Text>
-                  <Text
-                    style={[
-                      styles.progressRemainingText,
-                      { color: remainingBudget >= 0 ? '#15803D' : '#DC2626' },
-                    ]}
-                  >
-                    ₹{Math.abs(remainingBudget).toLocaleString('en-IN')}{' '}
-                    {remainingBudget >= 0 ? 'remaining' : 'over cap'}
-                  </Text>
-                </View>
-
-                {/* Stat Boxes (Daily Average & Projected Run-Rate) */}
-                <View style={styles.statCardsRow}>
-                  <View style={styles.statBox}>
-                    <Text style={styles.statBoxLabel}>Daily Average</Text>
-                    <View style={styles.statBoxValueRow}>
-                      <Text style={styles.statBoxValue}>
-                        ₹{dailyAverage.toLocaleString('en-IN')}
-                      </Text>
-                      <Text style={styles.statBoxSub}> / day</Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.statBox}>
-                    <Text style={styles.statBoxLabel}>Projected Run-Rate</Text>
-                    <View style={styles.statBoxValueRow}>
-                      <Text style={styles.statBoxValue}>
-                        ₹{projectedRunRate.toLocaleString('en-IN')}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              </View>
-
-              {/* Horizontal Category Chips Row */}
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.categoryChipsScroll}
-              >
-                {/* All Chip */}
-                <TouchableOpacity
-                  style={[
-                    styles.categoryChip,
-                    selectedCategory === null
-                      ? styles.categoryChipActive
-                      : styles.categoryChipInactive,
-                  ]}
-                  activeOpacity={0.8}
-                  onPress={() => setSelectedCategory(null)}
-                >
-                  <Text
-                    style={[
-                      styles.categoryChipText,
-                      selectedCategory === null
-                        ? styles.categoryChipTextActive
-                        : styles.categoryChipTextInactive,
-                    ]}
-                  >
-                    All
-                  </Text>
-                </TouchableOpacity>
-
-                {/* Categories */}
-                {categoryChips.map(cat => {
-                  const isActive =
-                    selectedCategory?.toLowerCase() === cat.toLowerCase();
-                  return (
-                    <TouchableOpacity
-                      key={cat}
-                      style={[
-                        styles.categoryChip,
+                        styles.categoryChipText,
                         isActive
-                          ? styles.categoryChipActive
-                          : styles.categoryChipInactive,
+                          ? styles.categoryChipTextActive
+                          : styles.categoryChipTextInactive,
                       ]}
-                      activeOpacity={0.8}
-                      onPress={() => {
-                        if (isActive) {
-                          setSelectedCategory(null);
-                        } else {
-                          setSelectedCategory(cat);
-                        }
-                      }}
                     >
-                      <Text
-                        style={[
-                          styles.categoryChipText,
-                          isActive
-                            ? styles.categoryChipTextActive
-                            : styles.categoryChipTextInactive,
-                        ]}
-                      >
-                        {cat}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-            </View>
+                      {cat}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
           }
           renderItem={({ item: group }: { item: DateGroup }) => {
             const isHighlighted = highlightedDate === group.date;
@@ -740,6 +612,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
           budgetCap={budgetCap}
           navigation={navigation}
           onSelectDate={handleSelectDate}
+          onEditBudget={handleOpenBudgetModal}
         />
       </View>
 
@@ -1255,145 +1128,10 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
 
-  // Summary Card
-  summaryCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    marginHorizontal: 16,
-    marginTop: 6,
-    marginBottom: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  summaryTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  summaryLabel: {
-    fontSize: 12,
-    fontFamily: theme.fonts.bold,
-    color: '#374151',
-    letterSpacing: 0.5,
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusBadgeOnTrack: {
-    backgroundColor: '#ECFDF5',
-  },
-  statusBadgeOver: {
-    backgroundColor: '#FEE2E2',
-  },
-  statusBadgeText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.medium,
-  },
-  statusBadgeTextOnTrack: {
-    color: '#15803D',
-  },
-  statusBadgeTextOver: {
-    color: '#DC2626',
-  },
-  amountRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    marginBottom: 14,
-  },
-  mainAmountText: {
-    fontSize: 32,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  capAmountText: {
-    fontSize: 20,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-  },
-  budgetEditPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    marginLeft: 10,
-    gap: 3,
-  },
-  budgetEditPillText: {
-    fontSize: 11,
-    fontFamily: theme.fonts.medium,
-    color: '#4B5563',
-  },
-  progressBarTrack: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#F3F4F6',
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  progressInfoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  progressUtilizedText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.medium,
-    color: '#4B5563',
-  },
-  progressRemainingText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.medium,
-  },
-  statCardsRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  statBox: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-    borderRadius: 14,
-    padding: 12,
-  },
-  statBoxLabel: {
-    fontSize: 12,
-    fontFamily: theme.fonts.medium,
-    color: '#6B7280',
-    marginBottom: 4,
-  },
-  statBoxValueRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  statBoxValue: {
-    fontSize: 18,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  statBoxSub: {
-    fontSize: 13,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-  },
-
   // Category Chips
   categoryChipsScroll: {
     paddingHorizontal: 16,
+    paddingTop: 8,
     paddingBottom: 8,
     gap: 8,
   },

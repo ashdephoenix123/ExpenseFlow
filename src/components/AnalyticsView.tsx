@@ -43,6 +43,7 @@ export interface AnalyticsViewProps {
   budgetCap: number;
   navigation: any;
   onSelectDate?: (date: string) => void;
+  onEditBudget?: () => void;
 }
 
 export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
@@ -52,6 +53,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   budgetCap,
   navigation,
   onSelectDate,
+  onEditBudget,
 }) => {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
@@ -61,8 +63,8 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
     [expenses],
   );
 
-  // Daily Average calculation for the selected month
-  const { dailyAvg, budgetRate } = useMemo(() => {
+  // Daily Average & Projected Run-Rate calculation for the selected month
+  const { dailyAverage, projectedRunRate } = useMemo(() => {
     const dInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
     const today = new Date();
     const isCurrentMonth =
@@ -74,10 +76,15 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       : dInMonth;
 
     const avg = Math.round(totalSpent / daysPassed);
-    const bRate = Math.round(budgetCap / dInMonth);
+    const runRate = Math.round(avg * dInMonth);
 
-    return { dailyAvg: avg, budgetRate: bRate };
-  }, [selectedYear, selectedMonth, totalSpent, budgetCap]);
+    return { dailyAverage: avg, projectedRunRate: runRate };
+  }, [selectedYear, selectedMonth, totalSpent]);
+
+  // Budget calculations
+  const utilizationPercent = budgetCap > 0 ? (totalSpent / budgetCap) * 100 : 0;
+  const remainingBudget = budgetCap - totalSpent;
+  const isOnTrack = totalSpent <= budgetCap;
 
   // Expenses grouped by category (for category-wise breakdown)
   const expensesByCategory = useMemo(() => {
@@ -207,11 +214,6 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
     );
   };
 
-  const ceilingPercent = Math.min(
-    100,
-    Math.round(budgetCap > 0 ? (totalSpent / budgetCap) * 100 : 0),
-  );
-
   const monthLabel = `${MONTHS[selectedMonth - 1]} ${selectedYear}`;
 
   return (
@@ -242,58 +244,96 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       {/* Total Spent Summary Card */}
       <View style={styles.summaryCard}>
         <View style={styles.summaryTopRow}>
-          <Text style={styles.summaryLabel}>TOTAL SPENT</Text>
-          <View style={styles.walletIconBadge}>
-            <Icon name="wallet-outline" size={18} color="#374151" />
+          <Text style={styles.summaryLabel}>TOTAL SPENT THIS MONTH</Text>
+          <View
+            style={[
+              styles.statusBadge,
+              isOnTrack ? styles.statusBadgeOnTrack : styles.statusBadgeOver,
+            ]}
+          >
+            <Text
+              style={[
+                styles.statusBadgeText,
+                isOnTrack
+                  ? styles.statusBadgeTextOnTrack
+                  : styles.statusBadgeTextOver,
+              ]}
+            >
+              • {isOnTrack ? 'On Track' : 'Over Cap'}
+            </Text>
           </View>
         </View>
 
-        <View style={styles.totalAmountRow}>
-          <Text style={styles.totalAmountText}>
+        {/* Main Amount & Cap */}
+        <TouchableOpacity
+          activeOpacity={onEditBudget ? 0.8 : 1}
+          onPress={onEditBudget}
+          style={styles.amountRow}
+        >
+          <Text style={styles.mainAmountText}>
             ₹{totalSpent.toLocaleString('en-IN')}
           </Text>
-          {totalSpent > 0 && (
-            <View style={styles.trendRow}>
-              <Icon name="arrow-bottom-right" size={14} color="#15803D" />
-              <Text style={styles.trendText}>vs budget</Text>
+          <Text style={styles.capAmountText}>
+            {' '}
+            / ₹{budgetCap.toLocaleString('en-IN')}
+          </Text>
+          {onEditBudget && (
+            <View style={styles.budgetEditPill}>
+              <Icon name="pencil-outline" size={13} color="#4B5563" />
+              <Text style={styles.budgetEditPillText}>Edit</Text>
             </View>
           )}
+        </TouchableOpacity>
+
+        {/* Progress Bar */}
+        <View style={styles.progressBarTrack}>
+          <View
+            style={[
+              styles.progressBarFill,
+              {
+                width: `${Math.min(100, Math.max(0, utilizationPercent))}%`,
+                backgroundColor: isOnTrack ? '#18181B' : '#DC2626',
+              },
+            ]}
+          />
         </View>
 
-        <View style={styles.ceilingRow}>
-          <Text style={styles.ceilingLabel}>Monthly allocation ceiling</Text>
-          <Text style={styles.ceilingValue}>
-            ₹{budgetCap.toLocaleString('en-IN')} max ({ceilingPercent}%)
+        {/* Utilization & Remaining Info */}
+        <View style={styles.progressInfoRow}>
+          <Text style={styles.progressUtilizedText}>
+            {utilizationPercent.toFixed(1)}% of cap utilized
+          </Text>
+          <Text
+            style={[
+              styles.progressRemainingText,
+              { color: remainingBudget >= 0 ? '#15803D' : '#DC2626' },
+            ]}
+          >
+            ₹{Math.abs(remainingBudget).toLocaleString('en-IN')}{' '}
+            {remainingBudget >= 0 ? 'remaining' : 'over cap'}
           </Text>
         </View>
-      </View>
 
-      {/* 2-Column Stats (Daily Avg & Transactions) */}
-      <View style={styles.statCardsRow}>
-        {/* Daily Avg */}
-        <View style={styles.statCard}>
-          <View style={styles.statCardHeader}>
-            <Text style={styles.statCardLabel}>Daily Avg</Text>
-            <Icon name="credit-card-outline" size={18} color="#6B7280" />
+        {/* Stat Boxes (Daily Average & Projected Run-Rate) */}
+        <View style={styles.statCardsRow}>
+          <View style={styles.statBox}>
+            <Text style={styles.statBoxLabel}>Daily Average</Text>
+            <View style={styles.statBoxValueRow}>
+              <Text style={styles.statBoxValue}>
+                ₹{dailyAverage.toLocaleString('en-IN')}
+              </Text>
+              <Text style={styles.statBoxSub}> / day</Text>
+            </View>
           </View>
-          <Text style={styles.statCardValue}>
-            ₹{dailyAvg.toLocaleString('en-IN')}
-          </Text>
-          <Text style={styles.statCardSub}>
-            Target rate: ₹{budgetRate.toLocaleString('en-IN')}
-          </Text>
-        </View>
 
-        {/* Transactions */}
-        <View style={styles.statCard}>
-          <View style={styles.statCardHeader}>
-            <Text style={styles.statCardLabel}>Transactions</Text>
-            <Icon name="receipt-text-outline" size={18} color="#6B7280" />
+          <View style={styles.statBox}>
+            <Text style={styles.statBoxLabel}>Projected Run-Rate</Text>
+            <View style={styles.statBoxValueRow}>
+              <Text style={styles.statBoxValue}>
+                ₹{projectedRunRate.toLocaleString('en-IN')}
+              </Text>
+            </View>
           </View>
-          <Text style={styles.statCardValue}>{expenses.length}</Text>
-          <Text style={styles.statCardSub}>
-            {expenses.length > 0 ? 'Recorded this month' : 'No entries'}
-          </Text>
         </View>
       </View>
 
@@ -696,109 +736,131 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: '#F0F1F3',
-    padding: 18,
+    padding: 20,
     marginHorizontal: 16,
-    marginBottom: 14,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
     elevation: 2,
   },
   summaryTopRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    justifyContent: 'space-between',
+    marginBottom: 10,
   },
   summaryLabel: {
     fontSize: 12,
     fontFamily: theme.fonts.bold,
     letterSpacing: 0.5,
-    color: '#4B5563',
+    color: '#374151',
   },
-  walletIconBadge: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  totalAmountRow: {
+  statusBadgeOnTrack: {
+    backgroundColor: '#ECFDF5',
+  },
+  statusBadgeOver: {
+    backgroundColor: '#FEE2E2',
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontFamily: theme.fonts.medium,
+  },
+  statusBadgeTextOnTrack: {
+    color: '#15803D',
+  },
+  statusBadgeTextOver: {
+    color: '#DC2626',
+  },
+  amountRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
     marginBottom: 14,
   },
-  totalAmountText: {
-    fontSize: 34,
+  mainAmountText: {
+    fontSize: 32,
     fontFamily: theme.fonts.bold,
     color: '#111827',
   },
-  trendRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 10,
-    gap: 2,
-  },
-  trendText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.medium,
-    color: '#15803D',
-  },
-  ceilingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-  },
-  ceilingLabel: {
-    fontSize: 13,
+  capAmountText: {
+    fontSize: 20,
     fontFamily: theme.fonts.regular,
     color: '#6B7280',
   },
-  ceilingValue: {
-    fontSize: 13,
-    fontFamily: theme.fonts.semiBold,
-    color: '#111827',
-  },
-
-  // Stat Cards Row
-  statCardsRow: {
+  budgetEditPill: {
     flexDirection: 'row',
-    marginHorizontal: 16,
-    gap: 12,
-    marginBottom: 14,
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginLeft: 10,
+    gap: 3,
   },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    padding: 14,
+  budgetEditPillText: {
+    fontSize: 11,
+    fontFamily: theme.fonts.medium,
+    color: '#4B5563',
   },
-  statCardHeader: {
+  progressBarTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#F3F4F6',
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  progressInfoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 16,
   },
-  statCardLabel: {
+  progressUtilizedText: {
     fontSize: 12,
     fontFamily: theme.fonts.medium,
     color: '#4B5563',
   },
-  statCardValue: {
-    fontSize: 22,
+  progressRemainingText: {
+    fontSize: 12,
+    fontFamily: theme.fonts.medium,
+  },
+  statCardsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 14,
+    padding: 12,
+  },
+  statBoxLabel: {
+    fontSize: 12,
+    fontFamily: theme.fonts.medium,
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  statBoxValueRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  statBoxValue: {
+    fontSize: 18,
     fontFamily: theme.fonts.bold,
     color: '#111827',
-    marginTop: 6,
-    marginBottom: 2,
   },
-  statCardSub: {
-    fontSize: 12,
+  statBoxSub: {
+    fontSize: 13,
     fontFamily: theme.fonts.regular,
     color: '#6B7280',
   },

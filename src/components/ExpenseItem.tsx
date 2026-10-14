@@ -108,6 +108,7 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({
       editNote: note,
       editAccountId: accountId,
       editIsReminder: isReminder,
+      editSpentOn: date,
     });
   };
 

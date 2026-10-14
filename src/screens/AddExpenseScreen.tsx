@@ -26,58 +26,60 @@ import { getTodayFormatted } from '../utils/dateUtils';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { Account } from '../types';
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'AddExpense'>;
+type NavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'AddExpense'
+>;
 
 export const AddExpenseScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProp<RootStackParamList, 'AddExpense'>>();
 
-  const updateExpense = useExpenseStore(state => state.updateExpense);
-  const addExpense = useExpenseStore(state => state.addExpense);
+  const updateExpense = useExpenseStore((state) => state.updateExpense);
+  const addExpense = useExpenseStore((state) => state.addExpense);
 
-  const {
-    categories,
-    fetchCategories,
-    addCategory,
-  } = useCategoryStore();
-
-  const {
-    accounts,
-    fetchAccounts,
-    getPrimaryAccount,
-  } = useAccountStore();
+  const { categories, fetchCategories, addCategory } = useCategoryStore();
+  const { accounts, fetchAccounts, getPrimaryAccount } = useAccountStore();
 
   const editId = route.params?.editId;
   const isEditing = Boolean(editId);
 
   const [amount, setAmount] = useState(
-    isEditing && route.params?.editAmount ? String(route.params.editAmount) : '',
+    isEditing && route.params?.editAmount ? String(route.params.editAmount) : ''
   );
   const [category, setCategory] = useState(
-    isEditing && route.params?.editCategory ? route.params.editCategory : '',
+    isEditing && route.params?.editCategory ? route.params.editCategory : ''
   );
   const [categorySearch, setCategorySearch] = useState('');
   const [note, setNote] = useState(
-    isEditing && route.params?.editNote ? route.params.editNote : '',
+    isEditing && route.params?.editNote ? route.params.editNote : ''
   );
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(
-    isEditing && route.params?.editAccountId ? route.params.editAccountId : null,
+    isEditing && route.params?.editAccountId
+      ? route.params.editAccountId
+      : null
   );
   const [isReminder, setIsReminder] = useState(
-    isEditing ? Boolean(route.params?.editIsReminder) : false,
+    isEditing ? Boolean(route.params?.editIsReminder) : false
   );
-  const [spentOn, setSpentOn] = useState(getTodayFormatted());
+  const [spentOn, setSpentOn] = useState(
+    isEditing && route.params?.editSpentOn
+      ? route.params.editSpentOn
+      : getTodayFormatted()
+  );
   const [loading, setLoading] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   const amountRef = useRef<TextInput>(null);
 
+  // Fetch categories and accounts on mount
   useEffect(() => {
     fetchCategories();
     fetchAccounts();
   }, [fetchCategories, fetchAccounts]);
 
+  // Set default account to primary when accounts load if not already set
   useEffect(() => {
     if (accounts.length > 0 && !selectedAccountId) {
       if (isEditing && route.params?.editAccountId) {
@@ -87,45 +89,51 @@ export const AddExpenseScreen = () => {
         setSelectedAccountId(primary ? primary.id : accounts[0].id);
       }
     }
-  }, [accounts, isEditing, route.params?.editAccountId, selectedAccountId, getPrimaryAccount]);
+  }, [
+    accounts,
+    isEditing,
+    route.params?.editAccountId,
+    selectedAccountId,
+    getPrimaryAccount,
+  ]);
 
+  // Quick Add increment helper
   const handleQuickAdd = (increment: number) => {
     const current = Number(amount) || 0;
     const next = current + increment;
     setAmount(String(next));
   };
 
-  const fiscalYearText = useMemo(() => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1;
-    const startYear = month >= 4 ? year : year - 1;
-    const endYear = (startYear + 1) % 100;
-    return `LEDGER ENTRY • FY ${startYear % 100}–${endYear < 10 ? '0' + endYear : endYear}`;
-  }, []);
-
+  // Filtered categories for selection
   const filteredCategories = useMemo(() => {
     if (!categorySearch.trim()) return categories;
-    return categories.filter(c =>
-      c.name.toLowerCase().includes(categorySearch.toLowerCase().trim()),
+    return categories.filter((c) =>
+      c.name.toLowerCase().includes(categorySearch.toLowerCase().trim())
     );
   }, [categories, categorySearch]);
 
+  // Helper for category icons
   const getCategoryIcon = (
-    name: string,
+    name: string
   ): React.ComponentProps<typeof Icon>['name'] => {
     const n = name.toLowerCase();
-    if (n.includes('food') || n.includes('dining')) return 'silverware-fork-knife';
+    if (n.includes('food') || n.includes('dining'))
+      return 'silverware-fork-knife';
     if (n.includes('shop')) return 'shopping-outline';
-    if (n.includes('travel') || n.includes('trip') || n.includes('flight')) return 'airplane';
-    if (n.includes('transport') || n.includes('cab') || n.includes('uber')) return 'car';
-    if (n.includes('bill') || n.includes('utilit')) return 'file-document-outline';
+    if (n.includes('travel') || n.includes('trip') || n.includes('flight'))
+      return 'airplane';
+    if (n.includes('transport') || n.includes('cab') || n.includes('uber'))
+      return 'car';
+    if (n.includes('bill') || n.includes('utilit'))
+      return 'file-document-outline';
     if (n.includes('movie') || n.includes('entert')) return 'movie-outline';
-    if (n.includes('tech') || n.includes('electron') || n.includes('gadget')) return 'mouse';
+    if (n.includes('tech') || n.includes('electron') || n.includes('gadget'))
+      return 'mouse';
     if (n.includes('health') || n.includes('med')) return 'medical-bag';
     return 'tag-outline';
   };
 
+  // Helper for account icons & subtitle
   const getAccountMeta = (acc: Account) => {
     const n = acc.name.toLowerCase();
     let icon: React.ComponentProps<typeof Icon>['name'] = 'wallet-outline';
@@ -136,7 +144,11 @@ export const AddExpenseScreen = () => {
     } else if (n.includes('cash') || n.includes('physical')) {
       icon = 'cash';
       subtitle = 'Physical';
-    } else if (n.includes('card') || n.includes('diners') || n.includes('visa')) {
+    } else if (
+      n.includes('card') ||
+      n.includes('diners') ||
+      n.includes('visa')
+    ) {
       icon = 'credit-card-outline';
     } else if (n.includes('bank') || n.includes('sbi') || n.includes('hdfc')) {
       icon = 'bank-outline';
@@ -152,12 +164,13 @@ export const AddExpenseScreen = () => {
     return { icon, subtitle };
   };
 
+  // Form submit handler
   const handleSave = async () => {
     const numAmount = Number(amount);
     if (!amount || isNaN(numAmount) || numAmount <= 0) {
       Alert.alert(
         'Invalid Amount',
-        'Please enter a valid amount greater than 0.',
+        'Please enter a valid amount greater than 0.'
       );
       return;
     }
@@ -176,7 +189,7 @@ export const AddExpenseScreen = () => {
     setLoading(true);
     try {
       const existing = categories.find(
-        c => c.name.toLowerCase() === finalCategory.toLowerCase(),
+        (c) => c.name.toLowerCase() === finalCategory.toLowerCase()
       );
       if (!existing) {
         await addCategory(finalCategory);
@@ -188,6 +201,7 @@ export const AddExpenseScreen = () => {
           category: finalCategory,
           note: note.trim() || undefined,
           account_id: selectedAccountId,
+          spent_on: spentOn,
           is_reminder: isReminder,
         });
       } else {
@@ -209,6 +223,12 @@ export const AddExpenseScreen = () => {
     }
   };
 
+  // Close / dismiss form
+  const handleClose = () => {
+    navigation.goBack();
+  };
+
+  // Formatted date string for "Posting Date"
   const formattedPostingDate = useMemo(() => {
     const todayStr = getTodayFormatted();
     try {
@@ -226,11 +246,16 @@ export const AddExpenseScreen = () => {
   const displayAmount = Number(amount) || 0;
 
   return (
-    <View style={[styles.screenContainer, { paddingTop: Math.max(insets.top, 10) }]}>
+    <View
+      style={[
+        styles.screenContainer,
+        { paddingTop: Math.max(insets.top, 10) },
+      ]}
+    >
       {/* Top Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={handleClose}
           style={styles.closeBtn}
           activeOpacity={0.7}
         >
@@ -241,21 +266,9 @@ export const AddExpenseScreen = () => {
           <Text style={styles.headerTitle}>
             {isEditing ? 'Edit Expense' : 'Add Expense'}
           </Text>
-          <Text style={styles.headerSubtitle}>{fiscalYearText}</Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.scanBtn}
-          activeOpacity={0.7}
-          onPress={() => {
-            Alert.alert(
-              'Receipt Scanner',
-              'Smart AI Receipt Scanner will be available in upcoming update.',
-            );
-          }}
-        >
-          <Icon name="line-scan" size={20} color="#111827" />
-        </TouchableOpacity>
+        <View style={{ width: 40 }} />
       </View>
 
       <KeyboardAwareScrollView
@@ -285,6 +298,7 @@ export const AddExpenseScreen = () => {
               placeholder="0"
               placeholderTextColor="#D1D5DB"
               keyboardType="numeric"
+              autoFocus={false}
             />
           </View>
 
@@ -337,18 +351,23 @@ export const AddExpenseScreen = () => {
 
         {/* Category Search Input */}
         <View style={styles.searchBar}>
-          <Icon name="magnify" size={20} color="#6B7280" style={styles.searchIcon} />
+          <Icon
+            name="magnify"
+            size={20}
+            color="#6B7280"
+            style={styles.searchIcon}
+          />
           <TextInput
             style={styles.searchInput}
             placeholder="e.g. Food, Travel, Shopping..."
             placeholderTextColor="#9CA3AF"
             value={categorySearch || category}
-            onChangeText={txt => {
+            onChangeText={(txt) => {
               setCategorySearch(txt);
               setCategory(txt);
             }}
           />
-          {(categorySearch || category) ? (
+          {categorySearch || category ? (
             <TouchableOpacity
               onPress={() => {
                 setCategorySearch('');
@@ -367,7 +386,7 @@ export const AddExpenseScreen = () => {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoryCardsRow}
         >
-          {filteredCategories.map(cat => {
+          {filteredCategories.map((cat) => {
             const isSelected =
               (category || categorySearch).trim().toLowerCase() ===
               cat.name.trim().toLowerCase();
@@ -411,7 +430,7 @@ export const AddExpenseScreen = () => {
 
         {/* Account 2-Column Grid */}
         <View style={styles.accountsGrid}>
-          {accounts.map(acc => {
+          {accounts.map((acc) => {
             const isSelected = selectedAccountId === acc.id;
             const { icon, subtitle } = getAccountMeta(acc);
             return (
@@ -475,7 +494,10 @@ export const AddExpenseScreen = () => {
             <TouchableOpacity
               activeOpacity={0.7}
               onPress={() => {
-                Alert.alert('Attachments', 'Receipt and photo attachments coming soon!');
+                Alert.alert(
+                  'Attachments',
+                  'Receipt and photo attachments coming soon!'
+                );
               }}
             >
               <Icon name="paperclip" size={20} color="#6B7280" />
@@ -534,7 +556,7 @@ export const AddExpenseScreen = () => {
           </View>
         </View>
 
-        {/* Save Expense Button */}
+        {/* Save / Update Expense Button */}
         <TouchableOpacity
           style={[styles.saveBtn, loading && styles.saveBtnDisabled]}
           onPress={handleSave}
@@ -546,7 +568,10 @@ export const AddExpenseScreen = () => {
           ) : (
             <Text style={styles.saveBtnText}>
               {isEditing ? 'Update Expense' : 'Save Expense'}{' '}
-              {displayAmount > 0 ? `• ₹${displayAmount.toLocaleString('en-IN')}` : ''} →
+              {displayAmount > 0
+                ? `• ₹${displayAmount.toLocaleString('en-IN')}`
+                : ''}{' '}
+              →
             </Text>
           )}
         </TouchableOpacity>
@@ -564,7 +589,10 @@ export const AddExpenseScreen = () => {
           activeOpacity={1}
           onPress={() => setIsDatePickerOpen(false)}
         >
-          <TouchableOpacity activeOpacity={1} style={styles.datePickerModalCard}>
+          <TouchableOpacity
+            activeOpacity={1}
+            style={styles.datePickerModalCard}
+          >
             <Text style={styles.dateModalTitle}>Select Posting Date</Text>
 
             <TouchableOpacity
@@ -575,7 +603,9 @@ export const AddExpenseScreen = () => {
               }}
             >
               <Icon name="calendar-today" size={20} color="#18181B" />
-              <Text style={styles.dateOptionText}>Today ({format(new Date(), 'MMM d')})</Text>
+              <Text style={styles.dateOptionText}>
+                Today ({format(new Date(), 'MMM d')})
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -601,14 +631,14 @@ export const AddExpenseScreen = () => {
               }}
             >
               <Icon name="calendar-clock" size={20} color="#18181B" />
-              <Text style={styles.dateOptionText}>2 days ago</Text>
+              <Text style={styles.dateOptionText}>2 Days Ago</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.dateModalCloseBtn}
+              style={styles.datePickerCloseBtn}
               onPress={() => setIsDatePickerOpen(false)}
             >
-              <Text style={styles.dateModalCloseText}>Close</Text>
+              <Text style={styles.datePickerCloseText}>Close</Text>
             </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>
@@ -630,8 +660,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   closeBtn: {
-    width: 38,
-    height: 38,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -643,43 +677,25 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.bold,
     color: '#111827',
   },
-  headerSubtitle: {
-    fontSize: 11,
-    fontFamily: theme.fonts.medium,
-    color: '#6B7280',
-    letterSpacing: 0.5,
-    marginTop: 2,
-  },
-  scanBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
   container: {
     flex: 1,
   },
   scrollContent: {
+    paddingHorizontal: 16,
     paddingBottom: 40,
   },
 
   // Outgoing Amount Card
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: '#F0F1F3',
-    padding: 18,
-    marginHorizontal: 16,
+    padding: 20,
     marginTop: 8,
-    marginBottom: 18,
+    marginBottom: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.03,
     shadowRadius: 6,
     elevation: 2,
@@ -688,42 +704,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   cardLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: theme.fonts.bold,
-    color: '#4B5563',
-    letterSpacing: 0.5,
+    color: '#6B7280',
+    letterSpacing: 1,
   },
   currencyBadge: {
     backgroundColor: '#F3F4F6',
-    borderRadius: 8,
+    borderRadius: 12,
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 4,
   },
   currencyBadgeText: {
     fontSize: 11,
-    fontFamily: theme.fonts.medium,
-    color: '#4B5563',
+    fontFamily: theme.fonts.bold,
+    color: '#374151',
   },
   amountInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   currencySymbol: {
-    fontSize: 34,
-    fontFamily: theme.fonts.bold,
-    color: '#9CA3AF',
-    marginRight: 8,
-  },
-  amountInput: {
-    flex: 1,
     fontSize: 38,
     fontFamily: theme.fonts.bold,
+    color: '#9CA3AF',
+    marginRight: 6,
+  },
+  amountInput: {
+    fontSize: 44,
+    fontFamily: theme.fonts.bold,
     color: '#111827',
+    flex: 1,
     padding: 0,
+    includeFontPadding: false,
   },
   quickPillsRow: {
     flexDirection: 'row',
@@ -731,54 +748,53 @@ const styles = StyleSheet.create({
   },
   quickPill: {
     flex: 1,
-    paddingVertical: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: '#F9FAFB',
-    borderRadius: 20,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    borderRadius: 14,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   quickPillText: {
     fontSize: 13,
-    fontFamily: theme.fonts.semiBold,
-    color: '#111827',
+    fontFamily: theme.fonts.medium,
+    color: '#374151',
   },
 
-  // Section Headers
+  // Category Classification
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginHorizontal: 16,
     marginBottom: 10,
+    paddingHorizontal: 4,
   },
   sectionLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: theme.fonts.bold,
-    letterSpacing: 0.5,
-    color: '#4B5563',
+    color: '#6B7280',
+    letterSpacing: 1,
   },
   sectionLink: {
     fontSize: 12,
     fontFamily: theme.fonts.medium,
-    color: '#4B5563',
+    color: '#6B7280',
   },
   sectionMeta: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: theme.fonts.regular,
     color: '#6B7280',
   },
-
-  // Category Search
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: Platform.OS === 'ios' ? 10 : 8,
-    marginHorizontal: 16,
     marginBottom: 12,
   },
   searchIcon: {
@@ -794,67 +810,75 @@ const styles = StyleSheet.create({
   clearSearchBtn: {
     padding: 2,
   },
-
-  // Category Cards
   categoryCardsRow: {
-    paddingHorizontal: 16,
-    gap: 10,
-    paddingBottom: 4,
-    marginBottom: 16,
+    gap: 8,
+    paddingBottom: 24,
   },
   categoryCard: {
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#F0F1F3',
+    borderRadius: 16,
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
+    paddingHorizontal: 14,
     alignItems: 'center',
-    gap: 10,
+    justifyContent: 'center',
+    minWidth: 80,
+    gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
+    elevation: 1,
   },
   categoryCardSelected: {
-    borderWidth: 2,
-    borderColor: '#18181B',
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#F3F4F6',
+    borderColor: '#111827',
+    borderWidth: 1.5,
   },
   categoryCardText: {
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: theme.fonts.medium,
-    color: '#374151',
+    color: '#4B5563',
+    textAlign: 'center',
   },
   categoryCardTextSelected: {
     fontFamily: theme.fonts.bold,
     color: '#111827',
   },
 
-  // Accounts Grid
+  // Source Account Grid
   accountsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: 16,
     gap: 10,
-    marginBottom: 18,
+    marginBottom: 24,
   },
   accountCard: {
     width: '48.5%',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#F0F1F3',
+    borderRadius: 16,
     padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
     position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
+    elevation: 1,
   },
   accountCardSelected: {
-    borderWidth: 2,
-    borderColor: '#18181B',
+    borderColor: '#111827',
+    borderWidth: 1.5,
+    backgroundColor: '#FBFBFC',
   },
   accountCardIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
@@ -864,52 +888,51 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   accountCardTitle: {
-    fontSize: 14,
-    fontFamily: theme.fonts.semiBold,
+    fontSize: 13,
+    fontFamily: theme.fonts.bold,
     color: '#111827',
   },
   accountCardSub: {
     fontSize: 11,
     fontFamily: theme.fonts.regular,
     color: '#6B7280',
-    marginTop: 2,
+    marginTop: 1,
   },
   selectedCheckBadge: {
     position: 'absolute',
-    right: 8,
     top: 8,
+    right: 8,
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: '#18181B',
+    backgroundColor: '#111827',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  // Memo Section
+  // Memo & Specifications Card
   memoSectionLabel: {
-    marginHorizontal: 16,
-    marginTop: 4,
     marginBottom: 10,
+    paddingHorizontal: 4,
   },
   memoCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: '#F0F1F3',
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 24,
+    overflow: 'hidden',
+    marginBottom: 28,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.02,
+    shadowRadius: 5,
+    elevation: 1,
   },
   memoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  memoRowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
   memoRowIcon: {
     marginRight: 12,
@@ -920,7 +943,17 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.regular,
     color: '#111827',
     padding: 0,
-    marginRight: 10,
+    marginRight: 8,
+  },
+  memoDivider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
+    marginLeft: 48,
+  },
+  memoRowLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   memoRowTitle: {
     fontSize: 14,
@@ -928,89 +961,91 @@ const styles = StyleSheet.create({
     color: '#111827',
   },
   memoRowSubtitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: theme.fonts.regular,
     color: '#6B7280',
-    marginTop: 2,
-  },
-  memoDivider: {
-    height: 1,
-    backgroundColor: '#F3F4F6',
-    marginVertical: 14,
+    marginTop: 1,
   },
   datePill: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    gap: 4,
   },
   datePillText: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: theme.fonts.medium,
-    color: '#1F2937',
+    color: '#111827',
   },
 
   // Save Button
   saveBtn: {
-    backgroundColor: '#000000',
-    borderRadius: 28,
+    backgroundColor: '#111827',
+    borderRadius: 16,
     paddingVertical: 16,
-    marginHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
   },
   saveBtnDisabled: {
     opacity: 0.6,
   },
   saveBtnText: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: theme.fonts.bold,
     color: '#FFFFFF',
   },
 
-  // Date Modal
+  // Date Picker Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    paddingHorizontal: 24,
   },
   datePickerModalCard: {
+    width: '100%',
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 20,
-    width: '100%',
-    maxWidth: 320,
+    gap: 10,
   },
   dateModalTitle: {
     fontSize: 16,
     fontFamily: theme.fonts.bold,
     color: '#111827',
-    marginBottom: 16,
+    marginBottom: 6,
   },
   dateOptionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
-    gap: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    paddingHorizontal: 12,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    gap: 10,
   },
   dateOptionText: {
     fontSize: 14,
     fontFamily: theme.fonts.medium,
-    color: '#1F2937',
+    color: '#111827',
   },
-  dateModalCloseBtn: {
+  datePickerCloseBtn: {
     alignItems: 'center',
-    paddingVertical: 12,
-    marginTop: 8,
+    justifyContent: 'center',
+    paddingVertical: 10,
+    marginTop: 4,
   },
-  dateModalCloseText: {
+  datePickerCloseText: {
     fontSize: 14,
     fontFamily: theme.fonts.medium,
     color: '#6B7280',

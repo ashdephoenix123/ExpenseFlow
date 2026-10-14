@@ -31,6 +31,7 @@ export type RootStackParamList = {
     editNote?: string;
     editAccountId?: string;
     editIsReminder?: boolean;
+    editSpentOn?: string;
   }
   | undefined;
   ManageCategories: undefined;
@@ -61,7 +62,7 @@ const TabNavigator = () => {
 
   return (
     <Tab.Navigator
-      initialRouteName="Overview"
+      initialRouteName="Add"
       screenOptions={({ route }) => ({
         headerStyle: {
           backgroundColor: '#FFFFFF',
@@ -97,15 +98,6 @@ const TabNavigator = () => {
           marginTop: 2,
         },
         tabBarIcon: ({ color, focused }) => {
-          if (route.name === 'Overview' || route.name === 'Timeline') {
-            return (
-              <Icon
-                name={focused ? 'view-dashboard' : 'view-dashboard-outline'}
-                size={24}
-                color={color}
-              />
-            );
-          }
           if (route.name === 'Add') {
             return (
               <View
@@ -113,13 +105,22 @@ const TabNavigator = () => {
                   width: 32,
                   height: 32,
                   borderRadius: 16,
-                  backgroundColor: '#18181B',
+                  backgroundColor: focused ? '#18181B' : '#71717A',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
                 <Icon name="plus" size={20} color="#FFFFFF" />
               </View>
+            );
+          }
+          if (route.name === 'Overview' || route.name === 'Timeline') {
+            return (
+              <Icon
+                name={focused ? 'chart-timeline-variant' : 'chart-timeline-variant'}
+                size={24}
+                color={color}
+              />
             );
           }
           if (route.name === 'AskAi') {
@@ -155,24 +156,24 @@ const TabNavigator = () => {
       })}
     >
       <Tab.Screen
-        name="Overview"
-        component={OverviewScreen}
-        options={{ title: 'Overview', headerShown: false }}
-      />
-      <Tab.Screen
         name="Add"
         component={HomeScreen}
         options={{ title: 'Add', headerShown: false }}
       />
       <Tab.Screen
+        name="Overview"
+        component={OverviewScreen}
+        options={{ title: 'Activity', headerShown: false }}
+      />
+      <Tab.Screen
         name="AskAi"
         component={AskAiScreen}
-        options={{ title: 'Ask AI' }}
+        options={{ title: 'Ask AI', headerShown: false }}
       />
       <Tab.Screen
         name="Settings"
         component={SettingsScreen}
-        options={{ title: 'Settings' }}
+        options={{ title: 'Settings', headerShown: false }}
       />
     </Tab.Navigator>
   );
@@ -231,63 +232,25 @@ export const AppNavigator = () => {
               <Stack.Screen
                 name="ManageCategories"
                 component={ManageCategoriesScreen}
-                options={{
-                  headerShown: true,
-                  title: 'Manage Categories',
-                  headerStyle: { backgroundColor: '#FFFFFF' },
-                  headerTintColor: '#111827',
-                  headerTitleStyle: {
-                    fontFamily: theme.fonts.bold,
-                    fontSize: 18,
-                    color: '#111827',
-                  },
-                }}
+                options={{ headerShown: false }}
               />
               <Stack.Screen
                 name="ManageAccounts"
                 component={ManageAccountsScreen}
-                options={{
-                  headerShown: true,
-                  title: 'Manage Accounts',
-                  headerStyle: { backgroundColor: '#FFFFFF' },
-                  headerTintColor: '#111827',
-                  headerTitleStyle: {
-                    fontFamily: theme.fonts.bold,
-                    fontSize: 18,
-                    color: '#111827',
-                  },
-                }}
+                options={{ headerShown: false }}
               />
               <Stack.Screen
                 name="Reminders"
                 component={ReminderScreen}
                 options={{
-                  headerShown: true,
-                  title: 'Reminders',
-                  headerStyle: { backgroundColor: '#FFFFFF' },
-                  headerTintColor: '#111827',
-                  headerTitleStyle: {
-                    fontFamily: theme.fonts.bold,
-                    fontSize: 18,
-                    color: '#111827',
-                  },
+                  headerShown: false,
                   presentation: 'card',
                 }}
               />
               <Stack.Screen
                 name="AiUsage"
                 component={AiUsageScreen}
-                options={{
-                  headerShown: true,
-                  title: 'AI Usage',
-                  headerStyle: { backgroundColor: '#FFFFFF' },
-                  headerTintColor: '#111827',
-                  headerTitleStyle: {
-                    fontFamily: theme.fonts.bold,
-                    fontSize: 18,
-                    color: '#111827',
-                  },
-                }}
+                options={{ headerShown: false }}
               />
             </>
           )
