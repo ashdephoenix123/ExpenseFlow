@@ -8,46 +8,45 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
-import { TextInput } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 import { supabase } from '../services/supabase';
 import { theme } from '../theme/theme';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from './AuthScreen';
-import { Button } from '../components/Button';
-import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 
-const paperTheme = {
-  colors: {
-    primary: theme.colors.primary,
-    background: theme.colors.surface,
-    text: theme.colors.text,
-  },
-  fonts: {
-    bodyLarge: { fontFamily: theme.fonts.displaySemiBold },
-  },
-};
+type NavigationProp = NativeStackNavigationProp<
+  AuthStackParamList,
+  'ForgotPassword'
+>;
 
-type NavigationProp = NativeStackNavigationProp<AuthStackParamList, 'ForgotPassword'>;
-
-export const ForgotPasswordScreen = ({ navigation }: { navigation: NavigationProp }) => {
+export const ForgotPasswordScreen = ({
+  navigation,
+}: {
+  navigation: NavigationProp;
+}) => {
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
 
   const handleResetPassword = async () => {
-    if (!email) {
-      Alert.alert('Error', 'Please enter your email address');
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      Alert.alert('Required Field', 'Please enter your email address.');
       return;
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
       redirectTo: 'expenseflow://auth-callback',
     });
 
     if (error) {
-      Alert.alert('Error', error.message);
+      Alert.alert('Request Failed', error.message);
     } else {
       setEmailSent(true);
     }
@@ -56,45 +55,73 @@ export const ForgotPasswordScreen = ({ navigation }: { navigation: NavigationPro
 
   if (emailSent) {
     return (
-      <View style={styles.container}>
-        <View style={styles.scrollContent}>
+      <View
+        style={[
+          styles.container,
+          {
+            paddingTop: Math.max(insets.top + 20, 40),
+            paddingBottom: Math.max(insets.bottom + 20, 40),
+          },
+        ]}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header */}
           <View style={styles.header}>
             <View style={[styles.iconCircle, styles.successCircle]}>
-              <Icon name="email-check" size={36} color={theme.colors.success} />
+              <Icon name="email-check-outline" size={30} color="#15803D" />
             </View>
-            <Text style={styles.title}>Check Your Email</Text>
+            <Text style={styles.title}>Check your email</Text>
             <Text style={styles.subtitle}>
-              We've sent a password reset link to
+              We've dispatched a secure recovery link to:
             </Text>
-            <Text style={styles.emailHighlight}>{email}</Text>
+            <View style={styles.emailChip}>
+              <Text style={styles.emailHighlight}>{email}</Text>
+            </View>
           </View>
 
+          {/* Hint Card */}
           <View style={styles.card}>
             <View style={styles.hintRow}>
-              <Icon name="information-outline" size={18} color={theme.colors.textSecondary} />
+              <Icon
+                name="information-outline"
+                size={20}
+                color="#6B7280"
+                style={styles.hintIcon}
+              />
               <Text style={styles.hintText}>
-                Didn't receive the email? Check your spam folder or try again.
+                Didn't receive an email? Check your spam folder or verify that
+                the email address entered is registered with ExpenseFlow.
               </Text>
             </View>
           </View>
 
-          <Button
-            title="Try Again"
+          {/* Try Again Button */}
+          <TouchableOpacity
+            style={styles.secondaryBtn}
             onPress={() => {
               setEmailSent(false);
               setEmail('');
             }}
-            style={styles.primaryBtn}
-          />
+            activeOpacity={0.8}
+          >
+            <Text style={styles.secondaryBtnText}>
+              Send to a Different Email
+            </Text>
+          </TouchableOpacity>
 
+          {/* Back to Sign In */}
           <TouchableOpacity
             onPress={() => navigation.navigate('Login')}
             style={styles.backBtn}
+            activeOpacity={0.7}
           >
-            <Icon name="arrow-left" size={18} color={theme.colors.textSecondary} />
-            <Text style={styles.backText}>Back to Sign In</Text>
+            <Icon name="arrow-left" size={18} color="#4B5563" />
+            <Text style={styles.backText}>Return to Sign In</Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </View>
     );
   }
@@ -102,55 +129,83 @@ export const ForgotPasswordScreen = ({ navigation }: { navigation: NavigationPro
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'height' : 'padding'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingTop: Math.max(insets.top + 20, 40),
+            paddingBottom: Math.max(insets.bottom + 20, 40),
+          },
+        ]}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
+        {/* ── Brand Header ── */}
         <View style={styles.header}>
           <View style={styles.iconCircle}>
-            <Icon name="lock-reset" size={36} color={theme.colors.primary} />
+            <Icon name="lock-reset" size={30} color="#FFFFFF" />
           </View>
-          <Text style={styles.title}>Reset Password</Text>
+          <Text style={styles.appName}>ExpenseFlow</Text>
+          <Text style={styles.title}>Reset password</Text>
           <Text style={styles.subtitle}>
-            Enter the email address associated with your account and we'll send you a reset link.
+            Enter your email address and we'll send you instructions to reset
+            your password
           </Text>
         </View>
 
-        {/* Form Card */}
+        {/* ── Form Card ── */}
         <View style={styles.card}>
-          <TextInput
-            label="Email"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            autoFocus
-            left={<TextInput.Icon icon="email-outline" color={theme.colors.textSecondary} />}
-            style={styles.input}
-            theme={paperTheme}
-            textColor={theme.colors.text}
-            contentStyle={styles.inputContent}
-          />
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>REGISTERED EMAIL</Text>
+            <View style={styles.inputWrapper}>
+              <Icon
+                name="email-outline"
+                size={20}
+                color="#9CA3AF"
+                style={styles.inputIcon}
+              />
+              <TextInput
+                value={email}
+                onChangeText={setEmail}
+                placeholder="name@example.com"
+                placeholderTextColor="#9CA3AF"
+                autoCapitalize="none"
+                keyboardType="email-address"
+                autoCorrect={false}
+                autoFocus
+                style={styles.textInput}
+                editable={!loading}
+              />
+            </View>
+          </View>
 
-          <Button
-            title="Send Reset Link"
+          <TouchableOpacity
+            style={[
+              styles.primaryBtn,
+              (loading || !email.trim()) && styles.primaryBtnDisabled,
+            ]}
             onPress={handleResetPassword}
-            loading={loading}
             disabled={loading || !email.trim()}
-            style={styles.primaryBtn}
-          />
+            activeOpacity={0.8}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={styles.primaryBtnText}>Send Recovery Link</Text>
+            )}
+          </TouchableOpacity>
         </View>
 
-        {/* Back */}
+        {/* ── Footer ── */}
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           disabled={loading}
           style={styles.backBtn}
+          activeOpacity={0.7}
         >
-          <Icon name="arrow-left" size={18} color={theme.colors.textSecondary} />
+          <Icon name="arrow-left" size={18} color="#4B5563" />
           <Text style={styles.backText}>Back to Sign In</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -161,74 +216,117 @@ export const ForgotPasswordScreen = ({ navigation }: { navigation: NavigationPro
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: '#F8F9FA',
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     justifyContent: 'center',
-    paddingVertical: 40,
   },
 
   // Header
   header: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 28,
   },
   iconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(139, 92, 246, 0.12)',
+    width: 60,
+    height: 60,
+    borderRadius: 20,
+    backgroundColor: '#18181B',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   successCircle: {
-    backgroundColor: 'rgba(75, 181, 67, 0.12)',
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1.5,
+    borderColor: '#A7F3D0',
+  },
+  appName: {
+    fontSize: 13,
+    fontFamily: theme.fonts.bold,
+    color: '#71717A',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    marginBottom: 6,
   },
   title: {
-    ...theme.typography.h1,
-    color: theme.colors.text,
+    fontSize: 26,
+    fontFamily: theme.fonts.bold,
+    color: '#111827',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   subtitle: {
-    ...theme.typography.caption,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
     fontSize: 14,
-    lineHeight: 22,
-    paddingHorizontal: 12,
+    fontFamily: theme.fonts.regular,
+    color: '#6B7280',
+    textAlign: 'center',
+    maxWidth: 290,
+    lineHeight: 20,
+  },
+  emailChip: {
+    marginTop: 10,
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 12,
   },
   emailHighlight: {
-    ...theme.typography.body,
-    color: theme.colors.primary,
+    fontSize: 14,
     fontFamily: theme.fonts.semiBold,
-    textAlign: 'center',
-    marginTop: 4,
+    color: '#18181B',
   },
 
-  // Card
+  // Form Card
   card: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    padding: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 22,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    marginBottom: 24,
+    borderColor: '#F0F1F3',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
+    marginBottom: 20,
   },
-  input: {
-    ...theme.typography.body,
-    marginBottom: 14,
-    backgroundColor: theme.colors.background,
+  inputGroup: {
+    marginBottom: 18,
   },
-  inputContent: {
-    ...theme.typography.body,
+  inputLabel: {
+    fontSize: 11,
+    fontFamily: theme.fonts.bold,
+    color: '#4B5563',
+    letterSpacing: 0.6,
+    marginBottom: 8,
   },
-  primaryBtn: {
-    marginTop: 4,
-    borderRadius: theme.borderRadius.md,
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 14,
+    height: 52,
+  },
+  inputIcon: {
+    marginRight: 10,
+  },
+  textInput: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: theme.fonts.regular,
+    color: '#111827',
+    padding: 0,
   },
 
   // Hint
@@ -237,24 +335,60 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 10,
   },
+  hintIcon: {
+    marginTop: 1,
+  },
   hintText: {
-    ...theme.typography.caption,
-    color: theme.colors.textSecondary,
+    fontSize: 13,
+    fontFamily: theme.fonts.regular,
+    color: '#6B7280',
     flex: 1,
-    lineHeight: 20,
+    lineHeight: 18,
   },
 
-  // Back button
+  // Buttons
+  primaryBtn: {
+    backgroundColor: '#18181B',
+    height: 52,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 6,
+  },
+  primaryBtnDisabled: {
+    opacity: 0.6,
+  },
+  primaryBtnText: {
+    fontSize: 15,
+    fontFamily: theme.fonts.semiBold,
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
+  },
+  secondaryBtn: {
+    backgroundColor: '#FFFFFF',
+    height: 50,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  secondaryBtnText: {
+    fontSize: 14,
+    fontFamily: theme.fonts.semiBold,
+    color: '#374151',
+  },
   backBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    marginTop: 8,
+    paddingVertical: 10,
   },
   backText: {
-    ...theme.typography.body,
-    color: theme.colors.textSecondary,
     fontSize: 14,
+    fontFamily: theme.fonts.medium,
+    color: '#4B5563',
   },
 });
