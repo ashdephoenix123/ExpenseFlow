@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
-import { theme } from '../theme/theme';
+import { theme, useTheme, ThemeColors } from '../theme/theme';
 import { aiUsageService } from '../services/aiUsageService';
 import { AiUsageOverview } from '../types';
 
@@ -30,6 +30,8 @@ function formatDate(isoDate: string): string {
 export const AiUsageScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   const [overview, setOverview] = useState<AiUsageOverview | null>(null);
   const [loading, setLoading] = useState(false);
@@ -56,7 +58,7 @@ export const AiUsageScreen = () => {
 
   const usagePercent = overview?.usagePercent ?? 0;
   const isNearLimit = usagePercent >= 90;
-  const progressColor = isNearLimit ? '#DC2626' : '#111827';
+  const progressColor = isNearLimit ? colors.tertiary : colors.primary;
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 10) }]}>
@@ -67,7 +69,7 @@ export const AiUsageScreen = () => {
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
         >
-          <Icon name="arrow-left" size={24} color="#111827" />
+          <Icon name="arrow-left" size={24} color={colors.onSurface} />
         </TouchableOpacity>
         <Text style={styles.appTitle}>AI Usage & Quota</Text>
         <View style={{ width: 32 }} />
@@ -84,7 +86,7 @@ export const AiUsageScreen = () => {
           <RefreshControl
             refreshing={loading}
             onRefresh={loadUsage}
-            tintColor="#111827"
+            tintColor={colors.primary}
           />
         }
       >
@@ -122,7 +124,7 @@ export const AiUsageScreen = () => {
         {/* ── Error Banner ── */}
         {error ? (
           <View style={styles.errorCard}>
-            <Icon name="alert-circle-outline" size={18} color="#DC2626" />
+            <Icon name="alert-circle-outline" size={18} color={colors.tertiary} />
             <Text style={styles.errorText}>{error}</Text>
           </View>
         ) : null}
@@ -131,7 +133,7 @@ export const AiUsageScreen = () => {
         <View style={styles.gridRow}>
           <View style={styles.statCard}>
             <View style={styles.statIconCircle}>
-              <Icon name="lightning-bolt-outline" size={16} color="#4B5563" />
+              <Icon name="lightning-bolt-outline" size={16} color={colors.onSurfaceVariant} />
             </View>
             <Text style={styles.statLabel}>Tokens Used Today</Text>
             <Text style={styles.statValue}>
@@ -141,7 +143,7 @@ export const AiUsageScreen = () => {
 
           <View style={styles.statCard}>
             <View style={styles.statIconCircle}>
-              <Icon name="message-text-outline" size={16} color="#4B5563" />
+              <Icon name="message-text-outline" size={16} color={colors.onSurfaceVariant} />
             </View>
             <Text style={styles.statLabel}>Requests Today</Text>
             <Text style={styles.statValue}>{overview?.todayRequests ?? 0}</Text>
@@ -151,7 +153,7 @@ export const AiUsageScreen = () => {
         <View style={styles.gridRow}>
           <View style={styles.statCard}>
             <View style={styles.statIconCircle}>
-              <Icon name="chart-box-outline" size={16} color="#4B5563" />
+              <Icon name="chart-box-outline" size={16} color={colors.onSurfaceVariant} />
             </View>
             <Text style={styles.statLabel}>Daily Token Limit</Text>
             <Text style={styles.statValue}>
@@ -161,10 +163,10 @@ export const AiUsageScreen = () => {
 
           <View style={styles.statCard}>
             <View style={styles.statIconCircle}>
-              <Icon name="clock-check-outline" size={16} color="#059669" />
+              <Icon name="clock-check-outline" size={16} color={isDark ? colors.secondary : '#059669'} />
             </View>
             <Text style={styles.statLabel}>Remaining Today</Text>
-            <Text style={[styles.statValue, { color: '#059669' }]}>
+            <Text style={[styles.statValue, { color: isDark ? colors.secondary : '#059669' }]}>
               {(overview?.remainingTokens ?? 0).toLocaleString('en-IN')}
             </Text>
           </View>
@@ -178,14 +180,14 @@ export const AiUsageScreen = () => {
               <Icon
                 name="speedometer"
                 size={18}
-                color="#111827"
+                color={colors.onSurface}
                 style={{ marginRight: 6 }}
               />
               <Text style={styles.progressHeading}>Fair-Use Burn Rate</Text>
             </View>
             <Text style={styles.progressValueText}>
               {(overview?.todayTokens ?? 0).toLocaleString('en-IN')}{' '}
-              <Text style={{ color: '#9CA3AF' }}>
+              <Text style={{ color: colors.onSurfaceVariant }}>
                 /{' '}
                 {(overview?.dailyQuotaTokens ?? 0).toLocaleString('en-IN')}
               </Text>
@@ -242,7 +244,7 @@ export const AiUsageScreen = () => {
                       <Icon
                         name="calendar-blank-outline"
                         size={18}
-                        color="#4B5563"
+                        color={colors.onSurfaceVariant}
                       />
                     </View>
 
@@ -277,7 +279,7 @@ export const AiUsageScreen = () => {
 
         {/* ── Footer Transparency Note ── */}
         <View style={styles.footerWrap}>
-          <Icon name="shield-check-outline" size={16} color="#9CA3AF" />
+          <Icon name="shield-check-outline" size={16} color={colors.onSurfaceVariant} />
           <Text style={styles.footerNote}>
             AI telemetry metrics are monitored for fair resource allocation. You
             are never billed for standard queries.
@@ -288,347 +290,349 @@ export const AiUsageScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
+function getStyles(colors: ThemeColors, isDark: boolean) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
 
-  // ── Top Bar ──
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  navIconBtn: {
-    padding: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  appTitle: {
-    fontSize: 18,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
+    // ── Top Bar ──
+    topBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+    },
+    navIconBtn: {
+      padding: 4,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    appTitle: {
+      fontSize: 18,
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurface,
+    },
 
-  // ── Content ──
-  scrollArea: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-  },
+    // ── Content ──
+    scrollArea: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: 20,
+    },
 
-  // ── Screen Title Section ──
-  titleSection: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginTop: 4,
-    marginBottom: 20,
-  },
-  titleCol: {
-    flex: 1,
-    paddingRight: 10,
-  },
-  screenHeading: {
-    fontSize: 26,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  screenSubheading: {
-    fontSize: 13,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    marginTop: 3,
-    lineHeight: 18,
-  },
-  statusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#DEF7EC',
-    borderRadius: 14,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    gap: 6,
-    borderWidth: 1,
-    borderColor: '#BCF0DA',
-  },
-  statusPillWarning: {
-    backgroundColor: '#FEF2F2',
-    borderColor: '#FEE2E2',
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#059669',
-  },
-  statusDotWarning: {
-    backgroundColor: '#DC2626',
-  },
-  statusText: {
-    fontSize: 11,
-    fontFamily: theme.fonts.medium,
-    color: '#03543F',
-  },
-  statusTextWarning: {
-    color: '#DC2626',
-  },
+    // ── Screen Title Section ──
+    titleSection: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      marginTop: 4,
+      marginBottom: 20,
+    },
+    titleCol: {
+      flex: 1,
+      paddingRight: 10,
+    },
+    screenHeading: {
+      fontSize: 26,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.bold,
+      color: colors.onSurface,
+    },
+    screenSubheading: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+      marginTop: 3,
+      lineHeight: 18,
+    },
+    statusPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: isDark ? 'rgba(143, 163, 130, 0.15)' : '#DEF7EC',
+      borderRadius: 14,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      gap: 6,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(143, 163, 130, 0.25)' : '#BCF0DA',
+    },
+    statusPillWarning: {
+      backgroundColor: isDark ? 'rgba(201, 122, 99, 0.15)' : '#FEF2F2',
+      borderColor: isDark ? 'rgba(201, 122, 99, 0.25)' : '#FEE2E2',
+    },
+    statusDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: isDark ? colors.secondary : '#059669',
+    },
+    statusDotWarning: {
+      backgroundColor: colors.tertiary,
+    },
+    statusText: {
+      fontSize: 11,
+      fontFamily: theme.fonts.medium,
+      color: isDark ? colors.secondary : '#03543F',
+    },
+    statusTextWarning: {
+      color: colors.tertiary,
+    },
 
-  // ── Error ──
-  errorCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderWidth: 1,
-    borderColor: '#FEE2E2',
-    backgroundColor: '#FFF5F5',
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 16,
-  },
-  errorText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.regular,
-    color: '#DC2626',
-    flex: 1,
-  },
+    // ── Error ──
+    errorCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(201, 122, 99, 0.3)' : '#FEE2E2',
+      backgroundColor: isDark ? 'rgba(201, 122, 99, 0.1)' : '#FFF5F5',
+      borderRadius: 14,
+      padding: 12,
+      marginBottom: 16,
+    },
+    errorText: {
+      fontSize: 12,
+      fontFamily: theme.fonts.regular,
+      color: colors.tertiary,
+      flex: 1,
+    },
 
-  // ── 2x2 Metric Cards Grid ──
-  gridRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 12,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    padding: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  statIconCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  statLabel: {
-    fontSize: 11,
-    fontFamily: theme.fonts.medium,
-    color: '#6B7280',
-    marginBottom: 2,
-  },
-  statValue: {
-    fontSize: 18,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
+    // ── 2x2 Metric Cards Grid ──
+    gridRow: {
+      flexDirection: 'row',
+      gap: 12,
+      marginBottom: 12,
+    },
+    statCard: {
+      flex: 1,
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      padding: 14,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.02,
+      shadowRadius: 4,
+      elevation: 1,
+    },
+    statIconCircle: {
+      width: 28,
+      height: 28,
+      borderRadius: 8,
+      backgroundColor: colors.surfaceContainerHigh,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 8,
+    },
+    statLabel: {
+      fontSize: 11,
+      fontFamily: theme.fonts.medium,
+      color: colors.onSurfaceVariant,
+      marginBottom: 2,
+    },
+    statValue: {
+      fontSize: 18,
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurface,
+    },
 
-  // ── Today's Capacity Progress Card ──
-  sectionHeaderLabel: {
-    fontSize: 11,
-    fontFamily: theme.fonts.bold,
-    color: '#6B7280',
-    letterSpacing: 1,
-    marginTop: 8,
-    marginBottom: 8,
-    marginLeft: 2,
-  },
-  progressCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    padding: 16,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 5,
-    elevation: 1,
-  },
-  progressHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  progressLabelWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  progressHeading: {
-    fontSize: 14,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  progressValueText: {
-    fontSize: 13,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  progressTrack: {
-    height: 8,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  progressFooterRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  progressPercentText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.medium,
-    color: '#4B5563',
-  },
-  progressResetText: {
-    fontSize: 11,
-    fontFamily: theme.fonts.regular,
-    color: '#9CA3AF',
-  },
+    // ── Today's Capacity Progress Card ──
+    sectionHeaderLabel: {
+      fontSize: 11,
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurfaceVariant,
+      letterSpacing: 1,
+      marginTop: 8,
+      marginBottom: 8,
+      marginLeft: 2,
+    },
+    progressCard: {
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      padding: 16,
+      marginBottom: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.02,
+      shadowRadius: 5,
+      elevation: 1,
+    },
+    progressHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    progressLabelWrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    progressHeading: {
+      fontSize: 14,
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurface,
+    },
+    progressValueText: {
+      fontSize: 13,
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurface,
+    },
+    progressTrack: {
+      height: 8,
+      backgroundColor: colors.surfaceContainerHigh,
+      borderRadius: 4,
+      overflow: 'hidden',
+    },
+    progressFill: {
+      height: '100%',
+      borderRadius: 4,
+    },
+    progressFooterRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: 8,
+    },
+    progressPercentText: {
+      fontSize: 12,
+      fontFamily: theme.fonts.medium,
+      color: colors.onSurfaceVariant,
+    },
+    progressResetText: {
+      fontSize: 11,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+    },
 
-  // ── Last 7 Days History Card ──
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-    marginLeft: 2,
-  },
-  sectionHeaderLabelNoMargin: {
-    fontSize: 11,
-    fontFamily: theme.fonts.bold,
-    color: '#6B7280',
-    letterSpacing: 1,
-  },
-  countBadge: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  countBadgeText: {
-    fontSize: 11,
-    fontFamily: theme.fonts.medium,
-    color: '#4B5563',
-  },
-  groupCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 5,
-    elevation: 1,
-    marginBottom: 20,
-  },
-  emptyHistoryWrap: {
-    padding: 24,
-    alignItems: 'center',
-  },
-  emptyHistoryText: {
-    fontSize: 13,
-    fontFamily: theme.fonts.regular,
-    color: '#9CA3AF',
-  },
-  dayRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-  },
-  dayIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  dayLeft: {
-    flex: 1,
-  },
-  dayDate: {
-    fontSize: 14,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  dayMeta: {
-    fontSize: 12,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    marginTop: 1,
-  },
-  dayRight: {
-    alignItems: 'flex-end',
-  },
-  dayTokens: {
-    fontSize: 14,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  tokensUnit: {
-    fontSize: 11,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-  },
-  dayBadge: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginTop: 2,
-  },
-  dayBadgeText: {
-    fontSize: 10,
-    fontFamily: theme.fonts.medium,
-    color: '#4B5563',
-  },
-  itemDivider: {
-    height: 1,
-    backgroundColor: '#F3F4F6',
-    marginLeft: 64,
-  },
+    // ── Last 7 Days History Card ──
+    sectionHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8,
+      marginLeft: 2,
+    },
+    sectionHeaderLabelNoMargin: {
+      fontSize: 11,
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurfaceVariant,
+      letterSpacing: 1,
+    },
+    countBadge: {
+      backgroundColor: colors.surfaceContainerHigh,
+      borderRadius: 12,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+    },
+    countBadgeText: {
+      fontSize: 11,
+      fontFamily: theme.fonts.medium,
+      color: colors.onSurfaceVariant,
+    },
+    groupCard: {
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      overflow: 'hidden',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.02,
+      shadowRadius: 5,
+      elevation: 1,
+      marginBottom: 20,
+    },
+    emptyHistoryWrap: {
+      padding: 24,
+      alignItems: 'center',
+    },
+    emptyHistoryText: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+    },
+    dayRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+    },
+    dayIconBox: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: colors.surfaceContainerHigh,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    dayLeft: {
+      flex: 1,
+    },
+    dayDate: {
+      fontSize: 14,
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurface,
+    },
+    dayMeta: {
+      fontSize: 12,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+      marginTop: 1,
+    },
+    dayRight: {
+      alignItems: 'flex-end',
+    },
+    dayTokens: {
+      fontSize: 14,
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurface,
+    },
+    tokensUnit: {
+      fontSize: 11,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+    },
+    dayBadge: {
+      backgroundColor: colors.surfaceContainerHigh,
+      borderRadius: 8,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      marginTop: 2,
+    },
+    dayBadgeText: {
+      fontSize: 10,
+      fontFamily: theme.fonts.medium,
+      color: colors.onSurfaceVariant,
+    },
+    itemDivider: {
+      height: 1,
+      backgroundColor: colors.outlineVariant,
+      marginLeft: 64,
+    },
 
-  // ── Footer ──
-  footerWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    marginTop: 4,
-  },
-  footerNote: {
-    fontSize: 11,
-    fontFamily: theme.fonts.regular,
-    color: '#9CA3AF',
-    textAlign: 'center',
-    lineHeight: 16,
-    flex: 1,
-  },
-});
+    // ── Footer ──
+    footerWrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      paddingHorizontal: 12,
+      marginTop: 4,
+    },
+    footerNote: {
+      fontSize: 11,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+      textAlign: 'center',
+      lineHeight: 16,
+      flex: 1,
+    },
+  });
+}

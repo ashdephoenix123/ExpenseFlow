@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { theme } from '../theme/theme';
+import { theme, useTheme, ThemeColors } from '../theme/theme';
 import { useExpenseStore } from '../store/expenseStore';
 import { formatTimeDisplay } from '../utils/dateUtils';
 
@@ -43,6 +43,9 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({
   isReminder,
   createdAt,
 }) => {
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const deleteExpense = useExpenseStore(state => state.deleteExpense);
@@ -211,7 +214,7 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({
           onPress={handleEdit}
           activeOpacity={0.8}
         >
-          <Icon name="pencil-outline" size={20} color="#1F2937" />
+          <Icon name="pencil-outline" size={20} color={colors.textPrimary} />
           <Text style={styles.editText}>Edit</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -219,7 +222,7 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({
           onPress={handleDelete}
           activeOpacity={0.8}
         >
-          <Icon name="trash-can-outline" size={20} color="#DC2626" />
+          <Icon name="trash-can-outline" size={20} color="#FFFFFF" />
           <Text style={styles.deleteText}>Delete</Text>
         </TouchableOpacity>
       </View>
@@ -245,7 +248,7 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({
               <Icon
                 name={getCategoryIcon(category, note)}
                 size={22}
-                color="#374151"
+                color={colors.textSecondary}
               />
             </View>
 
@@ -272,7 +275,7 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({
                   <Icon
                     name="bell"
                     size={13}
-                    color="#8B5CF6"
+                    color={colors.primary}
                     style={styles.reminderBell}
                   />
                 ) : null}
@@ -311,14 +314,14 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({
                 <Icon
                   name={getCategoryIcon(category, note)}
                   size={28}
-                  color="#1F2937"
+                  color={colors.textPrimary}
                 />
               </View>
               <TouchableOpacity
                 onPress={() => setModalVisible(false)}
                 style={styles.modalCloseBtn}
               >
-                <Icon name="close" size={22} color="#6B7280" />
+                <Icon name="close" size={22} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
@@ -337,7 +340,7 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({
                 </View>
                 {accountName && (
                   <View style={styles.modalAccountBadge}>
-                    <Icon name="wallet-outline" size={14} color="#6B7280" />
+                    <Icon name="wallet-outline" size={14} color={colors.textMuted} />
                     <Text style={styles.modalAccountText}>{accountName}</Text>
                   </View>
                 )}
@@ -365,7 +368,7 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({
                     handleEdit();
                   }}
                 >
-                  <Icon name="pencil" size={18} color="#FFFFFF" />
+                  <Icon name="pencil" size={18} color={isDark ? colors.canvasBase : '#FFFFFF'} />
                   <Text style={styles.modalEditBtnText}>Edit Expense</Text>
                 </TouchableOpacity>
 
@@ -376,7 +379,7 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({
                     handleDelete();
                   }}
                 >
-                  <Icon name="trash-can-outline" size={18} color="#DC2626" />
+                  <Icon name="trash-can-outline" size={18} color="#FFFFFF" />
                   <Text style={styles.modalDeleteBtnText}>Delete</Text>
                 </TouchableOpacity>
               </View>
@@ -388,276 +391,280 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  wrapper: {
-    position: 'relative',
-    overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
-  },
-  actionsContainer: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: ACTION_WIDTH,
-    flexDirection: 'row',
-  },
-  editBtn: {
-    width: 72,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  editText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.medium,
-    color: '#1F2937',
-  },
-  deleteBtn: {
-    width: 72,
-    backgroundColor: '#FEE2E2',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  deleteText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.medium,
-    color: '#DC2626',
-  },
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-  },
-  touchableContent: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  leftContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginRight: 12,
-  },
-  iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  details: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 15,
-    fontFamily: theme.fonts.semiBold,
-    color: '#111827',
-    marginBottom: 3,
-  },
-  subtitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'nowrap',
-  },
-  categoryText: {
-    fontSize: 13,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    maxWidth: 140,
-  },
-  dotSeparator: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    marginHorizontal: 6,
-  },
-  accountBadge: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 6,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-  },
-  accountBadgeText: {
-    fontSize: 11,
-    fontFamily: theme.fonts.medium,
-    color: '#4B5563',
-  },
-  reminderBell: {
-    marginLeft: 6,
-  },
-  amountContainer: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-  amountText: {
-    fontSize: 16,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  timeText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    marginTop: 3,
-  },
-  swipedHint: {
-    fontSize: 12,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    marginTop: 3,
-  },
+const getStyles = (colors: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    wrapper: {
+      position: 'relative',
+      overflow: 'hidden',
+      backgroundColor: colors.surfaceContainer,
+    },
+    actionsContainer: {
+      position: 'absolute',
+      right: 0,
+      top: 0,
+      bottom: 0,
+      width: ACTION_WIDTH,
+      flexDirection: 'row',
+    },
+    editBtn: {
+      width: 72,
+      backgroundColor: colors.surfaceElevated,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 4,
+    },
+    editText: {
+      fontSize: 12,
+      fontFamily: theme.fonts.medium,
+      color: colors.textPrimary,
+    },
+    deleteBtn: {
+      width: 72,
+      backgroundColor: '#DC2626',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 4,
+    },
+    deleteText: {
+      fontSize: 12,
+      fontFamily: theme.fonts.medium,
+      color: '#FFFFFF',
+    },
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surfaceContainer,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+    },
+    touchableContent: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    leftContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      marginRight: 12,
+    },
+    iconContainer: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.surfaceLow,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 14,
+    },
+    details: {
+      flex: 1,
+      justifyContent: 'center',
+    },
+    title: {
+      fontSize: 15,
+      fontFamily: theme.fonts.semiBold,
+      color: colors.textPrimary,
+      marginBottom: 3,
+    },
+    subtitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexWrap: 'nowrap',
+    },
+    categoryText: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.textSecondary,
+      maxWidth: 140,
+    },
+    dotSeparator: {
+      fontSize: 12,
+      color: colors.textMuted,
+      marginHorizontal: 6,
+    },
+    accountBadge: {
+      backgroundColor: colors.surfaceLow,
+      borderRadius: 6,
+      paddingHorizontal: 7,
+      paddingVertical: 2,
+    },
+    accountBadgeText: {
+      fontSize: 11,
+      fontFamily: theme.fonts.medium,
+      color: colors.textMuted,
+    },
+    reminderBell: {
+      marginLeft: 6,
+    },
+    amountContainer: {
+      alignItems: 'flex-end',
+      justifyContent: 'center',
+    },
+    amountText: {
+      fontSize: 16,
+      fontFamily: theme.fonts.bold,
+      color: colors.textPrimary,
+    },
+    timeText: {
+      fontSize: 12,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+      marginTop: 3,
+    },
+    swipedHint: {
+      fontSize: 12,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+      marginTop: 3,
+    },
 
-  // Details Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  modalIconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalCloseBtn: {
-    padding: 6,
-    borderRadius: 16,
-    backgroundColor: '#F3F4F6',
-  },
-  modalBody: {
-    maxHeight: 400,
-  },
-  modalAmount: {
-    fontSize: 32,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-    marginBottom: 4,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontFamily: theme.fonts.semiBold,
-    color: '#1F2937',
-    marginBottom: 10,
-  },
-  modalMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 10,
-  },
-  modalCategoryChip: {
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  modalCategoryText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.medium,
-    color: '#374151',
-  },
-  modalAccountBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    gap: 4,
-  },
-  modalAccountText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.medium,
-    color: '#374151',
-  },
-  modalDate: {
-    fontSize: 13,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    marginBottom: 14,
-  },
-  modalNoteContainer: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
-  },
-  modalNoteLabel: {
-    fontSize: 11,
-    fontFamily: theme.fonts.medium,
-    color: '#6B7280',
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  modalNoteText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.regular,
-    color: '#1F2937',
-    lineHeight: 20,
-  },
-  modalActionButtons: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 8,
-  },
-  modalEditBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#18181B',
-    paddingVertical: 12,
-    borderRadius: 12,
-    gap: 6,
-  },
-  modalEditBtnText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.medium,
-    color: '#FFFFFF',
-  },
-  modalDeleteBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FEE2E2',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    gap: 6,
-  },
-  modalDeleteBtnText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.medium,
-    color: '#DC2626',
-  },
-});
+    // Details Modal Styles
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.65)',
+      justifyContent: 'center',
+      padding: 24,
+    },
+    modalContent: {
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: 20,
+      padding: 20,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: isDark ? 0.3 : 0.1,
+      shadowRadius: 12,
+      elevation: 8,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    modalIconContainer: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: colors.surfaceLow,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    modalCloseBtn: {
+      padding: 6,
+      borderRadius: 16,
+      backgroundColor: colors.surfaceLow,
+    },
+    modalBody: {
+      maxHeight: 400,
+    },
+    modalAmount: {
+      fontSize: 32,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.bold,
+      color: colors.textPrimary,
+      marginBottom: 4,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontFamily: theme.fonts.semiBold,
+      color: colors.textPrimary,
+      marginBottom: 10,
+    },
+    modalMetaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 10,
+    },
+    modalCategoryChip: {
+      backgroundColor: colors.surfaceLow,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 8,
+    },
+    modalCategoryText: {
+      fontSize: 12,
+      fontFamily: theme.fonts.medium,
+      color: colors.textSecondary,
+    },
+    modalAccountBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surfaceLow,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 8,
+      gap: 4,
+    },
+    modalAccountText: {
+      fontSize: 12,
+      fontFamily: theme.fonts.medium,
+      color: colors.textSecondary,
+    },
+    modalDate: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+      marginBottom: 14,
+    },
+    modalNoteContainer: {
+      backgroundColor: colors.surfaceLow,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      padding: 12,
+      marginBottom: 16,
+    },
+    modalNoteLabel: {
+      fontSize: 11,
+      fontFamily: theme.fonts.medium,
+      color: colors.textMuted,
+      textTransform: 'uppercase',
+      marginBottom: 4,
+    },
+    modalNoteText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.regular,
+      color: colors.textPrimary,
+      lineHeight: 20,
+    },
+    modalActionButtons: {
+      flexDirection: 'row',
+      gap: 10,
+      marginTop: 8,
+    },
+    modalEditBtn: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: isDark ? colors.primary : '#18181B',
+      paddingVertical: 12,
+      borderRadius: 12,
+      gap: 6,
+    },
+    modalEditBtnText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.medium,
+      color: isDark ? colors.canvasBase : '#FFFFFF',
+    },
+    modalDeleteBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#DC2626',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 12,
+      gap: 6,
+    },
+    modalDeleteBtnText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.medium,
+      color: '#FFFFFF',
+    },
+  });
+

@@ -18,7 +18,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 import { format } from 'date-fns';
-import { theme } from '../theme/theme';
+import { theme, useTheme, ThemeColors } from '../theme/theme';
 import { useExpenseStore } from '../store/expenseStore';
 import { useCategoryStore } from '../store/categoryStore';
 import { useAccountStore } from '../store/accountStore';
@@ -35,6 +35,9 @@ export const AddExpenseScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProp<RootStackParamList, 'AddExpense'>>();
+
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   const updateExpense = useExpenseStore((state) => state.updateExpense);
   const addExpense = useExpenseStore((state) => state.addExpense);
@@ -259,7 +262,7 @@ export const AddExpenseScreen = () => {
           style={styles.closeBtn}
           activeOpacity={0.7}
         >
-          <Icon name="close" size={22} color="#111827" />
+          <Icon name="close" size={22} color={colors.textPrimary} />
         </TouchableOpacity>
 
         <View style={styles.headerTitleContainer}>
@@ -296,7 +299,7 @@ export const AddExpenseScreen = () => {
               value={amount}
               onChangeText={setAmount}
               placeholder="0"
-              placeholderTextColor="#D1D5DB"
+              placeholderTextColor={colors.textMuted}
               keyboardType="numeric"
               autoFocus={false}
             />
@@ -354,13 +357,13 @@ export const AddExpenseScreen = () => {
           <Icon
             name="magnify"
             size={20}
-            color="#6B7280"
+            color={colors.textMuted}
             style={styles.searchIcon}
           />
           <TextInput
             style={styles.searchInput}
             placeholder="e.g. Food, Travel, Shopping..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.textMuted}
             value={categorySearch || category}
             onChangeText={(txt) => {
               setCategorySearch(txt);
@@ -375,7 +378,7 @@ export const AddExpenseScreen = () => {
               }}
               style={styles.clearSearchBtn}
             >
-              <Icon name="close-circle" size={18} color="#9CA3AF" />
+              <Icon name="close-circle" size={18} color={colors.textMuted} />
             </TouchableOpacity>
           ) : null}
         </View>
@@ -406,7 +409,7 @@ export const AddExpenseScreen = () => {
                 <Icon
                   name={getCategoryIcon(cat.name)}
                   size={20}
-                  color={isSelected ? '#111827' : '#4B5563'}
+                  color={isSelected ? (isDark ? colors.primary : '#111827') : colors.textSecondary}
                 />
                 <Text
                   style={[
@@ -447,7 +450,7 @@ export const AddExpenseScreen = () => {
                   <Icon
                     name={icon}
                     size={18}
-                    color={isSelected ? '#111827' : '#6B7280'}
+                    color={isSelected ? (isDark ? colors.primary : '#111827') : colors.textMuted}
                   />
                 </View>
 
@@ -462,7 +465,7 @@ export const AddExpenseScreen = () => {
 
                 {isSelected ? (
                   <View style={styles.selectedCheckBadge}>
-                    <Icon name="check" size={12} color="#FFFFFF" />
+                    <Icon name="check" size={12} color={isDark ? colors.canvasBase : '#FFFFFF'} />
                   </View>
                 ) : null}
               </TouchableOpacity>
@@ -481,13 +484,13 @@ export const AddExpenseScreen = () => {
             <Icon
               name="format-list-bulleted"
               size={20}
-              color="#6B7280"
+              color={colors.textMuted}
               style={styles.memoRowIcon}
             />
             <TextInput
               style={styles.memoInput}
               placeholder="Dinner with design team at Olive Bistro"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.textMuted}
               value={note}
               onChangeText={setNote}
             />
@@ -500,7 +503,7 @@ export const AddExpenseScreen = () => {
                 );
               }}
             >
-              <Icon name="paperclip" size={20} color="#6B7280" />
+              <Icon name="paperclip" size={20} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
 
@@ -516,7 +519,7 @@ export const AddExpenseScreen = () => {
               <Icon
                 name="calendar-month-outline"
                 size={20}
-                color="#6B7280"
+                color={colors.textMuted}
                 style={styles.memoRowIcon}
               />
               <Text style={styles.memoRowTitle}>Posting Date</Text>
@@ -524,7 +527,7 @@ export const AddExpenseScreen = () => {
 
             <View style={styles.datePill}>
               <Text style={styles.datePillText}>{formattedPostingDate}</Text>
-              <Icon name="chevron-down" size={16} color="#6B7280" />
+              <Icon name="chevron-down" size={16} color={colors.textMuted} />
             </View>
           </TouchableOpacity>
 
@@ -536,7 +539,7 @@ export const AddExpenseScreen = () => {
               <Icon
                 name="bell-outline"
                 size={20}
-                color="#6B7280"
+                color={colors.textMuted}
                 style={styles.memoRowIcon}
               />
               <View>
@@ -550,8 +553,8 @@ export const AddExpenseScreen = () => {
             <Switch
               value={isReminder}
               onValueChange={setIsReminder}
-              trackColor={{ false: '#E5E7EB', true: '#18181B' }}
-              thumbColor="#FFFFFF"
+              trackColor={{ false: colors.surfaceContainerHighest, true: colors.primary }}
+              thumbColor={isDark ? colors.canvasBase : '#FFFFFF'}
             />
           </View>
         </View>
@@ -564,7 +567,7 @@ export const AddExpenseScreen = () => {
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
+            <ActivityIndicator size="small" color={isDark ? colors.canvasBase : '#FFFFFF'} />
           ) : (
             <Text style={styles.saveBtnText}>
               {isEditing ? 'Update Expense' : 'Save Expense'}{' '}
@@ -602,7 +605,7 @@ export const AddExpenseScreen = () => {
                 setIsDatePickerOpen(false);
               }}
             >
-              <Icon name="calendar-today" size={20} color="#18181B" />
+              <Icon name="calendar-today" size={20} color={colors.textPrimary} />
               <Text style={styles.dateOptionText}>
                 Today ({format(new Date(), 'MMM d')})
               </Text>
@@ -617,7 +620,7 @@ export const AddExpenseScreen = () => {
                 setIsDatePickerOpen(false);
               }}
             >
-              <Icon name="calendar-arrow-left" size={20} color="#18181B" />
+              <Icon name="calendar-arrow-left" size={20} color={colors.textPrimary} />
               <Text style={styles.dateOptionText}>Yesterday</Text>
             </TouchableOpacity>
 
@@ -630,7 +633,7 @@ export const AddExpenseScreen = () => {
                 setIsDatePickerOpen(false);
               }}
             >
-              <Icon name="calendar-clock" size={20} color="#18181B" />
+              <Icon name="calendar-clock" size={20} color={colors.textPrimary} />
               <Text style={styles.dateOptionText}>2 Days Ago</Text>
             </TouchableOpacity>
 
@@ -647,407 +650,417 @@ export const AddExpenseScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  screenContainer: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  closeBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitleContainer: {
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 40,
-  },
+const getStyles = (colors: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    screenContainer: {
+      flex: 1,
+      backgroundColor: colors.canvasBase,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    closeBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.surfaceLow,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    headerTitleContainer: {
+      alignItems: 'center',
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.bold,
+      color: colors.textPrimary,
+    },
+    container: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: 16,
+      paddingBottom: 40,
+    },
 
-  // Outgoing Amount Card
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    padding: 20,
-    marginTop: 8,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  cardLabel: {
-    fontSize: 11,
-    fontFamily: theme.fonts.bold,
-    color: '#6B7280',
-    letterSpacing: 1,
-  },
-  currencyBadge: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  currencyBadgeText: {
-    fontSize: 11,
-    fontFamily: theme.fonts.bold,
-    color: '#374151',
-  },
-  amountInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  currencySymbol: {
-    fontSize: 38,
-    fontFamily: theme.fonts.bold,
-    color: '#9CA3AF',
-    marginRight: 6,
-  },
-  amountInput: {
-    fontSize: 44,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-    flex: 1,
-    padding: 0,
-    includeFontPadding: false,
-  },
-  quickPillsRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  quickPill: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 14,
-    paddingVertical: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  quickPillText: {
-    fontSize: 13,
-    fontFamily: theme.fonts.medium,
-    color: '#374151',
-  },
+    // Outgoing Amount Card
+    card: {
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      padding: 20,
+      marginTop: 8,
+      marginBottom: 24,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: isDark ? 0.2 : 0.03,
+      shadowRadius: 6,
+      elevation: 2,
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    cardLabel: {
+      fontSize: 11,
+      fontFamily: theme.fonts.bold,
+      color: colors.textMuted,
+      letterSpacing: 1,
+    },
+    currencyBadge: {
+      backgroundColor: colors.surfaceLow,
+      borderRadius: 12,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+    },
+    currencyBadgeText: {
+      fontSize: 11,
+      fontFamily: theme.fonts.bold,
+      color: colors.textSecondary,
+    },
+    amountInputRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    currencySymbol: {
+      fontSize: 38,
+      fontFamily: theme.fonts.bold,
+      color: colors.textMuted,
+      marginRight: 6,
+    },
+    amountInput: {
+      fontSize: 44,
+      fontFamily: theme.fonts.bold,
+      color: colors.textPrimary,
+      flex: 1,
+      padding: 0,
+      includeFontPadding: false,
+    },
+    quickPillsRow: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    quickPill: {
+      flex: 1,
+      backgroundColor: colors.surfaceLow,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      borderRadius: 14,
+      paddingVertical: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    quickPillText: {
+      fontSize: 13,
+      fontFamily: theme.fonts.medium,
+      color: colors.textPrimary,
+    },
 
-  // Category Classification
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-    paddingHorizontal: 4,
-  },
-  sectionLabel: {
-    fontSize: 11,
-    fontFamily: theme.fonts.bold,
-    color: '#6B7280',
-    letterSpacing: 1,
-  },
-  sectionLink: {
-    fontSize: 12,
-    fontFamily: theme.fonts.medium,
-    color: '#6B7280',
-  },
-  sectionMeta: {
-    fontSize: 12,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: Platform.OS === 'ios' ? 10 : 8,
-    marginBottom: 12,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    fontFamily: theme.fonts.regular,
-    color: '#111827',
-    padding: 0,
-  },
-  clearSearchBtn: {
-    padding: 2,
-  },
-  categoryCardsRow: {
-    gap: 8,
-    paddingBottom: 24,
-  },
-  categoryCard: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 80,
-    gap: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  categoryCardSelected: {
-    backgroundColor: '#F3F4F6',
-    borderColor: '#111827',
-    borderWidth: 1.5,
-  },
-  categoryCardText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.medium,
-    color: '#4B5563',
-    textAlign: 'center',
-  },
-  categoryCardTextSelected: {
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
+    // Category Classification
+    sectionHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 10,
+      paddingHorizontal: 4,
+    },
+    sectionLabel: {
+      fontSize: 11,
+      fontFamily: theme.fonts.bold,
+      color: colors.textMuted,
+      letterSpacing: 1,
+    },
+    sectionLink: {
+      fontSize: 12,
+      fontFamily: theme.fonts.medium,
+      color: colors.primary,
+    },
+    sectionMeta: {
+      fontSize: 12,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+    },
+    searchBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surfaceLow,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      borderRadius: 14,
+      paddingHorizontal: 12,
+      paddingVertical: Platform.OS === 'ios' ? 10 : 8,
+      marginBottom: 12,
+    },
+    searchIcon: {
+      marginRight: 8,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 14,
+      fontFamily: theme.fonts.regular,
+      color: colors.textPrimary,
+      padding: 0,
+    },
+    clearSearchBtn: {
+      padding: 2,
+    },
+    categoryCardsRow: {
+      gap: 8,
+      paddingBottom: 24,
+    },
+    categoryCard: {
+      backgroundColor: colors.surfaceContainer,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      borderRadius: 16,
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minWidth: 80,
+      gap: 6,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: isDark ? 0.2 : 0.02,
+      shadowRadius: 4,
+      elevation: 1,
+    },
+    categoryCardSelected: {
+      backgroundColor: isDark ? 'rgba(224, 169, 109, 0.15)' : '#F3F4F6',
+      borderColor: colors.primary,
+      borderWidth: 1.5,
+    },
+    categoryCardText: {
+      fontSize: 12,
+      fontFamily: theme.fonts.medium,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+    categoryCardTextSelected: {
+      fontFamily: theme.fonts.bold,
+      color: isDark ? colors.primary : '#111827',
+    },
 
-  // Source Account Grid
-  accountsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 24,
-  },
-  accountCard: {
-    width: '48.5%',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    borderRadius: 16,
-    padding: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  accountCardSelected: {
-    borderColor: '#111827',
-    borderWidth: 1.5,
-    backgroundColor: '#FBFBFC',
-  },
-  accountCardIconContainer: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  accountCardDetails: {
-    flex: 1,
-  },
-  accountCardTitle: {
-    fontSize: 13,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  accountCardSub: {
-    fontSize: 11,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    marginTop: 1,
-  },
-  selectedCheckBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: '#111827',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    // Source Account Grid
+    accountsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 10,
+      marginBottom: 24,
+    },
+    accountCard: {
+      width: '48.5%',
+      backgroundColor: colors.surfaceContainer,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      borderRadius: 16,
+      padding: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      position: 'relative',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: isDark ? 0.2 : 0.02,
+      shadowRadius: 4,
+      elevation: 1,
+    },
+    accountCardSelected: {
+      borderColor: colors.primary,
+      borderWidth: 1.5,
+      backgroundColor: isDark ? 'rgba(224, 169, 109, 0.08)' : '#FBFBFC',
+    },
+    accountCardIconContainer: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      backgroundColor: colors.surfaceLow,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 10,
+    },
+    accountCardDetails: {
+      flex: 1,
+    },
+    accountCardTitle: {
+      fontSize: 13,
+      fontFamily: theme.fonts.bold,
+      color: colors.textPrimary,
+    },
+    accountCardSub: {
+      fontSize: 11,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+      marginTop: 1,
+    },
+    selectedCheckBadge: {
+      position: 'absolute',
+      top: 8,
+      right: 8,
+      width: 18,
+      height: 18,
+      borderRadius: 9,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
 
-  // Memo & Specifications Card
-  memoSectionLabel: {
-    marginBottom: 10,
-    paddingHorizontal: 4,
-  },
-  memoCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    overflow: 'hidden',
-    marginBottom: 28,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 5,
-    elevation: 1,
-  },
-  memoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-  },
-  memoRowIcon: {
-    marginRight: 12,
-  },
-  memoInput: {
-    flex: 1,
-    fontSize: 14,
-    fontFamily: theme.fonts.regular,
-    color: '#111827',
-    padding: 0,
-    marginRight: 8,
-  },
-  memoDivider: {
-    height: 1,
-    backgroundColor: '#F3F4F6',
-    marginLeft: 48,
-  },
-  memoRowLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  memoRowTitle: {
-    fontSize: 14,
-    fontFamily: theme.fonts.medium,
-    color: '#111827',
-  },
-  memoRowSubtitle: {
-    fontSize: 11,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    marginTop: 1,
-  },
-  datePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    gap: 4,
-  },
-  datePillText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.medium,
-    color: '#111827',
-  },
+    // Memo & Specifications Card
+    memoSectionLabel: {
+      marginBottom: 10,
+      paddingHorizontal: 4,
+    },
+    memoCard: {
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      overflow: 'hidden',
+      marginBottom: 28,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: isDark ? 0.2 : 0.02,
+      shadowRadius: 5,
+      elevation: 1,
+    },
+    memoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+    },
+    memoRowIcon: {
+      marginRight: 12,
+    },
+    memoInput: {
+      flex: 1,
+      fontSize: 14,
+      fontFamily: theme.fonts.regular,
+      color: colors.textPrimary,
+      padding: 0,
+      marginRight: 8,
+    },
+    memoDivider: {
+      height: 1,
+      backgroundColor: colors.borderHairline,
+      marginLeft: 48,
+    },
+    memoRowLeft: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    memoRowTitle: {
+      fontSize: 14,
+      fontFamily: theme.fonts.medium,
+      color: colors.textPrimary,
+    },
+    memoRowSubtitle: {
+      fontSize: 11,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+      marginTop: 1,
+    },
+    datePill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surfaceLow,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      borderRadius: 12,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      gap: 4,
+    },
+    datePillText: {
+      fontSize: 12,
+      fontFamily: theme.fonts.medium,
+      color: colors.textPrimary,
+    },
 
-  // Save Button
-  saveBtn: {
-    backgroundColor: '#111827',
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  saveBtnDisabled: {
-    opacity: 0.6,
-  },
-  saveBtnText: {
-    fontSize: 15,
-    fontFamily: theme.fonts.bold,
-    color: '#FFFFFF',
-  },
+    // Save Button
+    saveBtn: {
+      backgroundColor: isDark ? colors.primary : '#111827',
+      borderRadius: 16,
+      paddingVertical: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 20,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: isDark ? 0.25 : 0.08,
+      shadowRadius: 6,
+      elevation: 2,
+    },
+    saveBtnDisabled: {
+      opacity: 0.6,
+    },
+    saveBtnText: {
+      fontSize: 15,
+      fontFamily: theme.fonts.bold,
+      color: isDark ? colors.canvasBase : '#FFFFFF',
+    },
 
-  // Date Picker Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-  datePickerModalCard: {
-    width: '100%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    gap: 10,
-  },
-  dateModalTitle: {
-    fontSize: 16,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-    marginBottom: 6,
-  },
-  dateOptionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    gap: 10,
-  },
-  dateOptionText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.medium,
-    color: '#111827',
-  },
-  datePickerCloseBtn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    marginTop: 4,
-  },
-  datePickerCloseText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.medium,
-    color: '#6B7280',
-  },
-});
+    // Date Picker Modal
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.65)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 24,
+    },
+    datePickerModalCard: {
+      width: '100%',
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      padding: 20,
+      gap: 10,
+    },
+    dateModalTitle: {
+      fontSize: 16,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.bold,
+      color: colors.textPrimary,
+      marginBottom: 6,
+    },
+    dateOptionBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+      backgroundColor: colors.surfaceLow,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      borderRadius: 12,
+      gap: 10,
+    },
+    dateOptionText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.medium,
+      color: colors.textPrimary,
+    },
+    datePickerCloseBtn: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 10,
+      marginTop: 4,
+    },
+    datePickerCloseText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.medium,
+      color: colors.textSecondary,
+    },
+  });
+

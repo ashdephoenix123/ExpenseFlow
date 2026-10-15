@@ -15,7 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 import { format } from 'date-fns';
-import { theme } from '../theme/theme';
+import { theme, useTheme, ThemeColors } from '../theme/theme';
 import { useAuthStore } from '../store/authStore';
 import { useCategoryStore } from '../store/categoryStore';
 import { useAccountStore } from '../store/accountStore';
@@ -26,6 +26,9 @@ export const SettingsScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const { colors, isDark, themeMode, setThemeMode } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   const { user } = useAuthStore();
   const { categories, fetchCategories } = useCategoryStore();
@@ -118,7 +121,7 @@ export const SettingsScreen = () => {
             }}
             activeOpacity={0.7}
           >
-            <Icon name="arrow-left" size={24} color="#111827" />
+            <Icon name="arrow-left" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.appTitle}>ExpenseFlow</Text>
         </View>
@@ -133,7 +136,7 @@ export const SettingsScreen = () => {
         <View style={styles.titleSection}>
           <Text style={styles.screenHeading}>Settings</Text>
           <Text style={styles.screenSubheading}>
-            Manage your account preferences and ledger parameters
+            Manage your account preferences, theme, and ledger parameters
           </Text>
         </View>
 
@@ -143,9 +146,16 @@ export const SettingsScreen = () => {
             <Text style={styles.avatarInitialsText}>{userInitials}</Text>
           </View>
           <View style={styles.profileInfoCol}>
-            <Text style={styles.profileName} numberOfLines={1}>
-              {displayName}
-            </Text>
+            <View style={styles.nameRow}>
+              <Text style={styles.profileName} numberOfLines={1}>
+                {displayName}
+              </Text>
+              {isDark && (
+                <View style={styles.proBadge}>
+                  <Text style={styles.proBadgeText}>PRO</Text>
+                </View>
+              )}
+            </View>
             <Text style={styles.profileEmail} numberOfLines={1}>
               {user?.email || '—'}
             </Text>
@@ -153,7 +163,7 @@ export const SettingsScreen = () => {
               <Icon
                 name="calendar-blank-outline"
                 size={13}
-                color="#6B7280"
+                color={colors.textMuted}
                 style={styles.memberIcon}
               />
               <Text style={styles.memberText}>
@@ -163,16 +173,88 @@ export const SettingsScreen = () => {
           </View>
         </View>
 
-        {/* ── SECTION 1: ACCOUNT ── */}
-        <Text style={styles.sectionHeaderLabel}>ACCOUNT</Text>
+        {/* ── SECTION 1: ACCOUNT & PREFERENCES ── */}
+        <Text style={styles.sectionHeaderLabel}>ACCOUNT & PREFERENCES</Text>
         <View style={styles.groupCard}>
+          {/* Appearance (Theme Toggle) */}
+          <View style={styles.appearanceItem}>
+            <View style={styles.itemRow}>
+              <View style={styles.itemIconContainer}>
+                <Icon
+                  name="palette-outline"
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </View>
+              <View style={styles.itemContent}>
+                <Text style={styles.itemTitle}>Appearance</Text>
+                <Text style={styles.itemSubtitle}>
+                  {themeMode === 'system'
+                    ? `System default (${isDark ? 'Dark' : 'Light'})`
+                    : isDark
+                    ? 'Private library noir aesthetic'
+                    : 'Clean minimalist light'}
+                </Text>
+              </View>
+            </View>
+
+            {/* Segmented Control */}
+            <View style={styles.themeToggleContainer}>
+              {(['system', 'light', 'dark'] as const).map(mode => {
+                const isActive = themeMode === mode;
+                return (
+                  <TouchableOpacity
+                    key={mode}
+                    style={[
+                      styles.themeSegmentBtn,
+                      isActive && styles.themeSegmentBtnActive,
+                    ]}
+                    onPress={() => setThemeMode(mode)}
+                    activeOpacity={0.7}
+                  >
+                    <Icon
+                      name={
+                        mode === 'system'
+                          ? 'cellphone'
+                          : mode === 'light'
+                          ? 'white-balance-sunny'
+                          : 'weather-night'
+                      }
+                      size={14}
+                      color={isActive ? colors.activePillText : colors.textMuted}
+                      style={{ marginRight: 5 }}
+                    />
+                    <Text
+                      style={[
+                        styles.themeSegmentText,
+                        isActive && styles.themeSegmentTextActive,
+                      ]}
+                    >
+                      {mode === 'system'
+                        ? 'System'
+                        : mode === 'light'
+                        ? 'Light'
+                        : 'Dark'}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={styles.itemDivider} />
+
           {/* Email */}
           <View style={styles.itemRow}>
             <View style={styles.itemIconContainer}>
-              <Icon name="email-outline" size={20} color="#4B5563" />
+              <Icon
+                name="email-outline"
+                size={20}
+                color={colors.textSecondary}
+              />
             </View>
             <View style={styles.itemContent}>
-              <Text style={styles.itemTitle}>Email</Text>
+              <Text style={styles.itemTitle}>Registered Email</Text>
               <Text style={styles.itemSubtitle}>Primary account email</Text>
             </View>
             <Text style={styles.emailValueText} numberOfLines={1}>
@@ -185,7 +267,11 @@ export const SettingsScreen = () => {
           {/* Member Since */}
           <View style={styles.itemRow}>
             <View style={styles.itemIconContainer}>
-              <Icon name="calendar-clock" size={20} color="#4B5563" />
+              <Icon
+                name="calendar-clock"
+                size={20}
+                color={colors.textSecondary}
+              />
             </View>
             <View style={styles.itemContent}>
               <Text style={styles.itemTitle}>Member Since</Text>
@@ -195,8 +281,8 @@ export const SettingsScreen = () => {
           </View>
         </View>
 
-        {/* ── SECTION 2: MANAGE ── */}
-        <Text style={styles.sectionHeaderLabel}>MANAGE</Text>
+        {/* ── SECTION 2: MANAGE LEDGER ── */}
+        <Text style={styles.sectionHeaderLabel}>MANAGE LEDGER</Text>
         <View style={styles.groupCard}>
           {/* Categories */}
           <TouchableOpacity
@@ -205,7 +291,11 @@ export const SettingsScreen = () => {
             onPress={() => navigation.navigate('ManageCategories')}
           >
             <View style={styles.itemIconContainer}>
-              <Icon name="tag-outline" size={20} color="#4B5563" />
+              <Icon
+                name="tag-outline"
+                size={20}
+                color={colors.textSecondary}
+              />
             </View>
             <View style={styles.itemContent}>
               <Text style={styles.itemTitle}>Categories</Text>
@@ -221,7 +311,7 @@ export const SettingsScreen = () => {
                   </Text>
                 </View>
               )}
-              <Icon name="chevron-right" size={20} color="#9CA3AF" />
+              <Icon name="chevron-right" size={20} color={colors.textMuted} />
             </View>
           </TouchableOpacity>
 
@@ -234,7 +324,11 @@ export const SettingsScreen = () => {
             onPress={() => navigation.navigate('ManageAccounts')}
           >
             <View style={styles.itemIconContainer}>
-              <Icon name="bank-outline" size={20} color="#4B5563" />
+              <Icon
+                name="bank-outline"
+                size={20}
+                color={colors.textSecondary}
+              />
             </View>
             <View style={styles.itemContent}>
               <Text style={styles.itemTitle}>Accounts</Text>
@@ -250,7 +344,7 @@ export const SettingsScreen = () => {
                   </Text>
                 </View>
               )}
-              <Icon name="chevron-right" size={20} color="#9CA3AF" />
+              <Icon name="chevron-right" size={20} color={colors.textMuted} />
             </View>
           </TouchableOpacity>
 
@@ -263,7 +357,11 @@ export const SettingsScreen = () => {
             onPress={() => navigation.navigate('AiUsage')}
           >
             <View style={styles.itemIconContainer}>
-              <Icon name="robot-happy-outline" size={20} color="#4B5563" />
+              <Icon
+                name="robot-happy-outline"
+                size={20}
+                color={colors.textSecondary}
+              />
             </View>
             <View style={styles.itemContent}>
               <Text style={styles.itemTitle}>AI Usage</Text>
@@ -271,12 +369,36 @@ export const SettingsScreen = () => {
                 Daily token usage and fair-use limit
               </Text>
             </View>
-            <Icon name="chevron-right" size={20} color="#9CA3AF" />
+            <Icon name="chevron-right" size={20} color={colors.textMuted} />
+          </TouchableOpacity>
+
+          <View style={styles.itemDivider} />
+
+          {/* Reminders */}
+          <TouchableOpacity
+            style={styles.itemRow}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Reminders')}
+          >
+            <View style={styles.itemIconContainer}>
+              <Icon
+                name="bell-ring-outline"
+                size={20}
+                color={colors.textSecondary}
+              />
+            </View>
+            <View style={styles.itemContent}>
+              <Text style={styles.itemTitle}>Reminders & Bills</Text>
+              <Text style={styles.itemSubtitle}>
+                Track recurring upcoming payments
+              </Text>
+            </View>
+            <Icon name="chevron-right" size={20} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
 
         {/* ── SECTION 3: ACTIONS ── */}
-        <Text style={styles.sectionHeaderLabel}>ACTIONS</Text>
+        <Text style={styles.sectionHeaderLabel}>SESSION</Text>
         <View style={styles.groupCard}>
           <TouchableOpacity
             style={styles.itemRow}
@@ -286,18 +408,18 @@ export const SettingsScreen = () => {
             <View
               style={[
                 styles.itemIconContainer,
-                { backgroundColor: 'rgba(239, 68, 68, 0.08)' },
+                { backgroundColor: colors.outflowBg },
               ]}
             >
-              <Icon name="logout" size={20} color="#DC2626" />
+              <Icon name="logout" size={20} color={colors.outflow} />
             </View>
             <View style={styles.itemContent}>
-              <Text style={[styles.itemTitle, { color: '#DC2626' }]}>
-                Logout
+              <Text style={[styles.itemTitle, { color: colors.outflow }]}>
+                Disconnect & Log Out
               </Text>
-              <Text style={styles.itemSubtitle}>Sign out of your account</Text>
+              <Text style={styles.itemSubtitle}>Sign out of this device</Text>
             </View>
-            <Icon name="chevron-right" size={20} color="#DC2626" />
+            <Icon name="chevron-right" size={20} color={colors.outflow} />
           </TouchableOpacity>
         </View>
 
@@ -314,23 +436,25 @@ export const SettingsScreen = () => {
             <View
               style={[
                 styles.itemIconContainer,
-                { backgroundColor: 'rgba(239, 68, 68, 0.12)' },
+                { backgroundColor: colors.outflowBg },
               ]}
             >
-              <Icon name="delete-forever" size={20} color="#DC2626" />
+              <Icon name="delete-forever" size={20} color={colors.outflow} />
             </View>
             <View style={styles.itemContent}>
-              <Text style={[styles.itemTitle, { color: '#DC2626' }]}>
+              <Text style={[styles.itemTitle, { color: colors.outflow }]}>
                 Delete Account
               </Text>
-              <Text style={styles.itemSubtitle}>Permanently remove your data</Text>
+              <Text style={styles.itemSubtitle}>
+                Permanently purge all data from cloud
+              </Text>
             </View>
-            <Icon name="chevron-right" size={20} color="#DC2626" />
+            <Icon name="chevron-right" size={20} color={colors.outflow} />
           </TouchableOpacity>
         </View>
 
         {/* ── Version ── */}
-        <Text style={styles.versionText}>ExpenseFlow v1.0.0</Text>
+        <Text style={styles.versionText}>ExpenseFlow v1.0.0 • Warm Editorial Dark</Text>
       </ScrollView>
 
       {/* ── MODAL: Delete Account Confirmation ── */}
@@ -346,14 +470,16 @@ export const SettingsScreen = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.deleteModalCard}>
             <View style={styles.deleteIconCircle}>
-              <Icon name="alert-circle" size={32} color="#DC2626" />
+              <Icon name="alert-circle" size={32} color={colors.outflow} />
             </View>
             <Text style={styles.modalTitle}>Delete Account</Text>
             <Text style={styles.modalDesc}>
-              This action is permanent and cannot be undone. All your data will be deleted.
+              This action is permanent and cannot be undone. All your expenses,
+              categories, accounts, and insights will be erased.
             </Text>
             <Text style={styles.deleteConfirmLabel}>
-              Type <Text style={{ fontWeight: 'bold' }}>DELETE</Text> below to confirm:
+              Type <Text style={{ fontWeight: 'bold' }}>DELETE</Text> below to
+              confirm:
             </Text>
             <TextInput
               value={confirmText}
@@ -361,7 +487,7 @@ export const SettingsScreen = () => {
               style={styles.deleteInput}
               autoCapitalize="characters"
               placeholder="DELETE"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.textMuted}
             />
             <View style={styles.modalActionRow}>
               <TouchableOpacity
@@ -397,331 +523,384 @@ export const SettingsScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
+const getStyles = (colors: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
 
-  // ── Top Bar ──
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  topBarLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  navIconBtn: {
-    padding: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  appTitle: {
-    fontSize: 18,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-    marginLeft: 12,
-  },
+    // ── Top Bar ──
+    topBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+    },
+    topBarLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    navIconBtn: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: colors.surfaceContainer,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    appTitle: {
+      fontSize: 18,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.bold,
+      color: colors.textPrimary,
+      marginLeft: 12,
+      letterSpacing: isDark ? 0.3 : 0,
+    },
 
-  // ── Scroll Content ──
-  scrollArea: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
+    // ── Scroll Content ──
+    scrollArea: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingBottom: 40,
+    },
 
-  // ── Screen Title Section ──
-  titleSection: {
-    paddingHorizontal: 20,
-    marginTop: 4,
-    marginBottom: 16,
-  },
-  screenHeading: {
-    fontSize: 26,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  screenSubheading: {
-    fontSize: 13,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    marginTop: 3,
-    lineHeight: 18,
-  },
+    // ── Screen Title Section ──
+    titleSection: {
+      paddingHorizontal: 20,
+      marginTop: 4,
+      marginBottom: 16,
+    },
+    screenHeading: {
+      fontSize: 26,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.bold,
+      color: colors.textPrimary,
+    },
+    screenSubheading: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+      marginTop: 4,
+    },
 
-  // ── User Profile Card ──
-  profileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    padding: 16,
-    marginHorizontal: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  avatarCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#18181B',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  avatarInitialsText: {
-    fontSize: 20,
-    fontFamily: theme.fonts.bold,
-    color: '#FFFFFF',
-  },
-  profileInfoCol: {
-    flex: 1,
-  },
-  profileName: {
-    fontSize: 17,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  profileEmail: {
-    fontSize: 13,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  memberRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  memberIcon: {
-    marginRight: 4,
-  },
-  memberText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-  },
+    // ── User Profile Card ──
+    profileCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 20,
+      padding: 16,
+      marginHorizontal: 20,
+      marginBottom: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.2 : 0.04,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    avatarCircle: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: isDark ? '#211F1E' : '#18181B',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: isDark ? 2 : 0,
+      borderColor: colors.primary,
+    },
+    avatarInitialsText: {
+      fontSize: 18,
+      fontFamily: theme.fonts.bold,
+      color: isDark ? colors.primary : '#FFFFFF',
+    },
+    profileInfoCol: {
+      marginLeft: 14,
+      flex: 1,
+    },
+    nameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    profileName: {
+      fontSize: 16,
+      fontFamily: theme.fonts.bold,
+      color: colors.textPrimary,
+    },
+    proBadge: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 6,
+      paddingVertical: 1.5,
+      borderRadius: 6,
+    },
+    proBadgeText: {
+      fontSize: 10,
+      fontFamily: theme.fonts.bold,
+      color: colors.onPrimary,
+      letterSpacing: 0.5,
+    },
+    profileEmail: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.textSecondary,
+      marginTop: 1,
+    },
+    memberRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 4,
+    },
+    memberIcon: {
+      marginRight: 4,
+    },
+    memberText: {
+      fontSize: 11,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+    },
 
-  // ── Section Group Headers & Cards ──
-  sectionHeaderLabel: {
-    fontSize: 11,
-    fontFamily: theme.fonts.bold,
-    color: '#6B7280',
-    letterSpacing: 1,
-    marginHorizontal: 22,
-    marginBottom: 8,
-  },
-  dangerSectionLabel: {
-    color: '#DC2626',
-    marginTop: 4,
-  },
-  groupCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    marginHorizontal: 20,
-    marginBottom: 20,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 5,
-    elevation: 1,
-  },
-  dangerGroupCard: {
-    borderColor: '#FEE2E2',
-    backgroundColor: '#FFFBFB',
-  },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-  },
-  itemIconContainer: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  itemContent: {
-    flex: 1,
-    paddingRight: 8,
-  },
-  itemTitle: {
-    fontSize: 14,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  itemSubtitle: {
-    fontSize: 12,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    marginTop: 2,
-    lineHeight: 16,
-  },
-  itemRightGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  itemDivider: {
-    height: 1,
-    backgroundColor: '#F3F4F6',
-    marginLeft: 68,
-  },
+    // ── Section Headers ──
+    sectionHeaderLabel: {
+      fontSize: 11,
+      fontFamily: theme.fonts.bold,
+      color: colors.textMuted,
+      letterSpacing: 0.8,
+      paddingHorizontal: 22,
+      marginBottom: 8,
+      marginTop: 4,
+    },
+    dangerSectionLabel: {
+      color: colors.outflow,
+    },
 
-  // Item values
-  emailValueText: {
-    fontSize: 13,
-    fontFamily: theme.fonts.medium,
-    color: '#111827',
-    maxWidth: 160,
-    textAlign: 'right',
-  },
-  metaValueText: {
-    fontSize: 13,
-    fontFamily: theme.fonts.medium,
-    color: '#111827',
-    textAlign: 'right',
-  },
+    // ── Group Cards ──
+    groupCard: {
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 18,
+      marginHorizontal: 20,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: 'hidden',
+    },
+    dangerGroupCard: {
+      borderColor: isDark ? colors.border : '#FEE2E2',
+    },
 
-  // Badges
-  countBadge: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    marginRight: 6,
-  },
-  countBadgeText: {
-    fontSize: 11,
-    fontFamily: theme.fonts.medium,
-    color: '#4B5563',
-  },
+    // ── Item Rows ──
+    itemRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+    },
+    itemIconContainer: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: colors.surfaceLow,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    itemContent: {
+      flex: 1,
+    },
+    itemTitle: {
+      fontSize: 14,
+      fontFamily: theme.fonts.medium,
+      color: colors.textPrimary,
+    },
+    itemSubtitle: {
+      fontSize: 12,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+      marginTop: 1,
+    },
+    itemRightGroup: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    countBadge: {
+      backgroundColor: colors.surfaceLow,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    countBadgeText: {
+      fontSize: 11,
+      fontFamily: theme.fonts.medium,
+      color: colors.textSecondary,
+    },
+    itemDivider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginLeft: 64,
+    },
+    emailValueText: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+      maxWidth: 140,
+    },
+    metaValueText: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+    },
 
-  // Version
-  versionText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.regular,
-    color: '#9CA3AF',
-    textAlign: 'center',
-    marginTop: 4,
-    marginBottom: 16,
-  },
+    // ── Appearance Segmented Toggle ──
+    appearanceItem: {
+      paddingBottom: 14,
+    },
+    themeToggleContainer: {
+      flexDirection: 'row',
+      backgroundColor: colors.surfaceLow,
+      borderRadius: 12,
+      marginHorizontal: 16,
+      marginTop: 4,
+      padding: 3,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    themeSegmentBtn: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 8,
+      borderRadius: 9,
+    },
+    themeSegmentBtnActive: {
+      backgroundColor: colors.activePillBg,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.15,
+      shadowRadius: 2,
+      elevation: 2,
+    },
+    themeSegmentText: {
+      fontSize: 12,
+      fontFamily: theme.fonts.medium,
+      color: colors.textMuted,
+    },
+    themeSegmentTextActive: {
+      color: colors.activePillText,
+      fontFamily: theme.fonts.bold,
+    },
 
-  // ── Delete Confirmation Modal ──
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  deleteModalCard: {
-    width: '100%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 24,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#FEE2E2',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  deleteIconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#FEF2F2',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontFamily: theme.fonts.bold,
-    color: '#DC2626',
-    marginBottom: 6,
-    textAlign: 'center',
-  },
-  modalDesc: {
-    fontSize: 13,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 18,
-    marginBottom: 16,
-    paddingHorizontal: 8,
-  },
-  deleteConfirmLabel: {
-    fontSize: 13,
-    fontFamily: theme.fonts.regular,
-    color: '#4B5563',
-    marginBottom: 8,
-  },
-  deleteInput: {
-    width: '100%',
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#FCA5A5',
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 15,
-    fontFamily: theme.fonts.bold,
-    color: '#DC2626',
-    textAlign: 'center',
-    letterSpacing: 2,
-    marginBottom: 20,
-  },
-  modalActionRow: {
-    flexDirection: 'row',
-    width: '100%',
-    gap: 12,
-  },
-  modalCancelBtn: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 14,
-    paddingVertical: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalCancelText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.medium,
-    color: '#4B5563',
-  },
-  modalDeleteBtn: {
-    flex: 1,
-    backgroundColor: '#DC2626',
-    borderRadius: 14,
-    paddingVertical: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalDeleteText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.bold,
-    color: '#FFFFFF',
-  },
-});
+    // ── Version ──
+    versionText: {
+      fontSize: 12,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+      textAlign: 'center',
+      marginTop: 8,
+      marginBottom: 16,
+    },
+
+    // ── Delete Account Modal ──
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.65)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 24,
+    },
+    deleteModalCard: {
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 20,
+      padding: 24,
+      width: '100%',
+      maxWidth: 340,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    deleteIconCircle: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: colors.outflowBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 14,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontFamily: theme.fonts.bold,
+      color: colors.textPrimary,
+      marginBottom: 6,
+    },
+    modalDesc: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 18,
+      marginBottom: 16,
+    },
+    deleteConfirmLabel: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.textPrimary,
+      marginBottom: 8,
+      alignSelf: 'flex-start',
+    },
+    deleteInput: {
+      width: '100%',
+      backgroundColor: colors.surfaceLow,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      fontSize: 14,
+      fontFamily: theme.fonts.medium,
+      color: colors.textPrimary,
+      marginBottom: 18,
+      textAlign: 'center',
+      letterSpacing: 2,
+    },
+    modalActionRow: {
+      flexDirection: 'row',
+      gap: 10,
+      width: '100%',
+    },
+    modalCancelBtn: {
+      flex: 1,
+      backgroundColor: colors.surfaceLow,
+      borderRadius: 12,
+      paddingVertical: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    modalCancelText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.medium,
+      color: colors.textPrimary,
+    },
+    modalDeleteBtn: {
+      flex: 1,
+      backgroundColor: colors.outflow,
+      borderRadius: 12,
+      paddingVertical: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    modalDeleteText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.bold,
+      color: '#FFFFFF',
+    },
+  });

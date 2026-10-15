@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { theme } from '../theme/theme';
+import { theme, useTheme, ThemeColors } from '../theme/theme';
 import { useExpenseStore } from '../store/expenseStore';
 import { useAccountStore } from '../store/accountStore';
 import { useCategoryStore } from '../store/categoryStore';
@@ -58,6 +58,9 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
   const insets = useSafeAreaInsets();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   // Active top tab state: Timeline is selected by default, beside it Analytics
   const [activeTab, setActiveTab] = useState<'timeline' | 'analytics'>(initialTab);
@@ -326,7 +329,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
             <Text style={styles.monthPillText}>
               {MONTHS[selectedMonth - 1]} {selectedYear}
             </Text>
-            <Icon name="chevron-down" size={18} color="#6B7280" />
+            <Icon name="chevron-down" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -340,7 +343,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
             <Icon
               name="tune-variant"
               size={22}
-              color={selectedCategory || selectedAccount ? '#18181B' : '#4B5563'}
+              color={selectedCategory || selectedAccount ? colors.primary : colors.textSecondary}
             />
             {(selectedCategory || selectedAccount) && (
               <View style={styles.activeFilterDot} />
@@ -353,7 +356,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
             activeOpacity={0.7}
             onPress={() => navigation.navigate('Reminders')}
           >
-            <Icon name="bell-outline" size={22} color="#4B5563" />
+            <Icon name="bell-outline" size={22} color={colors.textSecondary} />
             {hasReminders && <View style={styles.bellBadgeDot} />}
           </TouchableOpacity>
         </View>
@@ -373,7 +376,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
             <Icon
               name={activeTab === 'timeline' ? 'calendar-month' : 'calendar-month-outline'}
               size={18}
-              color={activeTab === 'timeline' ? '#18181B' : '#71717A'}
+              color={activeTab === 'timeline' ? colors.textPrimary : colors.textMuted}
               style={styles.tabSwitchIcon}
             />
             <Text
@@ -397,7 +400,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
             <Icon
               name={activeTab === 'analytics' ? 'chart-box' : 'chart-box-outline'}
               size={18}
-              color={activeTab === 'analytics' ? '#18181B' : '#71717A'}
+              color={activeTab === 'analytics' ? colors.textPrimary : colors.textMuted}
               style={styles.tabSwitchIcon}
             />
             <Text
@@ -525,7 +528,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
                   <View style={styles.dayHeaderTitleGroup}>
                     {isHighlighted && (
                       <View style={styles.highlightBadge}>
-                        <Icon name="arrow-right" size={13} color="#FFFFFF" />
+                        <Icon name="arrow-right" size={13} color={isDark ? colors.canvasBase : '#FFFFFF'} />
                       </View>
                     )}
                     <Text
@@ -581,12 +584,12 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
             isLoading ? (
               <ActivityIndicator
                 size="large"
-                color="#18181B"
+                color={colors.primary}
                 style={styles.loader}
               />
             ) : (
               <View style={styles.emptyState}>
-                <Icon name="receipt" size={48} color="#9CA3AF" />
+                <Icon name="receipt" size={48} color={colors.textMuted} />
                 <Text style={styles.emptyText}>No expenses found</Text>
                 <Text style={styles.emptySubText}>
                   {selectedCategory
@@ -634,14 +637,14 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
                 onPress={() => setPickerYear(y => y - 1)}
                 style={styles.pickerIconBtn}
               >
-                <Icon name="chevron-left" size={28} color="#111827" />
+                <Icon name="chevron-left" size={28} color={colors.textPrimary} />
               </TouchableOpacity>
               <Text style={styles.pickerYearText}>{pickerYear}</Text>
               <TouchableOpacity
                 onPress={() => setPickerYear(y => y + 1)}
                 style={styles.pickerIconBtn}
               >
-                <Icon name="chevron-right" size={28} color="#111827" />
+                <Icon name="chevron-right" size={28} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
 
@@ -676,7 +679,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
               onPress={resetToCurrentMonth}
               activeOpacity={0.7}
             >
-              <Icon name="calendar-today" size={18} color="#18181B" />
+              <Icon name="calendar-today" size={18} color={colors.primary} />
               <Text style={styles.resetBtnText}>Jump to Current Month</Text>
             </TouchableOpacity>
           </TouchableOpacity>
@@ -701,7 +704,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
               onPress={() => setIsFilterModalOpen(false)}
               style={styles.filterCloseBtn}
             >
-              <Icon name="close" size={22} color="#111827" />
+              <Icon name="close" size={22} color={colors.textPrimary} />
             </TouchableOpacity>
           </View>
 
@@ -766,8 +769,8 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
                       (activeFilterTab === 'category'
                         ? !tempCategory
                         : !tempAccount)
-                        ? '#18181B'
-                        : '#9CA3AF'
+                        ? colors.primary
+                        : colors.textMuted
                     }
                   />
                   <Text style={styles.filterOptionItemText}>
@@ -791,7 +794,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
                         }
                         size={22}
                         color={
-                          tempCategory === cat.name ? '#18181B' : '#9CA3AF'
+                          tempCategory === cat.name ? colors.primary : colors.textMuted
                         }
                       />
                       <Text style={styles.filterOptionItemText}>
@@ -814,7 +817,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
                             : 'radiobox-blank'
                         }
                         size={22}
-                        color={tempAccount === acc.id ? '#18181B' : '#9CA3AF'}
+                        color={tempAccount === acc.id ? colors.primary : colors.textMuted}
                       />
                       <Text style={styles.filterOptionItemText}>
                         {acc.name}
@@ -872,7 +875,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 style={styles.budgetModalCloseBtn}
               >
-                <Icon name="close" size={20} color="#6B7280" />
+                <Icon name="close" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
@@ -888,7 +891,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
               <Icon
                 name={isCustomBudget ? 'check-circle-outline' : 'repeat'}
                 size={16}
-                color={isCustomBudget ? '#15803D' : '#4B5563'}
+                color={isCustomBudget ? colors.secondary : colors.textSecondary}
               />
               <Text
                 style={[
@@ -912,7 +915,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
                 value={tempBudgetInput}
                 onChangeText={setTempBudgetInput}
                 placeholder="20000"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.textMuted}
                 autoFocus
               />
             </View>
@@ -959,7 +962,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
                 activeOpacity={0.8}
               >
                 {isSavingBudget ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={isDark ? colors.canvasBase : '#FFFFFF'} />
                 ) : (
                   <Text style={styles.budgetSaveText}>
                     Save for {MONTHS[selectedMonth - 1]}
@@ -976,606 +979,623 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
 
 export const MonthlyScreen = OverviewScreen;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  // Top Header Row
-  topHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#F8F9FA',
-  },
-  topHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  avatarWrapper: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    overflow: 'hidden',
-    backgroundColor: '#E5E7EB',
-    borderWidth: 1.5,
-    borderColor: '#D1D5DB',
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-  },
-  avatarPlaceholder: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#E5E7EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarInitial: {
-    fontSize: 16,
-    fontFamily: theme.fonts.bold,
-    color: '#374151',
-  },
-  monthPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    gap: 4,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  monthPillText: {
-    fontSize: 15,
-    fontFamily: theme.fonts.semiBold,
-    color: '#111827',
-  },
-  topHeaderRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  iconButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  activeFilterDot: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#18181B',
-  },
-  bellBadgeDot: {
-    position: 'absolute',
-    top: 6,
-    right: 8,
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: '#F97316',
-  },
+const getStyles = (colors: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.canvasBase,
+    },
+    // Top Header Row
+    topHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      backgroundColor: colors.canvasBase,
+    },
+    topHeaderLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    avatarWrapper: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      overflow: 'hidden',
+      backgroundColor: colors.surfaceLow,
+      borderWidth: 1.5,
+      borderColor: colors.borderHairline,
+    },
+    avatarImage: {
+      width: '100%',
+      height: '100%',
+    },
+    avatarPlaceholder: {
+      width: '100%',
+      height: '100%',
+      backgroundColor: colors.surfaceLow,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    avatarInitial: {
+      fontSize: 16,
+      fontFamily: theme.fonts.bold,
+      color: colors.primary,
+    },
+    monthPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 20,
+      paddingHorizontal: 14,
+      paddingVertical: 7,
+      gap: 4,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: isDark ? 0.2 : 0.04,
+      shadowRadius: 2,
+      elevation: 1,
+    },
+    monthPillText: {
+      fontSize: 15,
+      fontFamily: theme.fonts.semiBold,
+      color: colors.textPrimary,
+    },
+    topHeaderRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    iconButton: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: colors.surfaceContainer,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: isDark ? 0.2 : 0.04,
+      shadowRadius: 2,
+      elevation: 1,
+    },
+    activeFilterDot: {
+      position: 'absolute',
+      top: 6,
+      right: 6,
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: colors.primary,
+    },
+    bellBadgeDot: {
+      position: 'absolute',
+      top: 6,
+      right: 8,
+      width: 7,
+      height: 7,
+      borderRadius: 3.5,
+      backgroundColor: colors.primary,
+    },
 
-  // Sub-header Tab Switcher
-  tabSwitcherContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 2,
-    paddingBottom: 8,
-    backgroundColor: '#F8F9FA',
-  },
-  tabSwitcherTrack: {
-    flexDirection: 'row',
-    backgroundColor: '#E4E4E7',
-    borderRadius: 14,
-    padding: 3,
-  },
-  tabSwitchButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    borderRadius: 11,
-  },
-  tabSwitchButtonActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1.5 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  tabSwitchIcon: {
-    marginRight: 6,
-  },
-  tabSwitchText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.medium,
-    color: '#71717A',
-  },
-  tabSwitchTextActive: {
-    color: '#18181B',
-    fontFamily: theme.fonts.semiBold,
-  },
+    // Sub-header Tab Switcher
+    tabSwitcherContainer: {
+      paddingHorizontal: 16,
+      paddingTop: 2,
+      paddingBottom: 8,
+      backgroundColor: colors.canvasBase,
+    },
+    tabSwitcherTrack: {
+      flexDirection: 'row',
+      backgroundColor: colors.surfaceLow,
+      borderRadius: 14,
+      padding: 3,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+    },
+    tabSwitchButton: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 8,
+      borderRadius: 11,
+    },
+    tabSwitchButtonActive: {
+      backgroundColor: colors.surfaceElevated,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1.5 },
+      shadowOpacity: isDark ? 0.25 : 0.08,
+      shadowRadius: 3,
+      elevation: 2,
+    },
+    tabSwitchIcon: {
+      marginRight: 6,
+    },
+    tabSwitchText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.medium,
+      color: colors.textMuted,
+    },
+    tabSwitchTextActive: {
+      color: colors.textPrimary,
+      fontFamily: theme.fonts.semiBold,
+    },
 
-  // Main List
-  listContent: {
-    paddingBottom: 40,
-  },
+    // Main List
+    listContent: {
+      paddingBottom: 40,
+    },
 
-  // Category Chips
-  categoryChipsScroll: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 8,
-    gap: 8,
-  },
-  categoryChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  categoryChipActive: {
-    backgroundColor: '#18181B',
-  },
-  categoryChipInactive: {
-    backgroundColor: '#F3F4F6',
-  },
-  categoryChipText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.medium,
-  },
-  categoryChipTextActive: {
-    color: '#FFFFFF',
-  },
-  categoryChipTextInactive: {
-    color: '#374151',
-  },
+    // Category Chips
+    categoryChipsScroll: {
+      paddingHorizontal: 16,
+      paddingTop: 8,
+      paddingBottom: 8,
+      gap: 8,
+    },
+    categoryChip: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 20,
+    },
+    categoryChipActive: {
+      backgroundColor: isDark ? colors.primary : '#18181B',
+    },
+    categoryChipInactive: {
+      backgroundColor: colors.surfaceContainer,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+    },
+    categoryChipText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.medium,
+    },
+    categoryChipTextActive: {
+      color: isDark ? colors.canvasBase : '#FFFFFF',
+      fontFamily: theme.fonts.semiBold,
+    },
+    categoryChipTextInactive: {
+      color: colors.textSecondary,
+    },
 
-  // Tab Content Visibility Wrappers
-  tabContentWrapper: {
-    flex: 1,
-  },
-  tabContentHidden: {
-    display: 'none',
-  },
+    // Tab Content Visibility Wrappers
+    tabContentWrapper: {
+      flex: 1,
+    },
+    tabContentHidden: {
+      display: 'none',
+    },
 
-  // Date Groups
-  dateGroupContainer: {
-    marginHorizontal: 16,
-    marginBottom: 14,
-  },
-  dateGroupHighlighted: {
-    // slightly emphasized
-  },
-  dayHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    paddingHorizontal: 2,
-  },
-  dayHeaderTitleGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  highlightBadge: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#18181B',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dayHeaderText: {
-    fontSize: 15,
-    fontFamily: theme.fonts.semiBold,
-    color: '#111827',
-  },
-  dayHeaderTextHighlighted: {
-    color: '#18181B',
-    fontFamily: theme.fonts.bold,
-  },
-  dayHeaderAmount: {
-    fontSize: 15,
-    fontFamily: theme.fonts.semiBold,
-    color: '#111827',
-  },
-  dayHeaderAmountHighlighted: {
-    color: '#18181B',
-    fontFamily: theme.fonts.bold,
-  },
-  dateCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  dateCardHighlighted: {
-    borderColor: '#18181B',
-    borderWidth: 2,
-    shadowColor: '#18181B',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  itemDivider: {
-    height: 1,
-    backgroundColor: '#F3F4F6',
-  },
+    // Date Groups
+    dateGroupContainer: {
+      marginHorizontal: 16,
+      marginBottom: 14,
+    },
+    dateGroupHighlighted: {
+      // slightly emphasized
+    },
+    dayHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 10,
+      paddingHorizontal: 2,
+    },
+    dayHeaderTitleGroup: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    highlightBadge: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    dayHeaderText: {
+      fontSize: 14,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.semiBold,
+      color: colors.textSecondary,
+      letterSpacing: isDark ? 0.4 : 0,
+    },
+    dayHeaderTextHighlighted: {
+      color: colors.primary,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.bold,
+    },
+    dayHeaderAmount: {
+      fontSize: 14,
+      fontFamily: theme.fonts.semiBold,
+      color: colors.textPrimary,
+    },
+    dayHeaderAmountHighlighted: {
+      color: colors.primary,
+      fontFamily: theme.fonts.bold,
+    },
+    dateCard: {
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      overflow: 'hidden',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: isDark ? 0.2 : 0.03,
+      shadowRadius: 4,
+      elevation: 1,
+    },
+    dateCardHighlighted: {
+      borderColor: colors.primary,
+      borderWidth: 2,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.25 : 0.12,
+      shadowRadius: 6,
+      elevation: 4,
+    },
+    itemDivider: {
+      height: 1,
+      backgroundColor: colors.borderHairline,
+    },
 
-  // Empty State & Loader
-  loader: {
-    marginTop: 40,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 50,
-    paddingHorizontal: 24,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontFamily: theme.fonts.semiBold,
-    color: '#374151',
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  emptySubText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    textAlign: 'center',
-  },
+    // Empty State & Loader
+    loader: {
+      marginTop: 40,
+    },
+    emptyState: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 50,
+      paddingHorizontal: 24,
+    },
+    emptyText: {
+      fontSize: 18,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.semiBold,
+      color: colors.textPrimary,
+      marginTop: 12,
+      marginBottom: 4,
+    },
+    emptySubText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+      textAlign: 'center',
+    },
 
-  // Month Picker Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  pickerContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    width: '100%',
-    maxWidth: 340,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  pickerHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 18,
-  },
-  pickerIconBtn: {
-    padding: 4,
-  },
-  pickerYearText: {
-    fontSize: 20,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  monthsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  monthChip: {
-    width: '30%',
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderRadius: 12,
-    backgroundColor: '#F3F4F6',
-  },
-  monthChipSelected: {
-    backgroundColor: '#18181B',
-  },
-  monthChipText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.medium,
-    color: '#4B5563',
-  },
-  monthChipTextSelected: {
-    color: '#FFFFFF',
-    fontFamily: theme.fonts.bold,
-  },
-  resetBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
-    paddingVertical: 10,
-    gap: 8,
-  },
-  resetBtnText: {
-    fontSize: 14,
-    color: '#18181B',
-    fontFamily: theme.fonts.medium,
-  },
+    // Month Picker Modal
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.65)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 24,
+    },
+    pickerContainer: {
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: 20,
+      padding: 20,
+      width: '100%',
+      maxWidth: 340,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: isDark ? 0.3 : 0.1,
+      shadowRadius: 12,
+      elevation: 8,
+    },
+    pickerHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 18,
+    },
+    pickerIconBtn: {
+      padding: 4,
+    },
+    pickerYearText: {
+      fontSize: 20,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.bold,
+      color: colors.textPrimary,
+    },
+    monthsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      gap: 10,
+    },
+    monthChip: {
+      width: '30%',
+      paddingVertical: 12,
+      alignItems: 'center',
+      borderRadius: 12,
+      backgroundColor: colors.surfaceLow,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+    },
+    monthChipSelected: {
+      backgroundColor: isDark ? colors.primary : '#18181B',
+      borderColor: colors.primary,
+    },
+    monthChipText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.medium,
+      color: colors.textSecondary,
+    },
+    monthChipTextSelected: {
+      color: isDark ? colors.canvasBase : '#FFFFFF',
+      fontFamily: theme.fonts.bold,
+    },
+    resetBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 20,
+      paddingVertical: 10,
+      gap: 8,
+    },
+    resetBtnText: {
+      fontSize: 14,
+      color: colors.primary,
+      fontFamily: theme.fonts.medium,
+    },
 
-  // Filter Modal
-  fullScreenFilterContainer: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  filterModalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  filterModalTitle: {
-    fontSize: 18,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  filterCloseBtn: {
-    padding: 4,
-  },
-  filterModalBody: {
-    flex: 1,
-    flexDirection: 'row',
-  },
-  filterTabsCol: {
-    width: '35%',
-    borderRightWidth: 1,
-    borderRightColor: '#F3F4F6',
-    backgroundColor: '#F9FAFB',
-  },
-  filterTabBtn: {
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderLeftWidth: 3,
-    borderLeftColor: 'transparent',
-  },
-  filterTabBtnActive: {
-    borderLeftColor: '#18181B',
-    backgroundColor: '#FFFFFF',
-  },
-  filterTabText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-  },
-  filterTabTextActive: {
-    color: '#18181B',
-    fontFamily: theme.fonts.semiBold,
-  },
-  filterOptionsCol: {
-    width: '65%',
-  },
-  filterOptionsList: {
-    padding: 16,
-  },
-  filterOptionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    gap: 12,
-  },
-  filterOptionItemText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.medium,
-    color: '#1F2937',
-  },
-  filterModalFooter: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    justifyContent: 'flex-end',
-    gap: 12,
-  },
-  filterCancelBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 10,
-  },
-  filterCancelBtnText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.medium,
-    color: '#6B7280',
-  },
-  filterApplyBtn: {
-    backgroundColor: '#18181B',
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    borderRadius: 10,
-  },
-  filterApplyBtnText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    fontFamily: theme.fonts.semiBold,
-  },
+    // Filter Modal
+    fullScreenFilterContainer: {
+      flex: 1,
+      backgroundColor: colors.canvasBase,
+    },
+    filterModalHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderHairline,
+    },
+    filterModalTitle: {
+      fontSize: 18,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.bold,
+      color: colors.textPrimary,
+    },
+    filterCloseBtn: {
+      padding: 4,
+    },
+    filterModalBody: {
+      flex: 1,
+      flexDirection: 'row',
+    },
+    filterTabsCol: {
+      width: '35%',
+      borderRightWidth: 1,
+      borderRightColor: colors.borderHairline,
+      backgroundColor: colors.surfaceLow,
+    },
+    filterTabBtn: {
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      borderLeftWidth: 3,
+      borderLeftColor: 'transparent',
+    },
+    filterTabBtnActive: {
+      borderLeftColor: colors.primary,
+      backgroundColor: colors.surfaceContainer,
+    },
+    filterTabText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+    },
+    filterTabTextActive: {
+      color: colors.textPrimary,
+      fontFamily: theme.fonts.semiBold,
+    },
+    filterOptionsCol: {
+      width: '65%',
+      backgroundColor: colors.canvasBase,
+    },
+    filterOptionsList: {
+      padding: 16,
+    },
+    filterOptionItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 12,
+      gap: 12,
+    },
+    filterOptionItemText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.medium,
+      color: colors.textPrimary,
+    },
+    filterModalFooter: {
+      flexDirection: 'row',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderHairline,
+      justifyContent: 'flex-end',
+      gap: 12,
+    },
+    filterCancelBtn: {
+      paddingVertical: 10,
+      paddingHorizontal: 18,
+      borderRadius: 10,
+    },
+    filterCancelBtnText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.medium,
+      color: colors.textSecondary,
+    },
+    filterApplyBtn: {
+      backgroundColor: isDark ? colors.primary : '#18181B',
+      paddingVertical: 10,
+      paddingHorizontal: 24,
+      borderRadius: 10,
+    },
+    filterApplyBtnText: {
+      fontSize: 14,
+      color: isDark ? colors.canvasBase : '#FFFFFF',
+      fontFamily: theme.fonts.semiBold,
+    },
 
-  // Budget Modal
-  budgetModalCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 22,
-    width: '100%',
-    maxWidth: 340,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  budgetModalHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  budgetModalHeaderTexts: {
-    flex: 1,
-  },
-  budgetModalTitle: {
-    fontSize: 18,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  budgetModalSub: {
-    fontSize: 13,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  budgetModalCloseBtn: {
-    padding: 4,
-    marginLeft: 8,
-  },
-  budgetBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    marginBottom: 16,
-    gap: 6,
-  },
-  budgetBadgeRowCustom: {
-    backgroundColor: '#F0FDF4',
-  },
-  budgetBadgeRowCarried: {
-    backgroundColor: '#F3F4F6',
-  },
-  budgetBadgeText: {
-    fontSize: 11,
-    fontFamily: theme.fonts.regular,
-    flex: 1,
-  },
-  budgetBadgeTextCustom: {
-    color: '#15803D',
-  },
-  budgetBadgeTextCarried: {
-    color: '#4B5563',
-  },
-  budgetInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 14,
-    backgroundColor: '#FAFAFA',
-  },
-  budgetInputCurrency: {
-    fontSize: 22,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-    marginRight: 6,
-  },
-  budgetInput: {
-    flex: 1,
-    fontSize: 22,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-    padding: 0,
-  },
-  budgetPresetsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-    gap: 6,
-  },
-  budgetPresetChip: {
-    flex: 1,
-    paddingVertical: 7,
-    alignItems: 'center',
-    borderRadius: 8,
-    backgroundColor: '#F3F4F6',
-  },
-  budgetPresetChipActive: {
-    backgroundColor: '#18181B',
-  },
-  budgetPresetText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.medium,
-    color: '#4B5563',
-  },
-  budgetPresetTextActive: {
-    color: '#FFFFFF',
-    fontFamily: theme.fonts.semiBold,
-  },
-  budgetModalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 10,
-  },
-  budgetCancelBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-  },
-  budgetCancelText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.medium,
-    color: '#6B7280',
-  },
-  budgetSaveBtn: {
-    backgroundColor: '#18181B',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    minWidth: 140,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  budgetSaveText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.semiBold,
-    color: '#FFFFFF',
-  },
-});
+    // Budget Modal
+    budgetModalCard: {
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: 20,
+      padding: 22,
+      width: '100%',
+      maxWidth: 340,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: isDark ? 0.3 : 0.1,
+      shadowRadius: 12,
+      elevation: 8,
+    },
+    budgetModalHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: 12,
+    },
+    budgetModalHeaderTexts: {
+      flex: 1,
+    },
+    budgetModalTitle: {
+      fontSize: 18,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.bold,
+      color: colors.textPrimary,
+    },
+    budgetModalSub: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    budgetModalCloseBtn: {
+      padding: 4,
+      marginLeft: 8,
+    },
+    budgetBadgeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 8,
+      marginBottom: 16,
+      gap: 6,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+    },
+    budgetBadgeRowCustom: {
+      backgroundColor: isDark ? 'rgba(143, 163, 130, 0.15)' : '#F0FDF4',
+    },
+    budgetBadgeRowCarried: {
+      backgroundColor: colors.surfaceLow,
+    },
+    budgetBadgeText: {
+      fontSize: 11,
+      fontFamily: theme.fonts.regular,
+      flex: 1,
+    },
+    budgetBadgeTextCustom: {
+      color: colors.secondary,
+    },
+    budgetBadgeTextCarried: {
+      color: colors.textSecondary,
+    },
+    budgetInputContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: 1.5,
+      borderColor: colors.borderHairline,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      marginBottom: 14,
+      backgroundColor: colors.surfaceLow,
+    },
+    budgetInputCurrency: {
+      fontSize: 22,
+      fontFamily: theme.fonts.bold,
+      color: colors.textPrimary,
+      marginRight: 6,
+    },
+    budgetInput: {
+      flex: 1,
+      fontSize: 22,
+      fontFamily: theme.fonts.bold,
+      color: colors.textPrimary,
+      padding: 0,
+    },
+    budgetPresetsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 20,
+      gap: 6,
+    },
+    budgetPresetChip: {
+      flex: 1,
+      paddingVertical: 7,
+      alignItems: 'center',
+      borderRadius: 8,
+      backgroundColor: colors.surfaceLow,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+    },
+    budgetPresetChipActive: {
+      backgroundColor: isDark ? colors.primary : '#18181B',
+      borderColor: colors.primary,
+    },
+    budgetPresetText: {
+      fontSize: 12,
+      fontFamily: theme.fonts.medium,
+      color: colors.textSecondary,
+    },
+    budgetPresetTextActive: {
+      color: isDark ? colors.canvasBase : '#FFFFFF',
+      fontFamily: theme.fonts.semiBold,
+    },
+    budgetModalActions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: 10,
+    },
+    budgetCancelBtn: {
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      borderRadius: 10,
+    },
+    budgetCancelText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.medium,
+      color: colors.textSecondary,
+    },
+    budgetSaveBtn: {
+      backgroundColor: isDark ? colors.primary : '#18181B',
+      paddingVertical: 10,
+      paddingHorizontal: 20,
+      borderRadius: 10,
+      minWidth: 140,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    budgetSaveText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.semiBold,
+      color: isDark ? colors.canvasBase : '#FFFFFF',
+    },
+  });
+

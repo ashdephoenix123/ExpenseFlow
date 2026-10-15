@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,12 +13,14 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
-import { theme } from '../theme/theme';
+import { theme, useTheme, ThemeColors } from '../theme/theme';
 import { useAccountStore } from '../store/accountStore';
 
 export const ManageAccountsScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   const {
     accounts,
@@ -137,7 +139,7 @@ export const ManageAccountsScreen = () => {
           <Icon
             name={item.is_primary ? 'star' : 'bank-outline'}
             size={20}
-            color={item.is_primary ? '#B45309' : '#4B5563'}
+            color={item.is_primary ? (isDark ? colors.primary : '#B45309') : colors.onSurfaceVariant}
           />
         </View>
 
@@ -163,7 +165,7 @@ export const ManageAccountsScreen = () => {
               activeOpacity={0.7}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Icon name="star-outline" size={20} color="#9CA3AF" />
+              <Icon name="star-outline" size={20} color={colors.onSurfaceVariant} />
             </TouchableOpacity>
           )}
           <TouchableOpacity
@@ -172,7 +174,7 @@ export const ManageAccountsScreen = () => {
             activeOpacity={0.7}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Icon name="pencil-outline" size={19} color="#6B7280" />
+            <Icon name="pencil-outline" size={19} color={colors.onSurfaceVariant} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => handleDelete(item.id, item.name, item.is_primary)}
@@ -180,7 +182,7 @@ export const ManageAccountsScreen = () => {
             activeOpacity={0.7}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Icon name="delete-outline" size={19} color="#DC2626" />
+            <Icon name="delete-outline" size={19} color={colors.tertiary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -197,7 +199,7 @@ export const ManageAccountsScreen = () => {
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
         >
-          <Icon name="arrow-left" size={24} color="#111827" />
+          <Icon name="arrow-left" size={24} color={colors.onSurface} />
         </TouchableOpacity>
         <Text style={styles.appTitle}>Manage Accounts</Text>
         <View style={{ width: 32 }} />
@@ -228,7 +230,7 @@ export const ManageAccountsScreen = () => {
               <Icon
                 name="information-outline"
                 size={18}
-                color="#4B5563"
+                color={colors.onSurfaceVariant}
                 style={styles.hintIcon}
               />
               <Text style={styles.hintText}>
@@ -251,12 +253,12 @@ export const ManageAccountsScreen = () => {
         ListEmptyComponent={
           isLoading ? (
             <View style={styles.loaderContainer}>
-              <ActivityIndicator size="small" color="#111827" />
+              <ActivityIndicator size="small" color={colors.primary} />
             </View>
           ) : (
             <View style={styles.emptyCard}>
               <View style={styles.emptyIconCircle}>
-                <Icon name="wallet-plus-outline" size={28} color="#9CA3AF" />
+                <Icon name="wallet-plus-outline" size={28} color={colors.onSurfaceVariant} />
               </View>
               <Text style={styles.emptyTitle}>No Accounts Configured</Text>
               <Text style={styles.emptySubtext}>
@@ -279,7 +281,7 @@ export const ManageAccountsScreen = () => {
           activeOpacity={0.8}
           onPress={() => setShowAddModal(true)}
         >
-          <Icon name="plus" size={18} color="#FFFFFF" />
+          <Icon name="plus" size={18} color={isDark ? colors.onPrimary : '#FFFFFF'} />
           <Text style={styles.addBtnText}>Add New Account</Text>
         </TouchableOpacity>
       </View>
@@ -297,7 +299,7 @@ export const ManageAccountsScreen = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <View style={styles.modalIconCircle}>
-              <Icon name="bank-plus" size={24} color="#111827" />
+              <Icon name="bank-plus" size={24} color={colors.primary} />
             </View>
             <Text style={styles.modalTitle}>New Account</Text>
             <Text style={styles.modalDesc}>
@@ -309,7 +311,7 @@ export const ManageAccountsScreen = () => {
               value={newAccountName}
               onChangeText={setNewAccountName}
               placeholder="Account name"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.onSurfaceVariant}
               autoFocus
               maxLength={50}
             />
@@ -335,7 +337,7 @@ export const ManageAccountsScreen = () => {
                 onPress={handleAddAccount}
               >
                 {saving ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={isDark ? colors.onPrimary : '#FFFFFF'} />
                 ) : (
                   <Text style={styles.modalSaveText}>Create Account</Text>
                 )}
@@ -359,7 +361,7 @@ export const ManageAccountsScreen = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <View style={styles.modalIconCircle}>
-              <Icon name="pencil-outline" size={24} color="#111827" />
+              <Icon name="pencil-outline" size={24} color={colors.primary} />
             </View>
             <Text style={styles.modalTitle}>Rename Account</Text>
             <Text style={styles.modalDesc}>
@@ -371,7 +373,7 @@ export const ManageAccountsScreen = () => {
               value={renameText}
               onChangeText={setRenameText}
               placeholder="New account name"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.onSurfaceVariant}
               autoFocus
               maxLength={50}
             />
@@ -398,7 +400,7 @@ export const ManageAccountsScreen = () => {
                 onPress={handleRename}
               >
                 {saving ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={isDark ? colors.onPrimary : '#FFFFFF'} />
                 ) : (
                   <Text style={styles.modalSaveText}>Save Changes</Text>
                 )}
@@ -411,332 +413,337 @@ export const ManageAccountsScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
+function getStyles(colors: ThemeColors, isDark: boolean) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
 
-  // ── Top Bar ──
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  navIconBtn: {
-    padding: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  appTitle: {
-    fontSize: 18,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
+    // ── Top Bar ──
+    topBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+    },
+    navIconBtn: {
+      padding: 4,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    appTitle: {
+      fontSize: 18,
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurface,
+    },
 
-  // ── Content ──
-  listContent: {
-    paddingHorizontal: 20,
-  },
-  titleSection: {
-    marginTop: 4,
-    marginBottom: 16,
-  },
-  screenHeading: {
-    fontSize: 26,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  screenSubheading: {
-    fontSize: 13,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    marginTop: 3,
-    lineHeight: 18,
-  },
-  hintBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    padding: 12,
-    marginBottom: 20,
-    gap: 8,
-  },
-  hintIcon: {
-    marginTop: 1,
-  },
-  hintText: {
-    flex: 1,
-    fontSize: 12,
-    fontFamily: theme.fonts.regular,
-    color: '#4B5563',
-    lineHeight: 16,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-    marginLeft: 2,
-  },
-  sectionHeaderLabel: {
-    fontSize: 11,
-    fontFamily: theme.fonts.bold,
-    color: '#6B7280',
-    letterSpacing: 1,
-  },
-  countBadge: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  countBadgeText: {
-    fontSize: 11,
-    fontFamily: theme.fonts.medium,
-    color: '#4B5563',
-  },
+    // ── Content ──
+    listContent: {
+      paddingHorizontal: 20,
+    },
+    titleSection: {
+      marginTop: 4,
+      marginBottom: 16,
+    },
+    screenHeading: {
+      fontSize: 26,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.bold,
+      color: colors.onSurface,
+    },
+    screenSubheading: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+      marginTop: 3,
+      lineHeight: 18,
+    },
+    hintBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      padding: 12,
+      marginBottom: 20,
+      gap: 8,
+    },
+    hintIcon: {
+      marginTop: 1,
+    },
+    hintText: {
+      flex: 1,
+      fontSize: 12,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+      lineHeight: 16,
+    },
+    sectionHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8,
+      marginLeft: 2,
+    },
+    sectionHeaderLabel: {
+      fontSize: 11,
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurfaceVariant,
+      letterSpacing: 1,
+    },
+    countBadge: {
+      backgroundColor: colors.surfaceContainerHigh,
+      borderRadius: 12,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+    },
+    countBadgeText: {
+      fontSize: 11,
+      fontFamily: theme.fonts.medium,
+      color: colors.onSurfaceVariant,
+    },
 
-  // ── Item Row ──
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  itemIconContainer: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  primaryIconContainer: {
-    backgroundColor: '#FEF3C7',
-  },
-  itemContent: {
-    flex: 1,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  accountName: {
-    fontSize: 15,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  primaryBadge: {
-    backgroundColor: '#FEF3C7',
-    borderRadius: 8,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-  },
-  primaryBadgeText: {
-    fontSize: 10,
-    fontFamily: theme.fonts.bold,
-    color: '#B45309',
-  },
-  accountSubtitle: {
-    fontSize: 12,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  actionBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: '#F9FAFB',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-  },
-  deleteActionBtn: {
-    backgroundColor: 'rgba(239, 68, 68, 0.06)',
-    borderColor: 'rgba(239, 68, 68, 0.1)',
-  },
-  itemDivider: {
-    height: 0,
-  },
+    // ── Item Row ──
+    itemRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      marginBottom: 10,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.02,
+      shadowRadius: 4,
+      elevation: 1,
+    },
+    itemIconContainer: {
+      width: 38,
+      height: 38,
+      borderRadius: 12,
+      backgroundColor: colors.surfaceContainerHigh,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    primaryIconContainer: {
+      backgroundColor: isDark ? 'rgba(224, 169, 109, 0.15)' : '#FEF3C7',
+    },
+    itemContent: {
+      flex: 1,
+    },
+    nameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    accountName: {
+      fontSize: 15,
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurface,
+    },
+    primaryBadge: {
+      backgroundColor: isDark ? 'rgba(224, 169, 109, 0.15)' : '#FEF3C7',
+      borderRadius: 8,
+      paddingHorizontal: 7,
+      paddingVertical: 2,
+    },
+    primaryBadgeText: {
+      fontSize: 10,
+      fontFamily: theme.fonts.bold,
+      color: isDark ? colors.primary : '#B45309',
+    },
+    accountSubtitle: {
+      fontSize: 12,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+      marginTop: 2,
+    },
+    actionsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    actionBtn: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      backgroundColor: colors.surfaceContainerLow,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+    },
+    deleteActionBtn: {
+      backgroundColor: isDark ? 'rgba(201, 122, 99, 0.15)' : 'rgba(239, 68, 68, 0.06)',
+      borderColor: isDark ? 'rgba(201, 122, 99, 0.25)' : 'rgba(239, 68, 68, 0.1)',
+    },
+    itemDivider: {
+      height: 0,
+    },
 
-  // ── Bottom Bar ──
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#F0F1F3',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-  },
-  addBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#111827',
-    borderRadius: 14,
-    paddingVertical: 14,
-    gap: 6,
-  },
-  addBtnText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.bold,
-    color: '#FFFFFF',
-  },
+    // ── Bottom Bar ──
+    bottomBar: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: colors.surfaceContainer,
+      borderTopWidth: 1,
+      borderTopColor: colors.outlineVariant,
+      paddingHorizontal: 20,
+      paddingTop: 12,
+    },
+    addBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.primary,
+      borderRadius: 14,
+      paddingVertical: 14,
+      gap: 6,
+    },
+    addBtnText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.bold,
+      color: isDark ? colors.onPrimary : '#FFFFFF',
+    },
 
-  // ── Empty State ──
-  loaderContainer: {
-    paddingVertical: 40,
-    alignItems: 'center',
-  },
-  emptyCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    paddingVertical: 36,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  emptyIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-    marginBottom: 4,
-  },
-  emptySubtext: {
-    fontSize: 13,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 18,
-  },
+    // ── Empty State ──
+    loaderContainer: {
+      paddingVertical: 40,
+      alignItems: 'center',
+    },
+    emptyCard: {
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      paddingVertical: 36,
+      paddingHorizontal: 24,
+      alignItems: 'center',
+      marginTop: 20,
+    },
+    emptyIconCircle: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: colors.surfaceContainerHigh,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 12,
+    },
+    emptyTitle: {
+      fontSize: 16,
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurface,
+      marginBottom: 4,
+    },
+    emptySubtext: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+      textAlign: 'center',
+      lineHeight: 18,
+    },
 
-  // ── Modals ──
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  modalCard: {
-    width: '100%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 24,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  modalIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-    marginBottom: 6,
-    textAlign: 'center',
-  },
-  modalDesc: {
-    fontSize: 13,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 18,
-    marginBottom: 20,
-    paddingHorizontal: 8,
-  },
-  modalInput: {
-    width: '100%',
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 15,
-    fontFamily: theme.fonts.medium,
-    color: '#111827',
-    marginBottom: 20,
-  },
-  modalActionRow: {
-    flexDirection: 'row',
-    width: '100%',
-    gap: 12,
-  },
-  modalCancelBtn: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 14,
-    paddingVertical: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalCancelText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.medium,
-    color: '#4B5563',
-  },
-  modalSaveBtn: {
-    flex: 1,
-    backgroundColor: '#111827',
-    borderRadius: 14,
-    paddingVertical: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalSaveText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.bold,
-    color: '#FFFFFF',
-  },
-});
+    // ── Modals ──
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.65)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+    },
+    modalCard: {
+      width: '100%',
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      padding: 24,
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.15,
+      shadowRadius: 16,
+      elevation: 8,
+    },
+    modalIconCircle: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: colors.surfaceContainerHigh,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 14,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.bold,
+      color: colors.onSurface,
+      marginBottom: 6,
+      textAlign: 'center',
+    },
+    modalDesc: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+      textAlign: 'center',
+      lineHeight: 18,
+      marginBottom: 20,
+      paddingHorizontal: 8,
+    },
+    modalInput: {
+      width: '100%',
+      backgroundColor: colors.surfaceContainerLow,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      borderRadius: 14,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      fontSize: 15,
+      fontFamily: theme.fonts.medium,
+      color: colors.onSurface,
+      marginBottom: 20,
+    },
+    modalActionRow: {
+      flexDirection: 'row',
+      width: '100%',
+      gap: 12,
+    },
+    modalCancelBtn: {
+      flex: 1,
+      backgroundColor: colors.surfaceContainerHigh,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      borderRadius: 14,
+      paddingVertical: 13,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    modalCancelText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.medium,
+      color: colors.onSurface,
+    },
+    modalSaveBtn: {
+      flex: 1,
+      backgroundColor: colors.primary,
+      borderRadius: 14,
+      paddingVertical: 13,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    modalSaveText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.bold,
+      color: isDark ? colors.onPrimary : '#FFFFFF',
+    },
+  });
+}

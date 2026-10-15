@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
-import { theme } from '../theme/theme';
+import { theme, useTheme, ThemeColors } from '../theme/theme';
 import { useCategoryStore } from '../store/categoryStore';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
@@ -25,6 +25,8 @@ type NavigationProp = NativeStackNavigationProp<
 export const ManageCategoriesScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const {
     categories,
     isLoading,
@@ -92,7 +94,7 @@ export const ManageCategoriesScreen = () => {
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
         >
-          <Icon name="arrow-left" size={24} color="#111827" />
+          <Icon name="arrow-left" size={24} color={colors.onSurface} />
         </TouchableOpacity>
         <Text style={styles.appTitle}>Manage Categories</Text>
         <View style={{ width: 32 }} />
@@ -119,13 +121,13 @@ export const ManageCategoriesScreen = () => {
             <Icon
               name="tag-plus-outline"
               size={20}
-              color="#9CA3AF"
+              color={colors.onSurfaceVariant}
               style={styles.inputIcon}
             />
             <TextInput
               style={styles.textInput}
               placeholder="e.g. Subscriptions, Hobbies, Gym"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.onSurfaceVariant}
               value={newName}
               onChangeText={setNewName}
               maxLength={50}
@@ -143,10 +145,10 @@ export const ManageCategoriesScreen = () => {
             disabled={!newName.trim() || adding}
           >
             {adding ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator size="small" color={isDark ? colors.onPrimary : '#FFFFFF'} />
             ) : (
               <>
-                <Icon name="plus" size={18} color="#FFFFFF" />
+                <Icon name="plus" size={18} color={isDark ? colors.onPrimary : '#FFFFFF'} />
                 <Text style={styles.addBtnText}>Add Category</Text>
               </>
             )}
@@ -165,12 +167,12 @@ export const ManageCategoriesScreen = () => {
 
         {isLoading && categories.length === 0 ? (
           <View style={styles.loaderContainer}>
-            <ActivityIndicator size="small" color="#111827" />
+            <ActivityIndicator size="small" color={colors.primary} />
           </View>
         ) : customCategories.length === 0 ? (
           <View style={styles.emptyCard}>
             <View style={styles.emptyIconCircle}>
-              <Icon name="tag-off-outline" size={28} color="#9CA3AF" />
+              <Icon name="tag-off-outline" size={28} color={colors.onSurfaceVariant} />
             </View>
             <Text style={styles.emptyTitle}>No Custom Categories Yet</Text>
             <Text style={styles.emptySubtext}>
@@ -183,14 +185,14 @@ export const ManageCategoriesScreen = () => {
               <View key={cat.id}>
                 <View style={styles.itemRow}>
                   <View style={styles.itemIconContainer}>
-                    <Icon name="tag-outline" size={20} color="#4B5563" />
+                    <Icon name="tag-outline" size={20} color={colors.onSurfaceVariant} />
                   </View>
                   <View style={styles.itemContent}>
                     <Text style={styles.itemTitle}>{cat.name}</Text>
                     <Text style={styles.itemSubtitle}>Custom category</Text>
                   </View>
                   {deletingId === cat.id ? (
-                    <ActivityIndicator size="small" color="#DC2626" />
+                    <ActivityIndicator size="small" color={colors.tertiary} />
                   ) : (
                     <TouchableOpacity
                       onPress={() => handleDelete(cat.id, cat.name)}
@@ -198,7 +200,7 @@ export const ManageCategoriesScreen = () => {
                       style={styles.deleteBtn}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                      <Icon name="delete-outline" size={20} color="#DC2626" />
+                      <Icon name="delete-outline" size={20} color={colors.tertiary} />
                     </TouchableOpacity>
                   )}
                 </View>
@@ -231,7 +233,7 @@ export const ManageCategoriesScreen = () => {
                       <Icon
                         name="check-decagram-outline"
                         size={20}
-                        color="#059669"
+                        color={isDark ? colors.secondary : '#059669'}
                       />
                     </View>
                     <View style={styles.itemContent}>
@@ -239,7 +241,7 @@ export const ManageCategoriesScreen = () => {
                       <Text style={styles.itemSubtitle}>System standard</Text>
                     </View>
                     <View style={styles.defaultPill}>
-                      <Icon name="lock-outline" size={12} color="#6B7280" />
+                      <Icon name="lock-outline" size={12} color={colors.onSurfaceVariant} />
                       <Text style={styles.defaultPillText}>Default</Text>
                     </View>
                   </View>
@@ -256,261 +258,263 @@ export const ManageCategoriesScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
+function getStyles(colors: ThemeColors, isDark: boolean) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
 
-  // ── Top Bar ──
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  navIconBtn: {
-    padding: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  appTitle: {
-    fontSize: 18,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
+    // ── Top Bar ──
+    topBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+    },
+    navIconBtn: {
+      padding: 4,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    appTitle: {
+      fontSize: 18,
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurface,
+    },
 
-  // ── Scroll Content ──
-  scrollArea: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
+    // ── Scroll Content ──
+    scrollArea: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingBottom: 40,
+    },
 
-  // ── Screen Title Section ──
-  titleSection: {
-    paddingHorizontal: 20,
-    marginTop: 4,
-    marginBottom: 20,
-  },
-  screenHeading: {
-    fontSize: 26,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  screenSubheading: {
-    fontSize: 13,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    marginTop: 3,
-    lineHeight: 18,
-  },
+    // ── Screen Title Section ──
+    titleSection: {
+      paddingHorizontal: 20,
+      marginTop: 4,
+      marginBottom: 20,
+    },
+    screenHeading: {
+      fontSize: 26,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.bold,
+      color: colors.onSurface,
+    },
+    screenSubheading: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+      marginTop: 3,
+      lineHeight: 18,
+    },
 
-  // ── Add Card ──
-  addCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    padding: 16,
-    marginHorizontal: 20,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 5,
-    elevation: 1,
-  },
-  inputLabel: {
-    fontSize: 12,
-    fontFamily: theme.fonts.medium,
-    color: '#4B5563',
-    marginBottom: 8,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 14,
-  },
-  inputIcon: {
-    marginRight: 8,
-  },
-  textInput: {
-    flex: 1,
-    fontSize: 15,
-    fontFamily: theme.fonts.regular,
-    color: '#111827',
-    padding: 0,
-  },
-  addBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#111827',
-    borderRadius: 14,
-    paddingVertical: 12,
-    gap: 6,
-  },
-  addBtnDisabled: {
-    opacity: 0.5,
-  },
-  addBtnText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.bold,
-    color: '#FFFFFF',
-  },
+    // ── Add Card ──
+    addCard: {
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      padding: 16,
+      marginHorizontal: 20,
+      marginBottom: 24,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.02,
+      shadowRadius: 5,
+      elevation: 1,
+    },
+    inputLabel: {
+      fontSize: 12,
+      fontFamily: theme.fonts.medium,
+      color: colors.onSurfaceVariant,
+      marginBottom: 8,
+    },
+    inputWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surfaceContainerLow,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      borderRadius: 14,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      marginBottom: 14,
+    },
+    inputIcon: {
+      marginRight: 8,
+    },
+    textInput: {
+      flex: 1,
+      fontSize: 15,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurface,
+      padding: 0,
+    },
+    addBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.primary,
+      borderRadius: 14,
+      paddingVertical: 12,
+      gap: 6,
+    },
+    addBtnDisabled: {
+      opacity: 0.4,
+    },
+    addBtnText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.bold,
+      color: isDark ? colors.onPrimary : '#FFFFFF',
+    },
 
-  // ── Section Headers ──
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginHorizontal: 22,
-    marginBottom: 8,
-  },
-  sectionHeaderLabel: {
-    fontSize: 11,
-    fontFamily: theme.fonts.bold,
-    color: '#6B7280',
-    letterSpacing: 1,
-    marginHorizontal: 22,
-    marginBottom: 8,
-  },
-  sectionHeaderLabelNoMargin: {
-    fontSize: 11,
-    fontFamily: theme.fonts.bold,
-    color: '#6B7280',
-    letterSpacing: 1,
-  },
-  countBadge: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  countBadgeText: {
-    fontSize: 11,
-    fontFamily: theme.fonts.medium,
-    color: '#4B5563',
-  },
+    // ── Section Headers ──
+    sectionHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginHorizontal: 22,
+      marginBottom: 8,
+    },
+    sectionHeaderLabel: {
+      fontSize: 11,
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurfaceVariant,
+      letterSpacing: 1,
+      marginHorizontal: 22,
+      marginBottom: 8,
+    },
+    sectionHeaderLabelNoMargin: {
+      fontSize: 11,
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurfaceVariant,
+      letterSpacing: 1,
+    },
+    countBadge: {
+      backgroundColor: colors.surfaceContainerHigh,
+      borderRadius: 12,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+    },
+    countBadgeText: {
+      fontSize: 11,
+      fontFamily: theme.fonts.medium,
+      color: colors.onSurfaceVariant,
+    },
 
-  // ── Group Cards ──
-  groupCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    marginHorizontal: 20,
-    marginBottom: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 5,
-    elevation: 1,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-  },
-  itemIconContainer: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  itemContent: {
-    flex: 1,
-    paddingRight: 8,
-  },
-  itemTitle: {
-    fontSize: 15,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  itemSubtitle: {
-    fontSize: 12,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  itemDivider: {
-    height: 1,
-    backgroundColor: '#F3F4F6',
-    marginLeft: 68,
-  },
-  deleteBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: 'rgba(239, 68, 68, 0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  defaultPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    gap: 4,
-  },
-  defaultPillText: {
-    fontSize: 11,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-  },
+    // ── Group Cards ──
+    groupCard: {
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      marginHorizontal: 20,
+      marginBottom: 16,
+      overflow: 'hidden',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.02,
+      shadowRadius: 5,
+      elevation: 1,
+    },
+    itemRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+    },
+    itemIconContainer: {
+      width: 38,
+      height: 38,
+      borderRadius: 12,
+      backgroundColor: colors.surfaceContainerHigh,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 14,
+    },
+    itemContent: {
+      flex: 1,
+      paddingRight: 8,
+    },
+    itemTitle: {
+      fontSize: 15,
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurface,
+    },
+    itemSubtitle: {
+      fontSize: 12,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+      marginTop: 2,
+    },
+    itemDivider: {
+      height: 1,
+      backgroundColor: colors.outlineVariant,
+      marginLeft: 68,
+    },
+    deleteBtn: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      backgroundColor: isDark ? 'rgba(201, 122, 99, 0.15)' : 'rgba(239, 68, 68, 0.08)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    defaultPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surfaceContainerHigh,
+      borderRadius: 12,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      gap: 4,
+    },
+    defaultPillText: {
+      fontSize: 11,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+    },
 
-  // ── Empty & Loader ──
-  loaderContainer: {
-    paddingVertical: 40,
-    alignItems: 'center',
-  },
-  emptyCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    paddingVertical: 32,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    marginHorizontal: 20,
-    marginBottom: 20,
-  },
-  emptyIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  emptyTitle: {
-    fontSize: 15,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-    marginBottom: 4,
-  },
-  emptySubtext: {
-    fontSize: 13,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-});
+    // ── Empty & Loader ──
+    loaderContainer: {
+      paddingVertical: 40,
+      alignItems: 'center',
+    },
+    emptyCard: {
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      paddingVertical: 32,
+      paddingHorizontal: 24,
+      alignItems: 'center',
+      marginHorizontal: 20,
+      marginBottom: 20,
+    },
+    emptyIconCircle: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: colors.surfaceContainerHigh,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 12,
+    },
+    emptyTitle: {
+      fontSize: 15,
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurface,
+      marginBottom: 4,
+    },
+    emptySubtext: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+      textAlign: 'center',
+      lineHeight: 18,
+    },
+  });
+}

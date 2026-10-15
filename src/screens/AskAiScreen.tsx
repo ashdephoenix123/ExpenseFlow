@@ -20,7 +20,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 import Markdown from 'react-native-markdown-display';
 import { format } from 'date-fns';
-import { theme } from '../theme/theme';
+import { theme, useTheme, ThemeColors } from '../theme/theme';
 import { useAiChatStore } from '../store/aiChatStore';
 import { useAuthStore } from '../store/authStore';
 import { useExpenseStore } from '../store/expenseStore';
@@ -29,111 +29,115 @@ import { ChatMessage } from '../types';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
 // ─────────────────────────────────────────────────────────────
-// Markdown styles for light theme AI response card
+// Markdown styles generator
 // ─────────────────────────────────────────────────────────────
-const markdownStyles = StyleSheet.create({
-  body: {
-    color: '#374151',
-    fontSize: 14,
-    lineHeight: 22,
-    fontFamily: theme.fonts.regular,
-  },
-  strong: {
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  em: {
-    fontFamily: theme.fonts.regular,
-    fontStyle: 'italic',
-    color: '#4B5563',
-  },
-  bullet_list: {
-    marginVertical: 4,
-  },
-  ordered_list: {
-    marginVertical: 4,
-  },
-  list_item: {
-    flexDirection: 'row',
-    marginVertical: 3,
-  },
-  bullet_list_icon: {
-    color: '#18181B',
-    fontSize: 14,
-    lineHeight: 22,
-    marginRight: 8,
-  },
-  ordered_list_icon: {
-    color: '#18181B',
-    fontSize: 14,
-    lineHeight: 22,
-    marginRight: 8,
-    fontFamily: theme.fonts.medium,
-  },
-  paragraph: {
-    marginTop: 0,
-    marginBottom: 6,
-  },
-  heading1: {
-    fontSize: 20,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-    marginBottom: 8,
-  },
-  heading2: {
-    fontSize: 18,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-    marginBottom: 6,
-  },
-  heading3: {
-    fontSize: 15,
-    fontFamily: theme.fonts.semiBold,
-    color: '#111827',
-    marginBottom: 4,
-  },
-  code_inline: {
-    backgroundColor: '#F3F4F6',
-    color: '#111827',
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    fontSize: 13,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 4,
-  },
-  fence: {
-    backgroundColor: '#F9FAFB',
-    borderColor: '#E5E7EB',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 10,
-    marginVertical: 6,
-  },
-  code_block: {
-    color: '#111827',
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    fontSize: 13,
-  },
-  hr: {
-    backgroundColor: '#E5E7EB',
-    height: 1,
-    marginVertical: 8,
-  },
-  blockquote: {
-    borderLeftColor: '#18181B',
-    borderLeftWidth: 3,
-    paddingLeft: 12,
-    marginVertical: 6,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 4,
-    paddingVertical: 4,
-  },
-});
+const getMarkdownStyles = (colors: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    body: {
+      color: colors.onSurface,
+      fontSize: 14,
+      lineHeight: 22,
+      fontFamily: theme.fonts.regular,
+    },
+    strong: {
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurface,
+    },
+    em: {
+      fontFamily: theme.fonts.regular,
+      fontStyle: 'italic',
+      color: colors.onSurfaceVariant,
+    },
+    bullet_list: {
+      marginVertical: 4,
+    },
+    ordered_list: {
+      marginVertical: 4,
+    },
+    list_item: {
+      flexDirection: 'row',
+      marginVertical: 3,
+    },
+    bullet_list_icon: {
+      color: colors.primary,
+      fontSize: 14,
+      lineHeight: 22,
+      marginRight: 8,
+    },
+    ordered_list_icon: {
+      color: colors.primary,
+      fontSize: 14,
+      lineHeight: 22,
+      marginRight: 8,
+      fontFamily: theme.fonts.medium,
+    },
+    paragraph: {
+      marginTop: 0,
+      marginBottom: 6,
+    },
+    heading1: {
+      fontSize: 20,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.bold,
+      color: colors.onSurface,
+      marginBottom: 8,
+    },
+    heading2: {
+      fontSize: 18,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.bold,
+      color: colors.onSurface,
+      marginBottom: 6,
+    },
+    heading3: {
+      fontSize: 15,
+      fontFamily: theme.fonts.semiBold,
+      color: colors.onSurface,
+      marginBottom: 4,
+    },
+    code_inline: {
+      backgroundColor: colors.surfaceContainerHigh,
+      color: colors.onSurface,
+      fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+      fontSize: 13,
+      paddingHorizontal: 4,
+      paddingVertical: 1,
+      borderRadius: 4,
+    },
+    fence: {
+      backgroundColor: colors.surfaceContainerLowest,
+      borderColor: colors.outlineVariant,
+      borderWidth: 1,
+      borderRadius: 8,
+      padding: 10,
+      marginVertical: 6,
+    },
+    code_block: {
+      color: colors.onSurface,
+      fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+      fontSize: 13,
+    },
+    hr: {
+      backgroundColor: colors.outlineVariant,
+      height: 1,
+      marginVertical: 8,
+    },
+    blockquote: {
+      borderLeftColor: colors.primary,
+      borderLeftWidth: 3,
+      paddingLeft: 12,
+      marginVertical: 6,
+      backgroundColor: colors.surfaceContainerLow,
+      borderRadius: 4,
+      paddingVertical: 4,
+    },
+  });
 
 // ─────────────────────────────────────────────────────────────
 // Typing Indicator — 3 Animated jumping dots
 // ─────────────────────────────────────────────────────────────
 const TypingIndicator = () => {
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+
   const dot1 = useRef(new Animated.Value(0)).current;
   const dot2 = useRef(new Animated.Value(0)).current;
   const dot3 = useRef(new Animated.Value(0)).current;
@@ -189,7 +193,7 @@ const TypingIndicator = () => {
   return (
     <View style={styles.typingRow}>
       <View style={styles.aiAvatarCircle}>
-        <Icon name="creation" size={16} color="#18181B" />
+        <Icon name="creation" size={16} color={colors.primary} />
       </View>
       <View style={styles.typingCard}>
         <View style={styles.typingDotsContainer}>
@@ -213,6 +217,9 @@ interface MessageBubbleProps {
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onAdjustCap }) => {
   const isUser = message.role === 'user';
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+  const markdownStyles = useMemo(() => getMarkdownStyles(colors, isDark), [colors, isDark]);
 
   const timeFormatted = useMemo(() => {
     try {
@@ -233,7 +240,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onAdjustCap }) =
           <Text style={styles.userMessageText}>{message.content}</Text>
           <View style={styles.userMetaRow}>
             <Text style={styles.userTimeText}>{timeFormatted}</Text>
-            <Icon name="check-all" size={14} color="#6B7280" style={{ marginLeft: 4 }} />
+            <Icon name="check-all" size={14} color={colors.onSurfaceVariant} style={{ marginLeft: 4 }} />
           </View>
         </View>
       </View>
@@ -275,7 +282,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onAdjustCap }) =
   return (
     <View style={styles.aiMessageContainer}>
       <View style={styles.aiAvatarCircle}>
-        <Icon name="creation" size={16} color="#18181B" />
+        <Icon name="creation" size={16} color={colors.primary} />
       </View>
 
       <View style={styles.aiCard}>
@@ -289,13 +296,13 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onAdjustCap }) =
           <View
             style={[
               styles.targetBadge,
-              !isOnTarget && { backgroundColor: '#FEE2E2' },
+              !isOnTarget && styles.targetBadgeOver,
             ]}
           >
             <Text
               style={[
                 styles.targetBadgeText,
-                !isOnTarget && { color: '#DC2626' },
+                !isOnTarget && styles.targetBadgeTextOver,
               ]}
             >
               {isOnTarget ? '• On Target' : '• Over Cap'}
@@ -319,7 +326,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onAdjustCap }) =
                 style={[
                   styles.utilizationBarFill,
                   { width: `${utilizationPercent}%` },
-                  !isOnTarget && { backgroundColor: '#DC2626' },
+                  !isOnTarget && { backgroundColor: colors.tertiary },
                 ]}
               />
             </View>
@@ -356,7 +363,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onAdjustCap }) =
                   style={[
                     styles.statBoxValue,
                     styles.surplusValue,
-                    !isOnTarget && { color: '#DC2626' },
+                    !isOnTarget && { color: colors.tertiary },
                   ]}
                 >
                   {surplus >= 0 ? '+' : '-'}₹{Math.abs(surplus).toLocaleString('en-IN')}
@@ -376,7 +383,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onAdjustCap }) =
                 }
               }}
             >
-              <Icon name="tune-variant" size={16} color="#374151" />
+              <Icon name="tune-variant" size={16} color={colors.onSurface} />
               <Text style={styles.adjustCapText}>Adjust Cap</Text>
             </TouchableOpacity>
           </View>
@@ -416,6 +423,8 @@ const SUGGESTION_SETS = [
 export const AskAiScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   const { messages, isLoading, sendMessage, clearChat } = useAiChatStore();
   const { user } = useAuthStore();
@@ -490,7 +499,7 @@ export const AskAiScreen = () => {
           </View>
           <Text style={styles.headerTitle}>ExpenseFlow</Text>
           <View style={styles.advisorBadge}>
-            <Icon name="creation" size={13} color="#B45309" />
+            <Icon name="creation" size={13} color={isDark ? colors.primary : '#B45309'} />
             <Text style={styles.advisorBadgeText}>AI Advisor</Text>
           </View>
         </View>
@@ -502,7 +511,7 @@ export const AskAiScreen = () => {
               activeOpacity={0.7}
               onPress={clearChat}
             >
-              <Icon name="refresh" size={20} color="#4B5563" />
+              <Icon name="refresh" size={20} color={colors.onSurfaceVariant} />
             </TouchableOpacity>
           )}
 
@@ -511,7 +520,7 @@ export const AskAiScreen = () => {
             activeOpacity={0.7}
             onPress={() => navigation.navigate('Reminders')}
           >
-            <Icon name="bell-outline" size={22} color="#111827" />
+            <Icon name="bell-outline" size={22} color={colors.onSurface} />
             {reminderExpenses.length > 0 && <View style={styles.bellBadgeDot} />}
           </TouchableOpacity>
         </View>
@@ -528,7 +537,7 @@ export const AskAiScreen = () => {
           <View style={styles.welcomeSection}>
             {/* Center Sparkle Badge */}
             <View style={styles.welcomeIconCircle}>
-              <Icon name="creation" size={26} color="#18181B" />
+              <Icon name="creation" size={26} color={colors.primary} />
             </View>
 
             {/* Title & Subtitle */}
@@ -546,7 +555,7 @@ export const AskAiScreen = () => {
                 activeOpacity={0.7}
                 onPress={handleCycleSuggestions}
               >
-                <Icon name="refresh" size={14} color="#4B5563" />
+                <Icon name="refresh" size={14} color={colors.onSurfaceVariant} />
                 <Text style={styles.refreshBtnText}>Refresh</Text>
               </TouchableOpacity>
             </View>
@@ -560,7 +569,7 @@ export const AskAiScreen = () => {
                 onPress={() => handleSelectSuggestion(q)}
               >
                 <View style={styles.questionArrowCircle}>
-                  <Icon name="arrow-top-right" size={16} color="#4B5563" />
+                  <Icon name="arrow-top-right" size={16} color={colors.onSurfaceVariant} />
                 </View>
                 <Text style={styles.questionText}>{q}</Text>
               </TouchableOpacity>
@@ -585,13 +594,13 @@ export const AskAiScreen = () => {
             Alert.alert('Voice Input', 'Smart voice logging is coming in an upcoming update!');
           }}
         >
-          <Icon name="microphone-outline" size={22} color="#6B7280" />
+          <Icon name="microphone-outline" size={22} color={colors.onSurfaceVariant} />
         </TouchableOpacity>
 
         <TextInput
           style={styles.inputField}
           placeholder="Ask about your expenses..."
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.onSurfaceVariant}
           value={inputText}
           onChangeText={setInputText}
           onSubmitEditing={handleSend}
@@ -605,9 +614,9 @@ export const AskAiScreen = () => {
           disabled={!inputText.trim() || isLoading}
         >
           {isLoading ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
+            <ActivityIndicator size="small" color={isDark ? colors.onPrimary : '#FFFFFF'} />
           ) : (
-            <Icon name="arrow-up" size={20} color="#FFFFFF" />
+            <Icon name="arrow-up" size={20} color={isDark ? colors.onPrimary : '#FFFFFF'} />
           )}
         </TouchableOpacity>
       </View>
@@ -615,450 +624,460 @@ export const AskAiScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  // Top Header
-  topHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  topHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  avatarWrapper: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    overflow: 'hidden',
-    backgroundColor: '#E5E7EB',
-    borderWidth: 1.5,
-    borderColor: '#D1D5DB',
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-  },
-  avatarPlaceholder: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#E5E7EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarInitial: {
-    fontSize: 16,
-    fontFamily: theme.fonts.bold,
-    color: '#374151',
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  advisorBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEF3C7',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    gap: 4,
-  },
-  advisorBadgeText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.medium,
-    color: '#92400E',
-  },
-  topHeaderRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  headerIconBtn: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  bellBadgeDot: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: '#F97316',
-  },
+function getStyles(colors: ThemeColors, isDark: boolean) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    // Top Header
+    topHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+    },
+    topHeaderLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    avatarWrapper: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      overflow: 'hidden',
+      backgroundColor: colors.surfaceContainer,
+      borderWidth: 1.5,
+      borderColor: colors.outlineVariant,
+    },
+    avatarImage: {
+      width: '100%',
+      height: '100%',
+    },
+    avatarPlaceholder: {
+      width: '100%',
+      height: '100%',
+      backgroundColor: colors.surfaceContainer,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    avatarInitial: {
+      fontSize: 16,
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurface,
+    },
+    headerTitle: {
+      fontSize: 16,
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurface,
+    },
+    advisorBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: isDark ? 'rgba(224, 169, 109, 0.15)' : '#FEF3C7',
+      borderRadius: 12,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      gap: 4,
+    },
+    advisorBadgeText: {
+      fontSize: 12,
+      fontFamily: theme.fonts.medium,
+      color: isDark ? colors.primary : '#92400E',
+    },
+    topHeaderRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    headerIconBtn: {
+      width: 36,
+      height: 36,
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+    },
+    bellBadgeDot: {
+      position: 'absolute',
+      top: 6,
+      right: 6,
+      width: 7,
+      height: 7,
+      borderRadius: 3.5,
+      backgroundColor: colors.tertiary,
+    },
 
-  listContent: {
-    paddingBottom: 24,
-  },
+    listContent: {
+      paddingBottom: 24,
+    },
 
-  // Welcome Section
-  welcomeSection: {
-    paddingTop: 12,
-    marginBottom: 8,
-  },
-  welcomeIconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  welcomeTitle: {
-    fontSize: 26,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-    textAlign: 'center',
-    marginTop: 14,
-    marginBottom: 8,
-  },
-  welcomeSubtitle: {
-    fontSize: 14,
-    fontFamily: theme.fonts.regular,
-    color: '#4B5563',
-    lineHeight: 21,
-    textAlign: 'center',
-    paddingHorizontal: 28,
-    marginBottom: 24,
-  },
+    // Welcome Section
+    welcomeSection: {
+      paddingTop: 12,
+      marginBottom: 8,
+    },
+    welcomeIconCircle: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: colors.surfaceContainer,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      alignItems: 'center',
+      justifyContent: 'center',
+      alignSelf: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 6,
+      elevation: 2,
+    },
+    welcomeTitle: {
+      fontSize: 26,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.bold,
+      color: colors.onSurface,
+      textAlign: 'center',
+      marginTop: 14,
+      marginBottom: 8,
+    },
+    welcomeSubtitle: {
+      fontSize: 14,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+      lineHeight: 21,
+      textAlign: 'center',
+      paddingHorizontal: 28,
+      marginBottom: 24,
+    },
 
-  // Suggestions Header
-  suggestionsHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    marginBottom: 12,
-  },
-  suggestionsLabel: {
-    fontSize: 12,
-    fontFamily: theme.fonts.bold,
-    letterSpacing: 0.5,
-    color: '#6B7280',
-  },
-  refreshBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  refreshBtnText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.medium,
-    color: '#4B5563',
-  },
+    // Suggestions Header
+    suggestionsHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      marginBottom: 12,
+    },
+    suggestionsLabel: {
+      fontSize: 12,
+      fontFamily: theme.fonts.bold,
+      letterSpacing: 0.5,
+      color: colors.onSurfaceVariant,
+    },
+    refreshBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    refreshBtnText: {
+      fontSize: 12,
+      fontFamily: theme.fonts.medium,
+      color: colors.onSurfaceVariant,
+    },
 
-  // Question Cards
-  questionCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    padding: 14,
-    marginHorizontal: 16,
-    marginBottom: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  questionArrowCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  questionText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.medium,
-    color: '#111827',
-    flex: 1,
-  },
+    // Question Cards
+    questionCard: {
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      padding: 14,
+      marginHorizontal: 16,
+      marginBottom: 10,
+      flexDirection: 'row',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.03,
+      shadowRadius: 4,
+      elevation: 1,
+    },
+    questionArrowCircle: {
+      width: 32,
+      height: 32,
+      borderRadius: 10,
+      backgroundColor: colors.surfaceContainerHigh,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    questionText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.medium,
+      color: colors.onSurface,
+      flex: 1,
+    },
 
-  // User Message
-  userMessageContainer: {
-    paddingHorizontal: 16,
-    marginVertical: 6,
-    alignItems: 'flex-end',
-  },
-  userBubble: {
-    backgroundColor: '#EAEAEF',
-    borderRadius: 18,
-    borderBottomRightRadius: 4,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    maxWidth: '82%',
-  },
-  userMessageText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.regular,
-    color: '#111827',
-    lineHeight: 20,
-  },
-  userMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    marginTop: 4,
-  },
-  userTimeText: {
-    fontSize: 11,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-  },
+    // User Message
+    userMessageContainer: {
+      paddingHorizontal: 16,
+      marginVertical: 6,
+      alignItems: 'flex-end',
+    },
+    userBubble: {
+      backgroundColor: isDark ? colors.surfaceContainerHigh : '#EAEAEF',
+      borderRadius: 18,
+      borderBottomRightRadius: 4,
+      borderWidth: isDark ? 1 : 0,
+      borderColor: colors.outlineVariant,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      maxWidth: '82%',
+    },
+    userMessageText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurface,
+      lineHeight: 20,
+    },
+    userMetaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      marginTop: 4,
+    },
+    userTimeText: {
+      fontSize: 11,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+    },
 
-  // AI Message
-  aiMessageContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingHorizontal: 16,
-    marginVertical: 8,
-  },
-  aiAvatarCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-    marginTop: 4,
-  },
-  aiCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    padding: 18,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  aiCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  aiCardTitle: {
-    fontSize: 18,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  aiCardSubtitle: {
-    fontSize: 12,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  targetBadge: {
-    backgroundColor: '#D1FAE5',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  targetBadgeText: {
-    fontSize: 11,
-    fontFamily: theme.fonts.medium,
-    color: '#15803D',
-  },
+    // AI Message
+    aiMessageContainer: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      paddingHorizontal: 16,
+      marginVertical: 8,
+    },
+    aiAvatarCircle: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: colors.surfaceContainer,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 10,
+      marginTop: 4,
+    },
+    aiCard: {
+      flex: 1,
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      padding: 18,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    aiCardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: 12,
+    },
+    aiCardTitle: {
+      fontSize: 18,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.bold,
+      color: colors.onSurface,
+    },
+    aiCardSubtitle: {
+      fontSize: 12,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+      marginTop: 2,
+    },
+    targetBadge: {
+      backgroundColor: isDark ? 'rgba(143, 163, 130, 0.15)' : '#D1FAE5',
+      borderRadius: 12,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+    },
+    targetBadgeOver: {
+      backgroundColor: isDark ? 'rgba(201, 122, 99, 0.15)' : '#FEE2E2',
+    },
+    targetBadgeText: {
+      fontSize: 11,
+      fontFamily: theme.fonts.medium,
+      color: isDark ? colors.secondary : '#15803D',
+    },
+    targetBadgeTextOver: {
+      color: isDark ? colors.tertiary : '#DC2626',
+    },
 
-  // Budget Utilization Section inside AI Card
-  utilizationSection: {
-    marginTop: 8,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-  },
-  utilizationLabelsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  utilizationLabel: {
-    fontSize: 12,
-    fontFamily: theme.fonts.medium,
-    color: '#4B5563',
-  },
-  utilizationPercent: {
-    fontSize: 12,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  utilizationBarTrack: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#F3F4F6',
-    overflow: 'hidden',
-  },
-  utilizationBarFill: {
-    height: '100%',
-    borderRadius: 3,
-    backgroundColor: '#2D5A43',
-  },
-  utilizationBoundsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 4,
-    marginBottom: 12,
-  },
-  utilizationBoundText: {
-    fontSize: 11,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-  },
+    // Budget Utilization Section inside AI Card
+    utilizationSection: {
+      marginTop: 8,
+      paddingTop: 12,
+      borderTopWidth: 1,
+      borderTopColor: colors.outlineVariant,
+    },
+    utilizationLabelsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 6,
+    },
+    utilizationLabel: {
+      fontSize: 12,
+      fontFamily: theme.fonts.medium,
+      color: colors.onSurfaceVariant,
+    },
+    utilizationPercent: {
+      fontSize: 12,
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurface,
+    },
+    utilizationBarTrack: {
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: colors.surfaceContainerHigh,
+      overflow: 'hidden',
+    },
+    utilizationBarFill: {
+      height: '100%',
+      borderRadius: 3,
+      backgroundColor: colors.secondary,
+    },
+    utilizationBoundsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: 4,
+      marginBottom: 12,
+    },
+    utilizationBoundText: {
+      fontSize: 11,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+    },
 
-  // 3 Stats Boxes inside AI Card
-  statsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
-  },
-  statBox: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-  },
-  statBoxLabel: {
-    fontSize: 10,
-    fontFamily: theme.fonts.medium,
-    color: '#6B7280',
-  },
-  statBoxValue: {
-    fontSize: 15,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-    marginTop: 3,
-  },
-  burnValueRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  burnUnit: {
-    fontSize: 11,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-  },
-  surplusValue: {
-    color: '#15803D',
-  },
-  adjustCapBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    paddingVertical: 10,
-    gap: 6,
-  },
-  adjustCapText: {
-    fontSize: 13,
-    fontFamily: theme.fonts.medium,
-    color: '#374151',
-  },
+    // 3 Stats Boxes inside AI Card
+    statsRow: {
+      flexDirection: 'row',
+      gap: 8,
+      marginBottom: 12,
+    },
+    statBox: {
+      flex: 1,
+      backgroundColor: colors.surfaceContainerLow,
+      borderRadius: 12,
+      padding: 10,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+    },
+    statBoxLabel: {
+      fontSize: 10,
+      fontFamily: theme.fonts.medium,
+      color: colors.onSurfaceVariant,
+    },
+    statBoxValue: {
+      fontSize: 15,
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurface,
+      marginTop: 3,
+    },
+    burnValueRow: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+    },
+    burnUnit: {
+      fontSize: 11,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+    },
+    surplusValue: {
+      color: colors.secondary,
+    },
+    adjustCapBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.surfaceContainerHigh,
+      borderRadius: 12,
+      paddingVertical: 10,
+      gap: 6,
+    },
+    adjustCapText: {
+      fontSize: 13,
+      fontFamily: theme.fonts.medium,
+      color: colors.onSurface,
+    },
 
-  // Typing Indicator
-  typingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    marginVertical: 8,
-  },
-  typingCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  typingDotsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  typingDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: '#6B7280',
-  },
+    // Typing Indicator
+    typingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      marginVertical: 8,
+    },
+    typingCard: {
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    typingDotsContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    typingDot: {
+      width: 7,
+      height: 7,
+      borderRadius: 3.5,
+      backgroundColor: colors.primary,
+    },
 
-  // Bottom Input Bar
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 28,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  micBtn: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  inputField: {
-    flex: 1,
-    fontSize: 14,
-    fontFamily: theme.fonts.regular,
-    color: '#111827',
-    paddingHorizontal: 10,
-    paddingVertical: Platform.OS === 'ios' ? 8 : 4,
-  },
-  sendBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#000000',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendBtnDisabled: {
-    opacity: 0.5,
-  },
-});
+    // Bottom Input Bar
+    inputContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 28,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      marginHorizontal: 16,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+    micBtn: {
+      width: 36,
+      height: 36,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    inputField: {
+      flex: 1,
+      fontSize: 14,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurface,
+      paddingHorizontal: 10,
+      paddingVertical: Platform.OS === 'ios' ? 8 : 4,
+    },
+    sendBtn: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    sendBtnDisabled: {
+      opacity: 0.4,
+    },
+  });
+}

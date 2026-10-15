@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -15,13 +15,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 import { supabase } from '../services/supabase';
-import { theme } from '../theme/theme';
+import { theme, useTheme, ThemeColors } from '../theme/theme';
 import { AuthStackParamList } from './AuthScreen';
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Signup'>;
 
 export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -94,7 +97,7 @@ export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => 
         {/* ── Brand Header ── */}
         <View style={styles.header}>
           <View style={styles.iconCircle}>
-            <Icon name="account-plus-outline" size={28} color="#FFFFFF" />
+            <Icon name="account-plus-outline" size={28} color={colors.primary} />
           </View>
           <Text style={styles.appName}>ExpenseFlow</Text>
           <Text style={styles.title}>Create account</Text>
@@ -112,14 +115,14 @@ export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => 
               <Icon
                 name="account-outline"
                 size={20}
-                color="#9CA3AF"
+                color={colors.onSurfaceVariant}
                 style={styles.inputIcon}
               />
               <TextInput
                 value={name}
                 onChangeText={setName}
                 placeholder="Alex Morgan"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.onSurfaceVariant}
                 autoCapitalize="words"
                 style={styles.textInput}
                 editable={!loading}
@@ -134,14 +137,14 @@ export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => 
               <Icon
                 name="email-outline"
                 size={20}
-                color="#9CA3AF"
+                color={colors.onSurfaceVariant}
                 style={styles.inputIcon}
               />
               <TextInput
                 value={email}
                 onChangeText={setEmail}
                 placeholder="name@example.com"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.onSurfaceVariant}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 autoCorrect={false}
@@ -158,14 +161,14 @@ export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => 
               <Icon
                 name="lock-outline"
                 size={20}
-                color="#9CA3AF"
+                color={colors.onSurfaceVariant}
                 style={styles.inputIcon}
               />
               <TextInput
                 value={password}
                 onChangeText={setPassword}
                 placeholder="At least 6 characters"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.onSurfaceVariant}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 style={styles.textInput}
@@ -179,7 +182,7 @@ export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => 
                 <Icon
                   name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                   size={20}
-                  color="#6B7280"
+                  color={colors.onSurfaceVariant}
                 />
               </TouchableOpacity>
             </View>
@@ -192,14 +195,14 @@ export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => 
               <Icon
                 name="lock-check-outline"
                 size={20}
-                color="#9CA3AF"
+                color={colors.onSurfaceVariant}
                 style={styles.inputIcon}
               />
               <TextInput
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 placeholder="Re-enter password"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.onSurfaceVariant}
                 secureTextEntry={!showConfirmPassword}
                 autoCapitalize="none"
                 style={styles.textInput}
@@ -213,7 +216,7 @@ export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => 
                 <Icon
                   name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
                   size={20}
-                  color="#6B7280"
+                  color={colors.onSurfaceVariant}
                 />
               </TouchableOpacity>
             </View>
@@ -227,7 +230,7 @@ export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => 
             activeOpacity={0.8}
           >
             {loading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator size="small" color={isDark ? colors.onPrimary : '#FFFFFF'} />
             ) : (
               <Text style={styles.primaryBtnText}>Create Account</Text>
             )}
@@ -251,146 +254,150 @@ export const SignupScreen = ({ navigation }: { navigation: NavigationProp }) => 
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 20,
-    justifyContent: 'center',
-  },
+function getStyles(colors: ThemeColors, isDark: boolean) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      paddingHorizontal: 20,
+      justifyContent: 'center',
+    },
 
-  // Header
-  header: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  iconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 20,
-    backgroundColor: '#18181B',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  appName: {
-    fontSize: 13,
-    fontFamily: theme.fonts.bold,
-    color: '#71717A',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginBottom: 6,
-  },
-  title: {
-    fontSize: 26,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-    textAlign: 'center',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 14,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    textAlign: 'center',
-    maxWidth: 300,
-    lineHeight: 20,
-  },
+    // Header
+    header: {
+      alignItems: 'center',
+      marginBottom: 24,
+    },
+    iconCircle: {
+      width: 60,
+      height: 60,
+      borderRadius: 20,
+      backgroundColor: colors.surfaceContainer,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 14,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+    appName: {
+      fontSize: 13,
+      fontFamily: theme.fonts.bold,
+      color: colors.primary,
+      letterSpacing: 1.2,
+      textTransform: 'uppercase',
+      marginBottom: 6,
+    },
+    title: {
+      fontSize: 26,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.bold,
+      color: colors.onSurface,
+      textAlign: 'center',
+      marginBottom: 6,
+    },
+    subtitle: {
+      fontSize: 14,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+      textAlign: 'center',
+      maxWidth: 300,
+      lineHeight: 20,
+    },
 
-  // Form Card
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    elevation: 2,
-    marginBottom: 20,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  inputLabel: {
-    fontSize: 11,
-    fontFamily: theme.fonts.bold,
-    color: '#4B5563',
-    letterSpacing: 0.6,
-    marginBottom: 8,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingHorizontal: 14,
-    height: 52,
-  },
-  inputIcon: {
-    marginRight: 10,
-  },
-  textInput: {
-    flex: 1,
-    fontSize: 15,
-    fontFamily: theme.fonts.regular,
-    color: '#111827',
-    padding: 0,
-  },
-  eyeBtn: {
-    padding: 6,
-    marginLeft: 4,
-  },
+    // Form Card
+    card: {
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 20,
+      padding: 22,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 10,
+      elevation: 2,
+      marginBottom: 20,
+    },
+    inputGroup: {
+      marginBottom: 16,
+    },
+    inputLabel: {
+      fontSize: 11,
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurfaceVariant,
+      letterSpacing: 0.6,
+      marginBottom: 8,
+    },
+    inputWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surfaceContainerLow,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      paddingHorizontal: 14,
+      height: 52,
+    },
+    inputIcon: {
+      marginRight: 10,
+    },
+    textInput: {
+      flex: 1,
+      fontSize: 15,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurface,
+      padding: 0,
+    },
+    eyeBtn: {
+      padding: 6,
+      marginLeft: 4,
+    },
 
-  // Button
-  primaryBtn: {
-    backgroundColor: '#18181B',
-    height: 52,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
-  },
-  primaryBtnDisabled: {
-    opacity: 0.7,
-  },
-  primaryBtnText: {
-    fontSize: 15,
-    fontFamily: theme.fonts.semiBold,
-    color: '#FFFFFF',
-    letterSpacing: 0.2,
-  },
+    // Button
+    primaryBtn: {
+      backgroundColor: colors.primary,
+      height: 52,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 8,
+    },
+    primaryBtnDisabled: {
+      opacity: 0.5,
+    },
+    primaryBtnText: {
+      fontSize: 15,
+      fontFamily: theme.fonts.semiBold,
+      color: isDark ? colors.onPrimary : '#FFFFFF',
+      letterSpacing: 0.2,
+    },
 
-  // Footer
-  footer: {
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  switchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-  },
-  switchText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-  },
-  switchHighlight: {
-    fontSize: 14,
-    fontFamily: theme.fonts.bold,
-    color: '#18181B',
-  },
-});
+    // Footer
+    footer: {
+      alignItems: 'center',
+      paddingVertical: 4,
+    },
+    switchRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 6,
+    },
+    switchText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+    },
+    switchHighlight: {
+      fontSize: 14,
+      fontFamily: theme.fonts.bold,
+      color: colors.primary,
+    },
+  });
+}
