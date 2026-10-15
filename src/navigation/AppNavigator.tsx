@@ -19,7 +19,7 @@ import { ReminderScreen } from '../screens/ReminderScreen';
 import { ResetPasswordScreen } from '../screens/ResetPasswordScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { useAuthStore } from '../store/authStore';
-import { theme } from '../theme/theme';
+import { theme, useTheme } from '../theme/theme';
 
 export type RootStackParamList = {
   MainTabs: undefined;
@@ -31,6 +31,7 @@ export type RootStackParamList = {
     editNote?: string;
     editAccountId?: string;
     editIsReminder?: boolean;
+    editSpentOn?: string;
   }
   | undefined;
   ManageCategories: undefined;
@@ -58,27 +59,28 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const TabNavigator = () => {
   const insets = useSafeAreaInsets();
   const bottomPadding = Math.max(insets.bottom, 10);
+  const { colors, isDark } = useTheme();
 
   return (
     <Tab.Navigator
-      initialRouteName="Overview"
+      initialRouteName="Add"
       screenOptions={({ route }) => ({
         headerStyle: {
-          backgroundColor: '#FFFFFF',
+          backgroundColor: colors.surface,
           elevation: 0,
           shadowOpacity: 0,
           borderBottomWidth: 1,
-          borderBottomColor: '#F1F3F5',
+          borderBottomColor: colors.border,
         },
-        headerTintColor: '#111827',
+        headerTintColor: colors.textPrimary,
         headerTitleStyle: {
           fontFamily: theme.fonts.bold,
           fontSize: 18,
-          color: '#111827',
+          color: colors.textPrimary,
         },
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopColor: '#F1F3F5',
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
           borderTopWidth: 1,
           paddingBottom: bottomPadding,
           paddingTop: 8,
@@ -86,26 +88,17 @@ const TabNavigator = () => {
           elevation: 8,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.04,
+          shadowOpacity: isDark ? 0.3 : 0.04,
           shadowRadius: 6,
         },
-        tabBarActiveTintColor: '#18181B',
-        tabBarInactiveTintColor: '#71717A',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarLabelStyle: {
           fontFamily: theme.fonts.medium,
           fontSize: 11,
           marginTop: 2,
         },
         tabBarIcon: ({ color, focused }) => {
-          if (route.name === 'Overview' || route.name === 'Timeline') {
-            return (
-              <Icon
-                name={focused ? 'view-dashboard' : 'view-dashboard-outline'}
-                size={24}
-                color={color}
-              />
-            );
-          }
           if (route.name === 'Add') {
             return (
               <View
@@ -113,13 +106,30 @@ const TabNavigator = () => {
                   width: 32,
                   height: 32,
                   borderRadius: 16,
-                  backgroundColor: '#18181B',
+                  backgroundColor: focused
+                    ? colors.primary
+                    : isDark
+                    ? colors.surfaceElevated
+                    : '#71717A',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
-                <Icon name="plus" size={20} color="#FFFFFF" />
+                <Icon
+                  name="plus"
+                  size={20}
+                  color={focused ? colors.onPrimary : '#FFFFFF'}
+                />
               </View>
+            );
+          }
+          if (route.name === 'Overview' || route.name === 'Timeline') {
+            return (
+              <Icon
+                name={focused ? 'chart-timeline-variant' : 'chart-timeline-variant'}
+                size={24}
+                color={color}
+              />
             );
           }
           if (route.name === 'AskAi') {
@@ -155,24 +165,24 @@ const TabNavigator = () => {
       })}
     >
       <Tab.Screen
-        name="Overview"
-        component={OverviewScreen}
-        options={{ title: 'Overview', headerShown: false }}
-      />
-      <Tab.Screen
         name="Add"
         component={HomeScreen}
         options={{ title: 'Add', headerShown: false }}
       />
       <Tab.Screen
+        name="Overview"
+        component={OverviewScreen}
+        options={{ title: 'Activity', headerShown: false }}
+      />
+      <Tab.Screen
         name="AskAi"
         component={AskAiScreen}
-        options={{ title: 'Ask AI' }}
+        options={{ title: 'Ask AI', headerShown: false }}
       />
       <Tab.Screen
         name="Settings"
         component={SettingsScreen}
-        options={{ title: 'Settings' }}
+        options={{ title: 'Settings', headerShown: false }}
       />
     </Tab.Navigator>
   );
@@ -182,6 +192,7 @@ import * as SplashScreen from 'expo-splash-screen';
 export const AppNavigator = () => {
   const { session, initialized, initialize, pendingPasswordReset } =
     useAuthStore();
+  const { colors, isDark } = useTheme();
 
   useEffect(() => {
     initialize();
@@ -189,13 +200,14 @@ export const AppNavigator = () => {
 
   const MyTheme = {
     ...DarkTheme,
+    dark: isDark,
     colors: {
       ...DarkTheme.colors,
-      background: '#F8F9FA',
-      card: '#FFFFFF',
-      text: '#111827',
-      border: '#F1F3F5',
-      primary: '#18181B',
+      background: colors.background,
+      card: colors.surfaceContainer,
+      text: colors.textPrimary,
+      border: colors.border,
+      primary: colors.primary,
     },
   };
 
@@ -231,63 +243,25 @@ export const AppNavigator = () => {
               <Stack.Screen
                 name="ManageCategories"
                 component={ManageCategoriesScreen}
-                options={{
-                  headerShown: true,
-                  title: 'Manage Categories',
-                  headerStyle: { backgroundColor: '#FFFFFF' },
-                  headerTintColor: '#111827',
-                  headerTitleStyle: {
-                    fontFamily: theme.fonts.bold,
-                    fontSize: 18,
-                    color: '#111827',
-                  },
-                }}
+                options={{ headerShown: false }}
               />
               <Stack.Screen
                 name="ManageAccounts"
                 component={ManageAccountsScreen}
-                options={{
-                  headerShown: true,
-                  title: 'Manage Accounts',
-                  headerStyle: { backgroundColor: '#FFFFFF' },
-                  headerTintColor: '#111827',
-                  headerTitleStyle: {
-                    fontFamily: theme.fonts.bold,
-                    fontSize: 18,
-                    color: '#111827',
-                  },
-                }}
+                options={{ headerShown: false }}
               />
               <Stack.Screen
                 name="Reminders"
                 component={ReminderScreen}
                 options={{
-                  headerShown: true,
-                  title: 'Reminders',
-                  headerStyle: { backgroundColor: '#FFFFFF' },
-                  headerTintColor: '#111827',
-                  headerTitleStyle: {
-                    fontFamily: theme.fonts.bold,
-                    fontSize: 18,
-                    color: '#111827',
-                  },
+                  headerShown: false,
                   presentation: 'card',
                 }}
               />
               <Stack.Screen
                 name="AiUsage"
                 component={AiUsageScreen}
-                options={{
-                  headerShown: true,
-                  title: 'AI Usage',
-                  headerStyle: { backgroundColor: '#FFFFFF' },
-                  headerTintColor: '#111827',
-                  headerTitleStyle: {
-                    fontFamily: theme.fonts.bold,
-                    fontSize: 18,
-                    color: '#111827',
-                  },
-                }}
+                options={{ headerShown: false }}
               />
             </>
           )

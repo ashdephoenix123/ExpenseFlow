@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -8,44 +8,40 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
-import { TextInput } from 'react-native-paper';
-import { supabase } from '../services/supabase';
-import { theme } from '../theme/theme';
-import { useAuthStore } from '../store/authStore';
-import { Button } from '../components/Button';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
-
-const paperTheme = {
-  colors: {
-    primary: theme.colors.primary,
-    background: theme.colors.surface,
-    text: theme.colors.text,
-  },
-  fonts: {
-    bodyLarge: { fontFamily: theme.fonts.displaySemiBold },
-  },
-};
+import { supabase } from '../services/supabase';
+import { theme, useTheme, ThemeColors } from '../theme/theme';
+import { useAuthStore } from '../store/authStore';
 
 export const ResetPasswordScreen = () => {
+  const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const setPendingPasswordReset = useAuthStore(state => state.setPendingPasswordReset);
+  const setPendingPasswordReset = useAuthStore(
+    state => state.setPendingPasswordReset,
+  );
 
   const handleUpdatePassword = async () => {
     if (!newPassword) {
-      Alert.alert('Error', 'Please enter a new password');
+      Alert.alert('Required Field', 'Please enter your new password.');
       return;
     }
     if (newPassword.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      Alert.alert('Short Password', 'Password must be at least 6 characters.');
       return;
     }
     if (newPassword !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      Alert.alert('Password Mismatch', 'Passwords do not match.');
       return;
     }
 
@@ -55,18 +51,21 @@ export const ResetPasswordScreen = () => {
     });
 
     if (error) {
-      Alert.alert('Error', error.message);
+      Alert.alert('Update Failed', error.message);
     } else {
-      Alert.alert('Success', 'Your password has been updated successfully!');
-      setPendingPasswordReset(false);
+      Alert.alert(
+        'Password Updated',
+        'Your password has been updated successfully!',
+        [{ text: 'Continue', onPress: () => setPendingPasswordReset(false) }],
+      );
     }
     setLoading(false);
   };
 
   const handleSkip = () => {
     Alert.alert(
-      'Skip Password Reset?',
-      'You can change your password later from Settings.',
+      'Skip Password Update?',
+      'You can update your password anytime from Settings.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -80,82 +79,142 @@ export const ResetPasswordScreen = () => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'height' : 'padding'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingTop: Math.max(insets.top + 20, 40),
+            paddingBottom: Math.max(insets.bottom + 20, 40),
+          },
+        ]}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
+        {/* ── Brand Header ── */}
         <View style={styles.header}>
           <View style={styles.iconCircle}>
-            <Icon name="shield-lock" size={36} color={theme.colors.primary} />
+            <Icon name="shield-lock-outline" size={30} color={colors.primary} />
           </View>
-          <Text style={styles.title}>Set New Password</Text>
+          <Text style={styles.appName}>ExpenseFlow</Text>
+          <Text style={styles.title}>Set new password</Text>
           <Text style={styles.subtitle}>
-            Create a strong password for your account. It must be at least 6 characters long.
+            Create a secure password with at least 6 characters to protect your
+            account
           </Text>
         </View>
 
-        {/* Form Card */}
+        {/* ── Form Card ── */}
         <View style={styles.card}>
-          <TextInput
-            label="New Password"
-            value={newPassword}
-            onChangeText={setNewPassword}
-            secureTextEntry={!showPassword}
-            left={<TextInput.Icon icon="lock-outline" color={theme.colors.textSecondary} />}
-            right={
-              <TextInput.Icon
-                icon={showPassword ? 'eye-off' : 'eye'}
+          {/* New Password */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>NEW PASSWORD</Text>
+            <View style={styles.inputWrapper}>
+              <Icon
+                name="lock-outline"
+                size={20}
+                color={colors.onSurfaceVariant}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                value={newPassword}
+                onChangeText={setNewPassword}
+                placeholder="At least 6 characters"
+                placeholderTextColor={colors.onSurfaceVariant}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                style={styles.textInput}
+                editable={!loading}
+              />
+              <TouchableOpacity
                 onPress={() => setShowPassword(prev => !prev)}
-                color={theme.colors.textSecondary}
-              />
-            }
-            style={styles.input}
-            theme={paperTheme}
-            textColor={theme.colors.text}
-            contentStyle={styles.inputContent}
-          />
-          <TextInput
-            label="Confirm New Password"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry={!showConfirmPassword}
-            left={<TextInput.Icon icon="lock-check-outline" color={theme.colors.textSecondary} />}
-            right={
-              <TextInput.Icon
-                icon={showConfirmPassword ? 'eye-off' : 'eye'}
-                onPress={() => setShowConfirmPassword(prev => !prev)}
-                color={theme.colors.textSecondary}
-              />
-            }
-            style={styles.input}
-            theme={paperTheme}
-            textColor={theme.colors.text}
-            contentStyle={styles.inputContent}
-          />
-
-          {/* Password strength hint */}
-          <View style={styles.hintRow}>
-            <Icon name="information-outline" size={16} color={theme.colors.textSecondary} />
-            <Text style={styles.hintText}>Minimum 6 characters required</Text>
+                style={styles.eyeBtn}
+                activeOpacity={0.7}
+              >
+                <Icon
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color={colors.onSurfaceVariant}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
 
-          <Button
-            title="Update Password"
+          {/* Confirm New Password */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>CONFIRM NEW PASSWORD</Text>
+            <View style={styles.inputWrapper}>
+              <Icon
+                name="lock-check-outline"
+                size={20}
+                color={colors.onSurfaceVariant}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                placeholder="Re-enter new password"
+                placeholderTextColor={colors.onSurfaceVariant}
+                secureTextEntry={!showConfirmPassword}
+                autoCapitalize="none"
+                style={styles.textInput}
+                editable={!loading}
+              />
+              <TouchableOpacity
+                onPress={() => setShowConfirmPassword(prev => !prev)}
+                style={styles.eyeBtn}
+                activeOpacity={0.7}
+              >
+                <Icon
+                  name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color={colors.onSurfaceVariant}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Requirement Hint */}
+          <View style={styles.hintRow}>
+            <Icon
+              name="information-outline"
+              size={16}
+              color={colors.onSurfaceVariant}
+            />
+            <Text style={styles.hintText}>
+              Requires a minimum of 6 characters
+            </Text>
+          </View>
+
+          {/* Submit Button */}
+          <TouchableOpacity
+            style={[
+              styles.primaryBtn,
+              (loading || !newPassword || !confirmPassword) &&
+                styles.primaryBtnDisabled,
+            ]}
             onPress={handleUpdatePassword}
-            loading={loading}
             disabled={loading || !newPassword || !confirmPassword}
-            style={styles.primaryBtn}
-          />
+            activeOpacity={0.8}
+          >
+            {loading ? (
+              <ActivityIndicator
+                size="small"
+                color={isDark ? colors.onPrimary : '#FFFFFF'}
+              />
+            ) : (
+              <Text style={styles.primaryBtnText}>Update Password</Text>
+            )}
+          </TouchableOpacity>
         </View>
 
-        {/* Skip */}
+        {/* ── Skip Footer ── */}
         <TouchableOpacity
           onPress={handleSkip}
           disabled={loading}
           style={styles.skipBtn}
+          activeOpacity={0.7}
         >
           <Text style={styles.skipText}>Skip for now</Text>
         </TouchableOpacity>
@@ -164,85 +223,153 @@ export const ResetPasswordScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    justifyContent: 'center',
-    paddingVertical: 40,
-  },
+function getStyles(colors: ThemeColors, isDark: boolean) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      paddingHorizontal: 20,
+      justifyContent: 'center',
+    },
 
-  // Header
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  iconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(139, 92, 246, 0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  title: {
-    ...theme.typography.h1,
-    color: theme.colors.text,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  subtitle: {
-    ...theme.typography.caption,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
-    fontSize: 14,
-    lineHeight: 22,
-    paddingHorizontal: 12,
-  },
+    // Header
+    header: {
+      alignItems: 'center',
+      marginBottom: 26,
+    },
+    iconCircle: {
+      width: 60,
+      height: 60,
+      borderRadius: 20,
+      backgroundColor: colors.surfaceContainer,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 14,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+    appName: {
+      fontSize: 13,
+      fontFamily: theme.fonts.bold,
+      color: colors.primary,
+      letterSpacing: 1.2,
+      textTransform: 'uppercase',
+      marginBottom: 6,
+    },
+    title: {
+      fontSize: 26,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.bold,
+      color: colors.onSurface,
+      textAlign: 'center',
+      marginBottom: 6,
+    },
+    subtitle: {
+      fontSize: 14,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+      textAlign: 'center',
+      maxWidth: 290,
+      lineHeight: 20,
+    },
 
-  // Card
-  card: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    marginBottom: 24,
-  },
-  input: {
-    ...theme.typography.body,
-    marginBottom: 14,
-    backgroundColor: theme.colors.background,
-  },
-  inputContent: {
-    ...theme.typography.body,
-  },
-  hintRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 18,
-  },
-  hintText: {
-    ...theme.typography.small,
-    color: theme.colors.textSecondary,
-  },
-  primaryBtn: {
-    borderRadius: theme.borderRadius.md,
-  },
+    // Form Card
+    card: {
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 20,
+      padding: 22,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 10,
+      elevation: 2,
+      marginBottom: 20,
+    },
+    inputGroup: {
+      marginBottom: 16,
+    },
+    inputLabel: {
+      fontSize: 11,
+      fontFamily: theme.fonts.bold,
+      color: colors.onSurfaceVariant,
+      letterSpacing: 0.6,
+      marginBottom: 8,
+    },
+    inputWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surfaceContainerLow,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      paddingHorizontal: 14,
+      height: 52,
+    },
+    inputIcon: {
+      marginRight: 10,
+    },
+    textInput: {
+      flex: 1,
+      fontSize: 15,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurface,
+      padding: 0,
+    },
+    eyeBtn: {
+      padding: 6,
+      marginLeft: 4,
+    },
+    hintRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginBottom: 16,
+      marginTop: 2,
+    },
+    hintText: {
+      fontSize: 12,
+      fontFamily: theme.fonts.regular,
+      color: colors.onSurfaceVariant,
+    },
 
-  // Skip
-  skipBtn: {
-    alignSelf: 'center',
-  },
-  skipText: {
-    ...theme.typography.body,
-    color: theme.colors.textSecondary,
-    fontSize: 14,
-  },
-});
+    // Button
+    primaryBtn: {
+      backgroundColor: colors.primary,
+      height: 52,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 4,
+    },
+    primaryBtnDisabled: {
+      opacity: 0.5,
+    },
+    primaryBtnText: {
+      fontSize: 15,
+      fontFamily: theme.fonts.semiBold,
+      color: isDark ? colors.onPrimary : '#FFFFFF',
+      letterSpacing: 0.2,
+    },
+
+    // Skip
+    skipBtn: {
+      alignSelf: 'center',
+      paddingVertical: 10,
+    },
+    skipText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.medium,
+      color: colors.onSurfaceVariant,
+    },
+  });
+}
+

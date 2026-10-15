@@ -1,25 +1,63 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert, ScrollView, TouchableOpacity } from 'react-native';
-import { TextInput, Modal, Portal } from 'react-native-paper';
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  ScrollView,
+  TouchableOpacity,
+  Modal,
+  TextInput,
+  ActivityIndicator,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/AppNavigator';
-import { theme } from '../theme/theme';
-import { useAuthStore } from '../store/authStore';
-import { supabase } from '../services/supabase';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
-import { Button } from '../components/Button';
-
+import { format } from 'date-fns';
+import { theme, useTheme, ThemeColors } from '../theme/theme';
+import { useAuthStore } from '../store/authStore';
+import { useCategoryStore } from '../store/categoryStore';
+import { useAccountStore } from '../store/accountStore';
+import { supabase } from '../services/supabase';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
 export const SettingsScreen = () => {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const { colors, isDark, themeMode, setThemeMode } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+
   const { user } = useAuthStore();
+  const { categories, fetchCategories } = useCategoryStore();
+  const { accounts, fetchAccounts } = useAccountStore();
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [confirmText, setConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
 
+  useEffect(() => {
+    fetchCategories();
+    fetchAccounts();
+  }, [fetchCategories, fetchAccounts]);
+
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    Alert.alert('Logout', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await supabase.auth.signOut();
+          } catch (e: any) {
+            Alert.alert('Error', e.message || 'Failed to logout.');
+          }
+        },
+      },
+    ]);
   };
 
   const handleDeleteAccount = async () => {
@@ -43,406 +81,826 @@ export const SettingsScreen = () => {
     }
   };
 
+  const displayName =
+    user?.user_metadata?.name ||
+    user?.user_metadata?.full_name ||
+    user?.email?.split('@')[0] ||
+    'User';
+
+  const userInitials = useMemo(() => {
+    if (!displayName) return 'U';
+    const parts = displayName.trim().split(' ');
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return displayName.slice(0, 2).toUpperCase();
+  }, [displayName]);
+
+  const memberSinceFormatted = useMemo(() => {
+    if (!user?.created_at) return '—';
+    try {
+      return format(new Date(user.created_at), 'd MMMM yyyy');
+    } catch {
+      return '—';
+    }
+  }, [user?.created_at]);
+
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-    >
-      {/* Profile Card */}
-      <View style={styles.profileCard}>
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <Icon name="account" size={40} color={theme.colors.primary} />
-          </View>
+    <View style={[styles.container, { paddingTop: Math.max(insets.top, 10) }]}>
+      {/* ── Top Navigation Bar ── */}
+      <View style={styles.topBar}>
+        <View style={styles.topBarLeft}>
+          <TouchableOpacity
+            style={styles.navIconBtn}
+            onPress={() => {
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('Add' as any);
+              }
+            }}
+            activeOpacity={0.7}
+          >
+            <Icon name="arrow-left" size={24} color={colors.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.appTitle}>ExpenseFlow</Text>
         </View>
-        <Text style={styles.userName}>{user?.user_metadata?.name || 'User'}</Text>
-        <Text style={styles.userEmail}>{user?.email}</Text>
       </View>
 
-      {/* Account Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account</Text>
-        <View style={styles.card}>
-          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-            <View style={styles.menuIconContainer}>
-              <Icon name="email-outline" size={20} color={theme.colors.primary} />
-            </View>
-            <View style={styles.menuContent}>
-              <Text style={styles.menuLabel}>Email</Text>
-              <Text style={styles.menuValue} numberOfLines={1}>{user?.email}</Text>
-            </View>
-          </TouchableOpacity>
+      <ScrollView
+        style={styles.scrollArea}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Screen Title Section ── */}
+        <View style={styles.titleSection}>
+          <Text style={styles.screenHeading}>Settings</Text>
+          <Text style={styles.screenSubheading}>
+            Manage your account preferences, theme, and ledger parameters
+          </Text>
+        </View>
 
-          <View style={styles.divider} />
-
-          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-            <View style={styles.menuIconContainer}>
-              <Icon name="calendar-clock" size={20} color={theme.colors.primary} />
+        {/* ── User Profile Card ── */}
+        <View style={styles.profileCard}>
+          <View style={styles.avatarCircle}>
+            <Text style={styles.avatarInitialsText}>{userInitials}</Text>
+          </View>
+          <View style={styles.profileInfoCol}>
+            <View style={styles.nameRow}>
+              <Text style={styles.profileName} numberOfLines={1}>
+                {displayName}
+              </Text>
+              {isDark && (
+                <View style={styles.proBadge}>
+                  <Text style={styles.proBadgeText}>PRO</Text>
+                </View>
+              )}
             </View>
-            <View style={styles.menuContent}>
-              <Text style={styles.menuLabel}>Member Since</Text>
-              <Text style={styles.menuValue}>
-                {user?.created_at
-                  ? new Date(user.created_at).toLocaleDateString('en-IN', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })
-                  : '—'}
+            <Text style={styles.profileEmail} numberOfLines={1}>
+              {user?.email || '—'}
+            </Text>
+            <View style={styles.memberRow}>
+              <Icon
+                name="calendar-blank-outline"
+                size={13}
+                color={colors.textMuted}
+                style={styles.memberIcon}
+              />
+              <Text style={styles.memberText}>
+                Member since {memberSinceFormatted}
               </Text>
             </View>
-          </TouchableOpacity>
+          </View>
         </View>
-      </View>
 
-      {/* Manage Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Manage</Text>
-        <View style={styles.card}>
+        {/* ── SECTION 1: ACCOUNT & PREFERENCES ── */}
+        <Text style={styles.sectionHeaderLabel}>ACCOUNT & PREFERENCES</Text>
+        <View style={styles.groupCard}>
+          {/* Appearance (Theme Toggle) */}
+          <View style={styles.appearanceItem}>
+            <View style={styles.itemRow}>
+              <View style={styles.itemIconContainer}>
+                <Icon
+                  name="palette-outline"
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </View>
+              <View style={styles.itemContent}>
+                <Text style={styles.itemTitle}>Appearance</Text>
+                <Text style={styles.itemSubtitle}>
+                  {themeMode === 'system'
+                    ? `System default (${isDark ? 'Dark' : 'Light'})`
+                    : isDark
+                    ? 'Private library noir aesthetic'
+                    : 'Clean minimalist light'}
+                </Text>
+              </View>
+            </View>
+
+            {/* Segmented Control */}
+            <View style={styles.themeToggleContainer}>
+              {(['system', 'light', 'dark'] as const).map(mode => {
+                const isActive = themeMode === mode;
+                return (
+                  <TouchableOpacity
+                    key={mode}
+                    style={[
+                      styles.themeSegmentBtn,
+                      isActive && styles.themeSegmentBtnActive,
+                    ]}
+                    onPress={() => setThemeMode(mode)}
+                    activeOpacity={0.7}
+                  >
+                    <Icon
+                      name={
+                        mode === 'system'
+                          ? 'cellphone'
+                          : mode === 'light'
+                          ? 'white-balance-sunny'
+                          : 'weather-night'
+                      }
+                      size={14}
+                      color={isActive ? colors.activePillText : colors.textMuted}
+                      style={{ marginRight: 5 }}
+                    />
+                    <Text
+                      style={[
+                        styles.themeSegmentText,
+                        isActive && styles.themeSegmentTextActive,
+                      ]}
+                    >
+                      {mode === 'system'
+                        ? 'System'
+                        : mode === 'light'
+                        ? 'Light'
+                        : 'Dark'}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={styles.itemDivider} />
+
+          {/* Email */}
+          <View style={styles.itemRow}>
+            <View style={styles.itemIconContainer}>
+              <Icon
+                name="email-outline"
+                size={20}
+                color={colors.textSecondary}
+              />
+            </View>
+            <View style={styles.itemContent}>
+              <Text style={styles.itemTitle}>Registered Email</Text>
+              <Text style={styles.itemSubtitle}>Primary account email</Text>
+            </View>
+            <Text style={styles.emailValueText} numberOfLines={1}>
+              {user?.email || '—'}
+            </Text>
+          </View>
+
+          <View style={styles.itemDivider} />
+
+          {/* Member Since */}
+          <View style={styles.itemRow}>
+            <View style={styles.itemIconContainer}>
+              <Icon
+                name="calendar-clock"
+                size={20}
+                color={colors.textSecondary}
+              />
+            </View>
+            <View style={styles.itemContent}>
+              <Text style={styles.itemTitle}>Member Since</Text>
+              <Text style={styles.itemSubtitle}>Account registration date</Text>
+            </View>
+            <Text style={styles.metaValueText}>{memberSinceFormatted}</Text>
+          </View>
+        </View>
+
+        {/* ── SECTION 2: MANAGE LEDGER ── */}
+        <Text style={styles.sectionHeaderLabel}>MANAGE LEDGER</Text>
+        <View style={styles.groupCard}>
+          {/* Categories */}
           <TouchableOpacity
-            style={styles.menuItem}
+            style={styles.itemRow}
             activeOpacity={0.7}
             onPress={() => navigation.navigate('ManageCategories')}
           >
-            <View style={styles.menuIconContainer}>
-              <Icon name="tag-multiple" size={20} color={theme.colors.primary} />
+            <View style={styles.itemIconContainer}>
+              <Icon
+                name="tag-outline"
+                size={20}
+                color={colors.textSecondary}
+              />
             </View>
-            <View style={styles.menuContent}>
-              <Text style={styles.menuLabel}>Categories</Text>
-              <Text style={styles.menuHint}>Add or remove custom categories</Text>
+            <View style={styles.itemContent}>
+              <Text style={styles.itemTitle}>Categories</Text>
+              <Text style={styles.itemSubtitle}>
+                Add or remove custom categories
+              </Text>
             </View>
-            <Icon name="chevron-right" size={22} color={theme.colors.textSecondary} />
+            <View style={styles.itemRightGroup}>
+              {categories.length > 0 && (
+                <View style={styles.countBadge}>
+                  <Text style={styles.countBadgeText}>
+                    {categories.length} active
+                  </Text>
+                </View>
+              )}
+              <Icon name="chevron-right" size={20} color={colors.textMuted} />
+            </View>
           </TouchableOpacity>
 
-          <View style={styles.divider} />
+          <View style={styles.itemDivider} />
 
+          {/* Accounts */}
           <TouchableOpacity
-            style={styles.menuItem}
+            style={styles.itemRow}
             activeOpacity={0.7}
             onPress={() => navigation.navigate('ManageAccounts')}
           >
-            <View style={styles.menuIconContainer}>
-              <Icon name="bank-outline" size={20} color={theme.colors.primary} />
+            <View style={styles.itemIconContainer}>
+              <Icon
+                name="bank-outline"
+                size={20}
+                color={colors.textSecondary}
+              />
             </View>
-            <View style={styles.menuContent}>
-              <Text style={styles.menuLabel}>Accounts</Text>
-              <Text style={styles.menuHint}>Manage payment accounts & set primary</Text>
+            <View style={styles.itemContent}>
+              <Text style={styles.itemTitle}>Accounts</Text>
+              <Text style={styles.itemSubtitle}>
+                Manage payment accounts & set primary
+              </Text>
             </View>
-            <Icon name="chevron-right" size={22} color={theme.colors.textSecondary} />
+            <View style={styles.itemRightGroup}>
+              {accounts.length > 0 && (
+                <View style={styles.countBadge}>
+                  <Text style={styles.countBadgeText}>
+                    {accounts.length} linked
+                  </Text>
+                </View>
+              )}
+              <Icon name="chevron-right" size={20} color={colors.textMuted} />
+            </View>
           </TouchableOpacity>
 
-          <View style={styles.divider} />
+          <View style={styles.itemDivider} />
 
+          {/* AI Usage */}
           <TouchableOpacity
-            style={styles.menuItem}
+            style={styles.itemRow}
             activeOpacity={0.7}
             onPress={() => navigation.navigate('AiUsage')}
           >
-            <View style={styles.menuIconContainer}>
-              <Icon name="robot-happy-outline" size={20} color={theme.colors.primary} />
+            <View style={styles.itemIconContainer}>
+              <Icon
+                name="robot-happy-outline"
+                size={20}
+                color={colors.textSecondary}
+              />
             </View>
-            <View style={styles.menuContent}>
-              <Text style={styles.menuLabel}>AI Usage</Text>
-              <Text style={styles.menuHint}>Daily token usage and fair-use limit</Text>
+            <View style={styles.itemContent}>
+              <Text style={styles.itemTitle}>AI Usage</Text>
+              <Text style={styles.itemSubtitle}>
+                Daily token usage and fair-use limit
+              </Text>
             </View>
-            <Icon name="chevron-right" size={22} color={theme.colors.textSecondary} />
+            <Icon name="chevron-right" size={20} color={colors.textMuted} />
+          </TouchableOpacity>
+
+          <View style={styles.itemDivider} />
+
+          {/* Reminders */}
+          <TouchableOpacity
+            style={styles.itemRow}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Reminders')}
+          >
+            <View style={styles.itemIconContainer}>
+              <Icon
+                name="bell-ring-outline"
+                size={20}
+                color={colors.textSecondary}
+              />
+            </View>
+            <View style={styles.itemContent}>
+              <Text style={styles.itemTitle}>Reminders & Bills</Text>
+              <Text style={styles.itemSubtitle}>
+                Track recurring upcoming payments
+              </Text>
+            </View>
+            <Icon name="chevron-right" size={20} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
-      </View>
 
-      {/* Actions Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Actions</Text>
-        <View style={styles.card}>
+        {/* ── SECTION 3: ACTIONS ── */}
+        <Text style={styles.sectionHeaderLabel}>SESSION</Text>
+        <View style={styles.groupCard}>
           <TouchableOpacity
-            style={styles.menuItem}
+            style={styles.itemRow}
             activeOpacity={0.7}
             onPress={handleLogout}
           >
-            <View style={[styles.menuIconContainer, styles.logoutIcon]}>
-              <Icon name="logout" size={20} color={theme.colors.error} />
+            <View
+              style={[
+                styles.itemIconContainer,
+                { backgroundColor: colors.outflowBg },
+              ]}
+            >
+              <Icon name="logout" size={20} color={colors.outflow} />
             </View>
-            <View style={styles.menuContent}>
-              <Text style={[styles.menuLabel, styles.logoutText]}>Logout</Text>
-              <Text style={styles.menuHint}>Sign out of your account</Text>
+            <View style={styles.itemContent}>
+              <Text style={[styles.itemTitle, { color: colors.outflow }]}>
+                Disconnect & Log Out
+              </Text>
+              <Text style={styles.itemSubtitle}>Sign out of this device</Text>
             </View>
-            <Icon name="chevron-right" size={22} color={theme.colors.textSecondary} />
+            <Icon name="chevron-right" size={20} color={colors.outflow} />
           </TouchableOpacity>
         </View>
-      </View>
 
-      {/* Danger Zone */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, styles.dangerTitle]}>Danger Zone</Text>
-        <View style={[styles.card, styles.dangerCard]}>
+        {/* ── SECTION 4: DANGER ZONE ── */}
+        <Text style={[styles.sectionHeaderLabel, styles.dangerSectionLabel]}>
+          DANGER ZONE
+        </Text>
+        <View style={[styles.groupCard, styles.dangerGroupCard]}>
           <TouchableOpacity
-            style={styles.menuItem}
+            style={styles.itemRow}
             activeOpacity={0.7}
             onPress={() => setShowDeleteModal(true)}
           >
-            <View style={[styles.menuIconContainer, styles.deleteIcon]}>
-              <Icon name="delete-forever" size={20} color={theme.colors.error} />
+            <View
+              style={[
+                styles.itemIconContainer,
+                { backgroundColor: colors.outflowBg },
+              ]}
+            >
+              <Icon name="delete-forever" size={20} color={colors.outflow} />
             </View>
-            <View style={styles.menuContent}>
-              <Text style={[styles.menuLabel, styles.deleteText]}>Delete Account</Text>
-              <Text style={styles.menuHint}>Permanently remove your data</Text>
+            <View style={styles.itemContent}>
+              <Text style={[styles.itemTitle, { color: colors.outflow }]}>
+                Delete Account
+              </Text>
+              <Text style={styles.itemSubtitle}>
+                Permanently purge all data from cloud
+              </Text>
             </View>
-            <Icon name="chevron-right" size={22} color={theme.colors.error} />
+            <Icon name="chevron-right" size={20} color={colors.outflow} />
           </TouchableOpacity>
         </View>
-      </View>
 
-      <Text style={styles.version}>ExpenseFlow v1.0.0</Text>
+        {/* ── Version ── */}
+        <Text style={styles.versionText}>ExpenseFlow v1.0.0 • Warm Editorial Dark</Text>
+      </ScrollView>
 
-      {/* Delete Confirmation Modal */}
-      <Portal>
-        <Modal
-          visible={showDeleteModal}
-          onDismiss={() => {
-            setShowDeleteModal(false);
-            setConfirmText('');
-          }}
-          contentContainerStyle={styles.modalContainer}
-        >
-          <View style={styles.modalIconRow}>
-            <View style={styles.modalIconCircle}>
-              <Icon name="alert-circle" size={32} color={theme.colors.error} />
+      {/* ── MODAL: Delete Account Confirmation ── */}
+      <Modal
+        visible={showDeleteModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowDeleteModal(false);
+          setConfirmText('');
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.deleteModalCard}>
+            <View style={styles.deleteIconCircle}>
+              <Icon name="alert-circle" size={32} color={colors.outflow} />
+            </View>
+            <Text style={styles.modalTitle}>Delete Account</Text>
+            <Text style={styles.modalDesc}>
+              This action is permanent and cannot be undone. All your expenses,
+              categories, accounts, and insights will be erased.
+            </Text>
+            <Text style={styles.deleteConfirmLabel}>
+              Type <Text style={{ fontWeight: 'bold' }}>DELETE</Text> below to
+              confirm:
+            </Text>
+            <TextInput
+              value={confirmText}
+              onChangeText={setConfirmText}
+              style={styles.deleteInput}
+              autoCapitalize="characters"
+              placeholder="DELETE"
+              placeholderTextColor={colors.textMuted}
+            />
+            <View style={styles.modalActionRow}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                activeOpacity={0.7}
+                onPress={() => {
+                  setShowDeleteModal(false);
+                  setConfirmText('');
+                }}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.modalDeleteBtn,
+                  (confirmText !== 'DELETE' || deleting) && { opacity: 0.5 },
+                ]}
+                activeOpacity={0.8}
+                disabled={confirmText !== 'DELETE' || deleting}
+                onPress={handleDeleteAccount}
+              >
+                {deleting ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.modalDeleteText}>Delete Forever</Text>
+                )}
+              </TouchableOpacity>
             </View>
           </View>
-          <Text style={styles.modalTitle}>Delete Account</Text>
-          <Text style={styles.modalText}>
-            This action is permanent and cannot be undone. All your data will be deleted.
-          </Text>
-          <Text style={styles.modalText}>
-            Type <Text style={styles.bold}>DELETE</Text> below to confirm:
-          </Text>
-          <TextInput
-            value={confirmText}
-            onChangeText={setConfirmText}
-            style={styles.modalInput}
-            autoCapitalize="characters"
-            theme={{
-              colors: { primary: theme.colors.error, background: theme.colors.surface, text: theme.colors.text },
-            }}
-            textColor={theme.colors.text}
-          />
-          <View style={styles.modalActions}>
-            <Button
-              title="Cancel"
-              variant="outline"
-              onPress={() => {
-                setShowDeleteModal(false);
-                setConfirmText('');
-              }}
-              style={styles.modalCancelBtn}
-              textStyle={styles.modalCancelText}
-            />
-            <Button
-              title="Delete Forever"
-              onPress={handleDeleteAccount}
-              loading={deleting}
-              disabled={confirmText !== 'DELETE' || deleting}
-              style={styles.modalDeleteBtn}
-              textStyle={styles.modalDeleteText}
-            />
-          </View>
-        </Modal>
-      </Portal>
-    </ScrollView>
+        </View>
+      </Modal>
+    </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
+const getStyles = (colors: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
 
-  // Profile Card
-  profileCard: {
-    alignItems: 'center',
-    paddingVertical: 28,
-    marginBottom: 8,
-  },
-  avatarContainer: {
-    marginBottom: 14,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 2,
-    borderColor: theme.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  userName: {
-    ...theme.typography.h2,
-    color: theme.colors.text,
-    marginBottom: 4,
-  },
-  userEmail: {
-    ...theme.typography.caption,
-    color: theme.colors.textSecondary,
-    fontSize: 14,
-  },
+    // ── Top Bar ──
+    topBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+    },
+    topBarLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    navIconBtn: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: colors.surfaceContainer,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    appTitle: {
+      fontSize: 18,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.bold,
+      color: colors.textPrimary,
+      marginLeft: 12,
+      letterSpacing: isDark ? 0.3 : 0,
+    },
 
-  // Sections
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    ...theme.typography.small,
-    color: theme.colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-    marginBottom: 10,
-    marginLeft: 4,
-  },
-  dangerTitle: {
-    color: theme.colors.error,
-  },
+    // ── Scroll Content ──
+    scrollArea: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingBottom: 40,
+    },
 
-  // Card container
-  card: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    overflow: 'hidden',
-  },
-  dangerCard: {
-    borderColor: 'rgba(207, 102, 121, 0.25)',
-  },
+    // ── Screen Title Section ──
+    titleSection: {
+      paddingHorizontal: 20,
+      marginTop: 4,
+      marginBottom: 16,
+    },
+    screenHeading: {
+      fontSize: 26,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.bold,
+      color: colors.textPrimary,
+    },
+    screenSubheading: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+      marginTop: 4,
+    },
 
-  // Menu items
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-  },
-  menuIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: 'rgba(139, 92, 246, 0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  logoutIcon: {
-    backgroundColor: 'rgba(207, 102, 121, 0.12)',
-  },
-  deleteIcon: {
-    backgroundColor: 'rgba(207, 102, 121, 0.12)',
-  },
-  menuContent: {
-    flex: 1,
-  },
-  menuLabel: {
-    ...theme.typography.body,
-    fontSize: 15,
-    color: theme.colors.text,
-  },
-  menuValue: {
-    ...theme.typography.caption,
-    color: theme.colors.textSecondary,
-    fontSize: 13,
-  },
-  menuHint: {
-    ...theme.typography.small,
-    color: theme.colors.textSecondary,
-    fontSize: 12,
-    marginTop: 1,
-  },
-  logoutText: {
-    color: theme.colors.error,
-  },
-  deleteText: {
-    color: theme.colors.error,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: theme.colors.border,
-    marginLeft: 66,
-  },
+    // ── User Profile Card ──
+    profileCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 20,
+      padding: 16,
+      marginHorizontal: 20,
+      marginBottom: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.2 : 0.04,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    avatarCircle: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: isDark ? '#211F1E' : '#18181B',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: isDark ? 2 : 0,
+      borderColor: colors.primary,
+    },
+    avatarInitialsText: {
+      fontSize: 18,
+      fontFamily: theme.fonts.bold,
+      color: isDark ? colors.primary : '#FFFFFF',
+    },
+    profileInfoCol: {
+      marginLeft: 14,
+      flex: 1,
+    },
+    nameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    profileName: {
+      fontSize: 16,
+      fontFamily: theme.fonts.bold,
+      color: colors.textPrimary,
+    },
+    proBadge: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 6,
+      paddingVertical: 1.5,
+      borderRadius: 6,
+    },
+    proBadgeText: {
+      fontSize: 10,
+      fontFamily: theme.fonts.bold,
+      color: colors.onPrimary,
+      letterSpacing: 0.5,
+    },
+    profileEmail: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.textSecondary,
+      marginTop: 1,
+    },
+    memberRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 4,
+    },
+    memberIcon: {
+      marginRight: 4,
+    },
+    memberText: {
+      fontSize: 11,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+    },
 
-  // Version
-  version: {
-    ...theme.typography.small,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
-    marginTop: 8,
-    opacity: 0.6,
-  },
+    // ── Section Headers ──
+    sectionHeaderLabel: {
+      fontSize: 11,
+      fontFamily: theme.fonts.bold,
+      color: colors.textMuted,
+      letterSpacing: 0.8,
+      paddingHorizontal: 22,
+      marginBottom: 8,
+      marginTop: 4,
+    },
+    dangerSectionLabel: {
+      color: colors.outflow,
+    },
 
-  // Modal
-  modalContainer: {
-    backgroundColor: theme.colors.surface,
-    margin: 24,
-    padding: 24,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(207, 102, 121, 0.25)',
-  },
-  modalIconRow: {
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  modalIconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(207, 102, 121, 0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalTitle: {
-    ...theme.typography.h2,
-    color: theme.colors.error,
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  modalText: {
-    ...theme.typography.body,
-    color: theme.colors.textSecondary,
-    marginBottom: 8,
-    lineHeight: 22,
-    textAlign: 'center',
-  },
-  bold: {
-    fontWeight: '700',
-    color: theme.colors.text,
-  },
-  modalInput: {
-    backgroundColor: theme.colors.background,
-    marginTop: 8,
-    marginBottom: 20,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  modalCancelBtn: {
-    flex: 1,
-    borderColor: theme.colors.border,
-  },
-  modalCancelText: {
-    color: theme.colors.textSecondary,
-    fontSize: 14,
-  },
-  modalDeleteBtn: {
-    flex: 1,
-    backgroundColor: theme.colors.error,
-  },
-  modalDeleteText: {
-    color: '#ffffff',
-    fontSize: 14,
-  },
-});
+    // ── Group Cards ──
+    groupCard: {
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 18,
+      marginHorizontal: 20,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: 'hidden',
+    },
+    dangerGroupCard: {
+      borderColor: isDark ? colors.border : '#FEE2E2',
+    },
+
+    // ── Item Rows ──
+    itemRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+    },
+    itemIconContainer: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: colors.surfaceLow,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    itemContent: {
+      flex: 1,
+    },
+    itemTitle: {
+      fontSize: 14,
+      fontFamily: theme.fonts.medium,
+      color: colors.textPrimary,
+    },
+    itemSubtitle: {
+      fontSize: 12,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+      marginTop: 1,
+    },
+    itemRightGroup: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    countBadge: {
+      backgroundColor: colors.surfaceLow,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    countBadgeText: {
+      fontSize: 11,
+      fontFamily: theme.fonts.medium,
+      color: colors.textSecondary,
+    },
+    itemDivider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginLeft: 64,
+    },
+    emailValueText: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+      maxWidth: 140,
+    },
+    metaValueText: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+    },
+
+    // ── Appearance Segmented Toggle ──
+    appearanceItem: {
+      paddingBottom: 14,
+    },
+    themeToggleContainer: {
+      flexDirection: 'row',
+      backgroundColor: colors.surfaceLow,
+      borderRadius: 12,
+      marginHorizontal: 16,
+      marginTop: 4,
+      padding: 3,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    themeSegmentBtn: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 8,
+      borderRadius: 9,
+    },
+    themeSegmentBtnActive: {
+      backgroundColor: colors.activePillBg,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.15,
+      shadowRadius: 2,
+      elevation: 2,
+    },
+    themeSegmentText: {
+      fontSize: 12,
+      fontFamily: theme.fonts.medium,
+      color: colors.textMuted,
+    },
+    themeSegmentTextActive: {
+      color: colors.activePillText,
+      fontFamily: theme.fonts.bold,
+    },
+
+    // ── Version ──
+    versionText: {
+      fontSize: 12,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+      textAlign: 'center',
+      marginTop: 8,
+      marginBottom: 16,
+    },
+
+    // ── Delete Account Modal ──
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.65)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 24,
+    },
+    deleteModalCard: {
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 20,
+      padding: 24,
+      width: '100%',
+      maxWidth: 340,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    deleteIconCircle: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: colors.outflowBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 14,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontFamily: theme.fonts.bold,
+      color: colors.textPrimary,
+      marginBottom: 6,
+    },
+    modalDesc: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 18,
+      marginBottom: 16,
+    },
+    deleteConfirmLabel: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.textPrimary,
+      marginBottom: 8,
+      alignSelf: 'flex-start',
+    },
+    deleteInput: {
+      width: '100%',
+      backgroundColor: colors.surfaceLow,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      fontSize: 14,
+      fontFamily: theme.fonts.medium,
+      color: colors.textPrimary,
+      marginBottom: 18,
+      textAlign: 'center',
+      letterSpacing: 2,
+    },
+    modalActionRow: {
+      flexDirection: 'row',
+      gap: 10,
+      width: '100%',
+    },
+    modalCancelBtn: {
+      flex: 1,
+      backgroundColor: colors.surfaceLow,
+      borderRadius: 12,
+      paddingVertical: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    modalCancelText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.medium,
+      color: colors.textPrimary,
+    },
+    modalDeleteBtn: {
+      flex: 1,
+      backgroundColor: colors.outflow,
+      borderRadius: 12,
+      paddingVertical: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    modalDeleteText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.bold,
+      color: '#FFFFFF',
+    },
+  });

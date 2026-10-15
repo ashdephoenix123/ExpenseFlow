@@ -9,6 +9,7 @@ import { AppNavigator } from './src/navigation/AppNavigator';
 import { supabase } from './src/services/supabase';
 import { updateService } from './src/services/updateService';
 import { useAuthStore } from './src/store/authStore';
+import { useTheme } from './src/theme/theme';
 import * as Sentry from '@sentry/react-native';
 
 // Keep splash screen visible until initial resources are loaded
@@ -79,7 +80,7 @@ function App() {
     'PlayfairDisplay-Bold': require('./assets/fonts/PlayfairDisplay-Bold.ttf'),
   });
 
-  const isDarkMode = useColorScheme() === 'dark';
+  const { isDark, colors } = useTheme();
 
   // Pull any published JS update in the background; it applies on next launch.
   useEffect(() => {
@@ -93,7 +94,10 @@ function App() {
   return (
     <PaperProvider>
       <SafeAreaProvider>
-        <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+        <StatusBar
+          barStyle={isDark ? 'light-content' : 'dark-content'}
+          backgroundColor={colors.background}
+        />
         <AppNavigator />
       </SafeAreaProvider>
     </PaperProvider>

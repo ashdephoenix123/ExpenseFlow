@@ -8,7 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
-import { theme } from '../theme/theme';
+import { theme, useTheme, ThemeColors } from '../theme/theme';
 import { Expense } from '../types';
 import { formatDateDisplay } from '../utils/dateUtils';
 
@@ -27,15 +27,6 @@ const MONTHS = [
   'Dec',
 ];
 
-const CATEGORY_BAR_COLORS = [
-  '#18181B', // 1st: Black
-  '#2D5A43', // 2nd: Forest green
-  '#3F3F46', // 3rd: Charcoal
-  '#71717A', // 4th: Slate gray
-  '#9CA3AF', // 5th: Neutral gray
-  '#A1A1AA', // 6th+
-];
-
 export interface AnalyticsViewProps {
   selectedMonth: number; // 1-12
   selectedYear: number;
@@ -43,6 +34,7 @@ export interface AnalyticsViewProps {
   budgetCap: number;
   navigation: any;
   onSelectDate?: (date: string) => void;
+  onEditBudget?: () => void;
 }
 
 export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
@@ -52,7 +44,19 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   budgetCap,
   navigation,
   onSelectDate,
+  onEditBudget,
 }) => {
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+
+  const categoryBarColors = useMemo(
+    () =>
+      isDark
+        ? [colors.primary, colors.secondary, colors.tertiary, colors.outline, '#9E9A91']
+        : ['#18181B', '#2D5A43', '#3F3F46', '#71717A', '#9CA3AF', '#A1A1AA'],
+    [isDark, colors],
+  );
+
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   // Total spent in this month
@@ -61,8 +65,8 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
     [expenses],
   );
 
-  // Daily Average calculation for the selected month
-  const { dailyAvg, budgetRate } = useMemo(() => {
+  // Daily Average & Projected Run-Rate calculation for the selected month
+  const { dailyAverage, projectedRunRate } = useMemo(() => {
     const dInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
     const today = new Date();
     const isCurrentMonth =
@@ -74,10 +78,15 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       : dInMonth;
 
     const avg = Math.round(totalSpent / daysPassed);
-    const bRate = Math.round(budgetCap / dInMonth);
+    const runRate = Math.round(avg * dInMonth);
 
-    return { dailyAvg: avg, budgetRate: bRate };
-  }, [selectedYear, selectedMonth, totalSpent, budgetCap]);
+    return { dailyAverage: avg, projectedRunRate: runRate };
+  }, [selectedYear, selectedMonth, totalSpent]);
+
+  // Budget calculations
+  const utilizationPercent = budgetCap > 0 ? (totalSpent / budgetCap) * 100 : 0;
+  const remainingBudget = budgetCap - totalSpent;
+  const isOnTrack = totalSpent <= budgetCap;
 
   // Expenses grouped by category (for category-wise breakdown)
   const expensesByCategory = useMemo(() => {
@@ -207,11 +216,6 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
     );
   };
 
-  const ceilingPercent = Math.min(
-    100,
-    Math.round(budgetCap > 0 ? (totalSpent / budgetCap) * 100 : 0),
-  );
-
   const monthLabel = `${MONTHS[selectedMonth - 1]} ${selectedYear}`;
 
   return (
@@ -234,7 +238,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
           activeOpacity={0.7}
           onPress={handleExport}
         >
-          <Icon name="tray-arrow-down" size={16} color="#374151" />
+          <Icon name="tray-arrow-down" size={16} color={colors.textPrimary} />
           <Text style={styles.exportBtnText}>Export</Text>
         </TouchableOpacity>
       </View>
@@ -242,58 +246,96 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       {/* Total Spent Summary Card */}
       <View style={styles.summaryCard}>
         <View style={styles.summaryTopRow}>
-          <Text style={styles.summaryLabel}>TOTAL SPENT</Text>
-          <View style={styles.walletIconBadge}>
-            <Icon name="wallet-outline" size={18} color="#374151" />
+          <Text style={styles.summaryLabel}>TOTAL SPENT THIS MONTH</Text>
+          <View
+            style={[
+              styles.statusBadge,
+              isOnTrack ? styles.statusBadgeOnTrack : styles.statusBadgeOver,
+            ]}
+          >
+            <Text
+              style={[
+                styles.statusBadgeText,
+                isOnTrack
+                  ? styles.statusBadgeTextOnTrack
+                  : styles.statusBadgeTextOver,
+              ]}
+            >
+              • {isOnTrack ? 'On Track' : 'Over Cap'}
+            </Text>
           </View>
         </View>
 
-        <View style={styles.totalAmountRow}>
-          <Text style={styles.totalAmountText}>
+        {/* Main Amount & Cap */}
+        <TouchableOpacity
+          activeOpacity={onEditBudget ? 0.8 : 1}
+          onPress={onEditBudget}
+          style={styles.amountRow}
+        >
+          <Text style={styles.mainAmountText}>
             ₹{totalSpent.toLocaleString('en-IN')}
           </Text>
-          {totalSpent > 0 && (
-            <View style={styles.trendRow}>
-              <Icon name="arrow-bottom-right" size={14} color="#15803D" />
-              <Text style={styles.trendText}>vs budget</Text>
+          <Text style={styles.capAmountText}>
+            {' '}
+            / ₹{budgetCap.toLocaleString('en-IN')}
+          </Text>
+          {onEditBudget && (
+            <View style={styles.budgetEditPill}>
+              <Icon name="pencil-outline" size={13} color={colors.textSecondary} />
+              <Text style={styles.budgetEditPillText}>Edit</Text>
             </View>
           )}
+        </TouchableOpacity>
+
+        {/* Progress Bar */}
+        <View style={styles.progressBarTrack}>
+          <View
+            style={[
+              styles.progressBarFill,
+              {
+                width: `${Math.min(100, Math.max(0, utilizationPercent))}%`,
+                backgroundColor: isOnTrack ? (isDark ? colors.primary : '#18181B') : colors.error,
+              },
+            ]}
+          />
         </View>
 
-        <View style={styles.ceilingRow}>
-          <Text style={styles.ceilingLabel}>Monthly allocation ceiling</Text>
-          <Text style={styles.ceilingValue}>
-            ₹{budgetCap.toLocaleString('en-IN')} max ({ceilingPercent}%)
+        {/* Utilization & Remaining Info */}
+        <View style={styles.progressInfoRow}>
+          <Text style={styles.progressUtilizedText}>
+            {utilizationPercent.toFixed(1)}% of cap utilized
+          </Text>
+          <Text
+            style={[
+              styles.progressRemainingText,
+              { color: remainingBudget >= 0 ? colors.secondary : colors.error },
+            ]}
+          >
+            ₹{Math.abs(remainingBudget).toLocaleString('en-IN')}{' '}
+            {remainingBudget >= 0 ? 'remaining' : 'over cap'}
           </Text>
         </View>
-      </View>
 
-      {/* 2-Column Stats (Daily Avg & Transactions) */}
-      <View style={styles.statCardsRow}>
-        {/* Daily Avg */}
-        <View style={styles.statCard}>
-          <View style={styles.statCardHeader}>
-            <Text style={styles.statCardLabel}>Daily Avg</Text>
-            <Icon name="credit-card-outline" size={18} color="#6B7280" />
+        {/* Stat Boxes (Daily Average & Projected Run-Rate) */}
+        <View style={styles.statCardsRow}>
+          <View style={styles.statBox}>
+            <Text style={styles.statBoxLabel}>Daily Average</Text>
+            <View style={styles.statBoxValueRow}>
+              <Text style={styles.statBoxValue}>
+                ₹{dailyAverage.toLocaleString('en-IN')}
+              </Text>
+              <Text style={styles.statBoxSub}> / day</Text>
+            </View>
           </View>
-          <Text style={styles.statCardValue}>
-            ₹{dailyAvg.toLocaleString('en-IN')}
-          </Text>
-          <Text style={styles.statCardSub}>
-            Target rate: ₹{budgetRate.toLocaleString('en-IN')}
-          </Text>
-        </View>
 
-        {/* Transactions */}
-        <View style={styles.statCard}>
-          <View style={styles.statCardHeader}>
-            <Text style={styles.statCardLabel}>Transactions</Text>
-            <Icon name="receipt-text-outline" size={18} color="#6B7280" />
+          <View style={styles.statBox}>
+            <Text style={styles.statBoxLabel}>Projected Run-Rate</Text>
+            <View style={styles.statBoxValueRow}>
+              <Text style={styles.statBoxValue}>
+                ₹{projectedRunRate.toLocaleString('en-IN')}
+              </Text>
+            </View>
           </View>
-          <Text style={styles.statCardValue}>{expenses.length}</Text>
-          <Text style={styles.statCardSub}>
-            {expenses.length > 0 ? 'Recorded this month' : 'No entries'}
-          </Text>
         </View>
       </View>
 
@@ -389,7 +431,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
           <Icon
             name="information-outline"
             size={18}
-            color="#6B7280"
+            color={colors.textMuted}
             style={styles.calloutIcon}
           />
           <Text style={styles.calloutText}>
@@ -403,7 +445,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       {/* Predictive Intelligence Card (AI Insights) */}
       <View style={styles.predictiveCard}>
         <View style={styles.predictiveHeader}>
-          <Icon name="creation" size={16} color="#2D5A43" />
+          <Icon name="creation" size={16} color={colors.primary} />
           <Text style={styles.predictiveTag}>Predictive Intelligence</Text>
         </View>
 
@@ -445,7 +487,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
 
         {categoryBreakdown.length === 0 ? (
           <View style={styles.emptyCategoryBox}>
-            <Icon name="tag-outline" size={32} color="#9CA3AF" />
+            <Icon name="tag-outline" size={32} color={colors.textMuted} />
             <Text style={styles.emptyCategoryText}>
               No category data for {monthLabel}
             </Text>
@@ -453,7 +495,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
         ) : (
           categoryBreakdown.map((item, index) => {
             const barColor =
-              CATEGORY_BAR_COLORS[index % CATEGORY_BAR_COLORS.length];
+              categoryBarColors[index % categoryBarColors.length];
             const isExpanded = expandedCategory === item.name;
             const catExpenses = expensesByCategory[item.name] || [];
 
@@ -473,7 +515,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
                         <Icon
                           name={getCategoryIcon(item.name)}
                           size={18}
-                          color="#374151"
+                          color={colors.textPrimary}
                         />
                       </View>
                       <View>
@@ -496,7 +538,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
                       <Icon
                         name={isExpanded ? 'chevron-up' : 'chevron-down'}
                         size={18}
-                        color="#6B7280"
+                        color={colors.textMuted}
                         style={styles.expandChevron}
                       />
                     </View>
@@ -552,7 +594,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
                             <Icon
                               name="chevron-right"
                               size={16}
-                              color="#9CA3AF"
+                              color={colors.textMuted}
                               style={styles.detailChevron}
                             />
                           </View>
@@ -607,7 +649,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
                         styles.dailyBarFill,
                         {
                           width: `${barWidth}%`,
-                          backgroundColor: isHighest ? '#18181B' : '#71717A',
+                          backgroundColor: isHighest ? colors.primary : (isDark ? colors.outline : '#71717A'),
                         },
                       ]}
                     />
@@ -627,7 +669,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
                     <Icon
                       name="chevron-right"
                       size={18}
-                      color="#9CA3AF"
+                      color={colors.textMuted}
                       style={styles.dailyChevron}
                     />
                   </View>
@@ -646,670 +688,705 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 40,
-    paddingTop: 8,
-  },
+const getStyles = (colors: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.canvasBase,
+    },
+    scrollContent: {
+      paddingBottom: 40,
+      paddingTop: 8,
+    },
 
-  // Title Row
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginHorizontal: 16,
-    marginTop: 4,
-    marginBottom: 16,
-  },
-  pageTitle: {
-    fontSize: 24,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  pageSubtitle: {
-    fontSize: 13,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  exportBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E5E7EB',
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    gap: 6,
-  },
-  exportBtnText: {
-    fontSize: 13,
-    fontFamily: theme.fonts.medium,
-    color: '#374151',
-  },
+    // Title Row
+    titleRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginHorizontal: 16,
+      marginTop: 4,
+      marginBottom: 16,
+    },
+    pageTitle: {
+      fontSize: 24,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.bold,
+      color: colors.textPrimary,
+    },
+    pageSubtitle: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    exportBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: 16,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      gap: 6,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+    },
+    exportBtnText: {
+      fontSize: 13,
+      fontFamily: theme.fonts.medium,
+      color: colors.textPrimary,
+    },
 
-  // Summary Card
-  summaryCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    padding: 18,
-    marginHorizontal: 16,
-    marginBottom: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  summaryTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  summaryLabel: {
-    fontSize: 12,
-    fontFamily: theme.fonts.bold,
-    letterSpacing: 0.5,
-    color: '#4B5563',
-  },
-  walletIconBadge: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  totalAmountRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    marginBottom: 14,
-  },
-  totalAmountText: {
-    fontSize: 34,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  trendRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 10,
-    gap: 2,
-  },
-  trendText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.medium,
-    color: '#15803D',
-  },
-  ceilingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-  },
-  ceilingLabel: {
-    fontSize: 13,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-  },
-  ceilingValue: {
-    fontSize: 13,
-    fontFamily: theme.fonts.semiBold,
-    color: '#111827',
-  },
+    // Summary Card
+    summaryCard: {
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      padding: 20,
+      marginHorizontal: 16,
+      marginBottom: 16,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.2 : 0.04,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    summaryTopRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 10,
+    },
+    summaryLabel: {
+      fontSize: 11,
+      fontFamily: theme.fonts.bold,
+      letterSpacing: 0.6,
+      color: colors.textMuted,
+    },
+    statusBadge: {
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 12,
+    },
+    statusBadgeOnTrack: {
+      backgroundColor: isDark ? 'rgba(143, 163, 130, 0.15)' : '#ECFDF5',
+    },
+    statusBadgeOver: {
+      backgroundColor: isDark ? 'rgba(255, 180, 171, 0.15)' : '#FEE2E2',
+    },
+    statusBadgeText: {
+      fontSize: 12,
+      fontFamily: theme.fonts.medium,
+    },
+    statusBadgeTextOnTrack: {
+      color: colors.secondary,
+    },
+    statusBadgeTextOver: {
+      color: colors.error,
+    },
+    amountRow: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      marginBottom: 14,
+    },
+    mainAmountText: {
+      fontSize: 32,
+      fontFamily: theme.fonts.bold,
+      color: colors.textPrimary,
+    },
+    capAmountText: {
+      fontSize: 18,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+    },
+    budgetEditPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surfaceLow,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      borderRadius: 12,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      marginLeft: 10,
+      gap: 3,
+    },
+    budgetEditPillText: {
+      fontSize: 11,
+      fontFamily: theme.fonts.medium,
+      color: colors.textSecondary,
+    },
+    progressBarTrack: {
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: colors.surfaceLow,
+      overflow: 'hidden',
+      marginBottom: 8,
+    },
+    progressBarFill: {
+      height: '100%',
+      borderRadius: 3,
+    },
+    progressInfoRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    progressUtilizedText: {
+      fontSize: 12,
+      fontFamily: theme.fonts.medium,
+      color: colors.textMuted,
+    },
+    progressRemainingText: {
+      fontSize: 12,
+      fontFamily: theme.fonts.medium,
+    },
+    statCardsRow: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    statBox: {
+      flex: 1,
+      backgroundColor: colors.surfaceLow,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      borderRadius: 14,
+      padding: 12,
+    },
+    statBoxLabel: {
+      fontSize: 11,
+      fontFamily: theme.fonts.medium,
+      color: colors.textMuted,
+      marginBottom: 4,
+    },
+    statBoxValueRow: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+    },
+    statBoxValue: {
+      fontSize: 18,
+      fontFamily: theme.fonts.bold,
+      color: colors.textPrimary,
+    },
+    statBoxSub: {
+      fontSize: 12,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+    },
 
-  // Stat Cards Row
-  statCardsRow: {
-    flexDirection: 'row',
-    marginHorizontal: 16,
-    gap: 12,
-    marginBottom: 14,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    padding: 14,
-  },
-  statCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  statCardLabel: {
-    fontSize: 12,
-    fontFamily: theme.fonts.medium,
-    color: '#4B5563',
-  },
-  statCardValue: {
-    fontSize: 22,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-    marginTop: 6,
-    marginBottom: 2,
-  },
-  statCardSub: {
-    fontSize: 12,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-  },
+    // Velocity Card
+    velocityCard: {
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      padding: 18,
+      marginHorizontal: 16,
+      marginBottom: 14,
+    },
+    velocityHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: 16,
+    },
+    velocityTitle: {
+      fontSize: 16,
+      fontFamily: theme.fonts.bold,
+      color: colors.textPrimary,
+    },
+    velocitySubtitle: {
+      fontSize: 12,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    peakBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: isDark ? 'rgba(224, 169, 109, 0.15)' : '#FDF4ED',
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 12,
+      gap: 5,
+    },
+    peakBadgeDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: colors.primary,
+    },
+    peakBadgeText: {
+      fontSize: 11,
+      fontFamily: theme.fonts.medium,
+      color: colors.primary,
+    },
 
-  // Velocity Card
-  velocityCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    padding: 18,
-    marginHorizontal: 16,
-    marginBottom: 14,
-  },
-  velocityHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  velocityTitle: {
-    fontSize: 16,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  velocitySubtitle: {
-    fontSize: 12,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  peakBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FDF4ED',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 5,
-  },
-  peakBadgeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#B45309',
-  },
-  peakBadgeText: {
-    fontSize: 11,
-    fontFamily: theme.fonts.medium,
-    color: '#9A3412',
-  },
+    // Chart
+    chartContainer: {
+      height: 120,
+      position: 'relative',
+      justifyContent: 'center',
+      marginVertical: 10,
+    },
+    dashedGuideLine: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      height: 1,
+      borderWidth: 0.5,
+      borderColor: colors.borderHairline,
+      borderStyle: 'dashed',
+    },
+    chartLineSegment1: {
+      position: 'absolute',
+      left: '12%',
+      top: 74,
+      width: '26%',
+      height: 2.5,
+      backgroundColor: isDark ? colors.primary : '#18181B',
+      transform: [{ rotate: '-12deg' }],
+    },
+    chartLineSegment2: {
+      position: 'absolute',
+      left: '36%',
+      top: 48,
+      width: '28%',
+      height: 2.5,
+      backgroundColor: isDark ? colors.primary : '#18181B',
+      transform: [{ rotate: '-36deg' }],
+    },
+    chartLineSegment3: {
+      position: 'absolute',
+      left: '60%',
+      top: 50,
+      width: '28%',
+      height: 2.5,
+      backgroundColor: isDark ? colors.primary : '#18181B',
+      transform: [{ rotate: '36deg' }],
+    },
+    chartNode: {
+      position: 'absolute',
+      width: 14,
+      height: 14,
+      borderRadius: 7,
+      backgroundColor: colors.surfaceElevated,
+      borderWidth: 2.5,
+      borderColor: isDark ? colors.primary : '#18181B',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    nodeInnerCircle: {
+      width: 4,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: isDark ? colors.primary : '#18181B',
+    },
+    chartNode1: {
+      left: '10%',
+      top: 80,
+    },
+    chartNode2: {
+      left: '35%',
+      top: 65,
+    },
+    chartNode3Default: {
+      left: '60%',
+      top: 40,
+    },
+    chartNodePeak: {
+      left: '58%',
+      top: 18,
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      borderWidth: 0,
+      backgroundColor: 'transparent',
+    },
+    peakRing: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      backgroundColor: isDark ? 'rgba(224, 169, 109, 0.25)' : '#FEE2E2',
+      borderWidth: 2,
+      borderColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    peakInnerDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: colors.primary,
+    },
+    chartNode4: {
+      left: '84%',
+      top: 76,
+    },
 
-  // Chart
-  chartContainer: {
-    height: 120,
-    position: 'relative',
-    justifyContent: 'center',
-    marginVertical: 10,
-  },
-  dashedGuideLine: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 1,
-    borderWidth: 0.5,
-    borderColor: '#E5E7EB',
-    borderStyle: 'dashed',
-  },
-  chartLineSegment1: {
-    position: 'absolute',
-    left: '12%',
-    top: 74,
-    width: '26%',
-    height: 2.5,
-    backgroundColor: '#18181B',
-    transform: [{ rotate: '-12deg' }],
-  },
-  chartLineSegment2: {
-    position: 'absolute',
-    left: '36%',
-    top: 48,
-    width: '28%',
-    height: 2.5,
-    backgroundColor: '#18181B',
-    transform: [{ rotate: '-36deg' }],
-  },
-  chartLineSegment3: {
-    position: 'absolute',
-    left: '60%',
-    top: 50,
-    width: '28%',
-    height: 2.5,
-    backgroundColor: '#18181B',
-    transform: [{ rotate: '36deg' }],
-  },
-  chartNode: {
-    position: 'absolute',
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2.5,
-    borderColor: '#18181B',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nodeInnerCircle: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#18181B',
-  },
-  chartNode1: {
-    left: '10%',
-    top: 80,
-  },
-  chartNode2: {
-    left: '35%',
-    top: 65,
-  },
-  chartNode3Default: {
-    left: '60%',
-    top: 40,
-  },
-  chartNodePeak: {
-    left: '58%',
-    top: 18,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 0,
-    backgroundColor: 'transparent',
-  },
-  peakRing: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#FEE2E2',
-    borderWidth: 2,
-    borderColor: '#F87171',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  peakInnerDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#DC2626',
-  },
-  chartNode4: {
-    left: '84%',
-    top: 76,
-  },
+    // Chart Labels
+    chartLabelsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginTop: 8,
+      paddingHorizontal: 4,
+    },
+    chartLabelCol: {
+      alignItems: 'center',
+      width: '24%',
+    },
+    chartWeekName: {
+      fontSize: 11,
+      fontFamily: theme.fonts.medium,
+      color: colors.textMuted,
+      marginBottom: 2,
+    },
+    chartWeekNamePeak: {
+      color: colors.primary,
+      fontFamily: theme.fonts.semiBold,
+    },
+    chartWeekAmount: {
+      fontSize: 12,
+      fontFamily: theme.fonts.semiBold,
+      color: colors.textPrimary,
+    },
+    chartWeekAmountPeak: {
+      color: colors.primary,
+      fontFamily: theme.fonts.bold,
+    },
 
-  // Chart Labels
-  chartLabelsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-    paddingHorizontal: 4,
-  },
-  chartLabelCol: {
-    alignItems: 'center',
-    width: '24%',
-  },
-  chartWeekName: {
-    fontSize: 11,
-    fontFamily: theme.fonts.medium,
-    color: '#6B7280',
-    marginBottom: 2,
-  },
-  chartWeekNamePeak: {
-    color: '#B45309',
-    fontFamily: theme.fonts.semiBold,
-  },
-  chartWeekAmount: {
-    fontSize: 12,
-    fontFamily: theme.fonts.semiBold,
-    color: '#111827',
-  },
-  chartWeekAmountPeak: {
-    color: '#B45309',
-    fontFamily: theme.fonts.bold,
-  },
+    // Callout Box
+    calloutBox: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      backgroundColor: colors.surfaceLow,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      borderRadius: 12,
+      padding: 12,
+      marginTop: 18,
+    },
+    calloutIcon: {
+      marginRight: 8,
+      marginTop: 1,
+    },
+    calloutText: {
+      flex: 1,
+      fontSize: 12,
+      fontFamily: theme.fonts.regular,
+      color: colors.textSecondary,
+      lineHeight: 18,
+    },
 
-  // Callout Box
-  calloutBox: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 18,
-  },
-  calloutIcon: {
-    marginRight: 8,
-    marginTop: 1,
-  },
-  calloutText: {
-    flex: 1,
-    fontSize: 12,
-    fontFamily: theme.fonts.regular,
-    color: '#4B5563',
-    lineHeight: 18,
-  },
+    // Predictive Intelligence Card
+    predictiveCard: {
+      backgroundColor: isDark ? colors.surfaceContainer : '#F4EFE6',
+      borderRadius: 18,
+      borderWidth: isDark ? 1 : 0,
+      borderColor: colors.borderHairline,
+      padding: 18,
+      marginHorizontal: 16,
+      marginBottom: 14,
+    },
+    predictiveHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginBottom: 8,
+    },
+    predictiveTag: {
+      fontSize: 12,
+      fontFamily: theme.fonts.semiBold,
+      color: colors.primary,
+    },
+    predictiveTitle: {
+      fontSize: 18,
+      fontFamily: isDark ? theme.fonts.serifBold : theme.fonts.bold,
+      color: colors.textPrimary,
+      marginBottom: 6,
+    },
+    predictiveDesc: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.textSecondary,
+      lineHeight: 20,
+      marginBottom: 14,
+    },
+    predictiveFooter: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    confidenceText: {
+      fontSize: 12,
+      fontFamily: theme.fonts.medium,
+      color: colors.textMuted,
+    },
+    adjustmentLink: {
+      fontSize: 12,
+      fontFamily: theme.fonts.bold,
+      color: colors.primary,
+    },
 
-  // Predictive Intelligence Card
-  predictiveCard: {
-    backgroundColor: '#F4EFE6',
-    borderRadius: 18,
-    padding: 18,
-    marginHorizontal: 16,
-    marginBottom: 14,
-  },
-  predictiveHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
-  },
-  predictiveTag: {
-    fontSize: 12,
-    fontFamily: theme.fonts.semiBold,
-    color: '#4B5563',
-  },
-  predictiveTitle: {
-    fontSize: 18,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-    marginBottom: 6,
-  },
-  predictiveDesc: {
-    fontSize: 13,
-    fontFamily: theme.fonts.regular,
-    color: '#4B5563',
-    lineHeight: 20,
-    marginBottom: 14,
-  },
-  predictiveFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  confidenceText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.medium,
-    color: '#6B7280',
-  },
-  adjustmentLink: {
-    fontSize: 12,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
+    // Category Breakdown Card
+    categoryCard: {
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      padding: 18,
+      marginHorizontal: 16,
+      marginBottom: 16,
+    },
+    categoryHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: 16,
+    },
+    categoryCardTitle: {
+      fontSize: 16,
+      fontFamily: theme.fonts.bold,
+      color: colors.textPrimary,
+    },
+    categoryCardSubtitle: {
+      fontSize: 12,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    categoryCount: {
+      fontSize: 12,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+    },
+    emptyCategoryBox: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 24,
+      gap: 8,
+    },
+    emptyCategoryText: {
+      fontSize: 13,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+    },
+    categoryRowItem: {
+      marginBottom: 14,
+    },
+    categoryTouchableHeader: {
+      paddingVertical: 2,
+    },
+    categoryTopLine: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    categoryLeftGroup: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
+    categoryIconCircle: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: colors.surfaceLow,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 10,
+    },
+    categoryItemName: {
+      fontSize: 14,
+      fontFamily: theme.fonts.semiBold,
+      color: colors.textPrimary,
+    },
+    categoryItemCount: {
+      fontSize: 11,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+      marginTop: 1,
+    },
+    categoryRightGroup: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    categoryItemAmount: {
+      fontSize: 14,
+      fontFamily: theme.fonts.semiBold,
+      color: colors.textPrimary,
+    },
+    categoryItemPercent: {
+      fontSize: 12,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+    },
+    expandChevron: {
+      marginLeft: 4,
+    },
+    categoryBarTrack: {
+      height: 5,
+      backgroundColor: colors.surfaceLow,
+      borderRadius: 2.5,
+      overflow: 'hidden',
+    },
+    categoryBarFill: {
+      height: '100%',
+      borderRadius: 2.5,
+    },
 
-  // Category Breakdown Card
-  categoryCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    padding: 18,
-    marginHorizontal: 16,
-    marginBottom: 16,
-  },
-  categoryHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  categoryCardTitle: {
-    fontSize: 16,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  categoryCardSubtitle: {
-    fontSize: 12,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  categoryCount: {
-    fontSize: 12,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-  },
-  emptyCategoryBox: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 24,
-    gap: 8,
-  },
-  emptyCategoryText: {
-    fontSize: 13,
-    fontFamily: theme.fonts.regular,
-    color: '#9CA3AF',
-  },
-  categoryRowItem: {
-    marginBottom: 14,
-  },
-  categoryTouchableHeader: {
-    paddingVertical: 2,
-  },
-  categoryTopLine: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  categoryLeftGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  categoryIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  categoryItemName: {
-    fontSize: 14,
-    fontFamily: theme.fonts.semiBold,
-    color: '#111827',
-  },
-  categoryItemCount: {
-    fontSize: 11,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    marginTop: 1,
-  },
-  categoryRightGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  categoryItemAmount: {
-    fontSize: 14,
-    fontFamily: theme.fonts.semiBold,
-    color: '#111827',
-  },
-  categoryItemPercent: {
-    fontSize: 12,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-  },
-  expandChevron: {
-    marginLeft: 4,
-  },
-  categoryBarTrack: {
-    height: 5,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 2.5,
-    overflow: 'hidden',
-  },
-  categoryBarFill: {
-    height: '100%',
-    borderRadius: 2.5,
-  },
+    // Accordion inside Category Breakdown
+    categoryExpensesContainer: {
+      backgroundColor: colors.surfaceLow,
+      borderRadius: 12,
+      marginTop: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 6,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+    },
+    expenseDetailRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 10,
+    },
+    expenseDetailRowBorder: {
+      borderTopWidth: 1,
+      borderTopColor: colors.borderHairline,
+    },
+    expenseDetailLeft: {
+      flex: 1,
+      marginRight: 10,
+    },
+    expenseDetailNote: {
+      fontSize: 13,
+      fontFamily: theme.fonts.medium,
+      color: colors.textPrimary,
+      marginBottom: 2,
+    },
+    expenseDetailDate: {
+      fontSize: 11,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+    },
+    expenseDetailAmount: {
+      fontSize: 13,
+      fontFamily: theme.fonts.bold,
+      color: colors.textPrimary,
+    },
+    noExpensesText: {
+      fontSize: 12,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+      textAlign: 'center',
+      paddingVertical: 8,
+    },
 
-  // Accordion inside Category Breakdown
-  categoryExpensesContainer: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    marginTop: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-  },
-  expenseDetailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  expenseDetailRowBorder: {
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-  },
-  expenseDetailLeft: {
-    flex: 1,
-    marginRight: 10,
-  },
-  expenseDetailNote: {
-    fontSize: 13,
-    fontFamily: theme.fonts.medium,
-    color: '#1F2937',
-    marginBottom: 2,
-  },
-  expenseDetailDate: {
-    fontSize: 11,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-  },
-  expenseDetailAmount: {
-    fontSize: 13,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  noExpensesText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.regular,
-    color: '#9CA3AF',
-    textAlign: 'center',
-    paddingVertical: 8,
-  },
+    // Daily Spending Breakdown Card
+    dailyCard: {
+      backgroundColor: colors.surfaceContainer,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: colors.borderHairline,
+      padding: 18,
+      marginHorizontal: 16,
+      marginBottom: 24,
+    },
+    dailyHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: 16,
+    },
+    dailyCardTitle: {
+      fontSize: 16,
+      fontFamily: theme.fonts.bold,
+      color: colors.textPrimary,
+    },
+    dailyCardSubtitle: {
+      fontSize: 12,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    dailyCount: {
+      fontSize: 12,
+      fontFamily: theme.fonts.regular,
+      color: colors.textMuted,
+    },
+    dailyRowItem: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 12,
+    },
+    dailyRowItemBorder: {
+      borderTopWidth: 1,
+      borderTopColor: colors.borderHairline,
+    },
+    dailyLeft: {
+      flex: 1,
+      marginRight: 16,
+    },
+    dailyDateText: {
+      fontSize: 13,
+      fontFamily: theme.fonts.medium,
+      color: colors.textPrimary,
+      marginBottom: 6,
+    },
+    dailyBarTrack: {
+      height: 5,
+      backgroundColor: colors.surfaceLow,
+      borderRadius: 2.5,
+      overflow: 'hidden',
+    },
+    dailyBarFill: {
+      height: '100%',
+      borderRadius: 2.5,
+    },
+    dailyRight: {
+      alignItems: 'flex-end',
+    },
+    dailyAmountText: {
+      fontSize: 14,
+      fontFamily: theme.fonts.semiBold,
+      color: colors.textPrimary,
+    },
+    dailyAmountTextHighest: {
+      color: colors.primary,
+      fontFamily: theme.fonts.bold,
+    },
+    highBadge: {
+      backgroundColor: isDark ? 'rgba(224, 169, 109, 0.15)' : '#FDF4ED',
+      borderRadius: 4,
+      paddingHorizontal: 6,
+      paddingVertical: 1,
+      marginTop: 3,
+    },
+    highBadgeText: {
+      fontSize: 9,
+      fontFamily: theme.fonts.bold,
+      color: colors.primary,
+      letterSpacing: 0.5,
+    },
+    dailyAmountRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    dailyChevron: {
+      marginLeft: 2,
+    },
+    detailChevron: {
+      marginLeft: 4,
+    },
+    expenseDetailRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+  });
 
-  // Daily Spending Breakdown Card
-  dailyCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#F0F1F3',
-    padding: 18,
-    marginHorizontal: 16,
-    marginBottom: 24,
-  },
-  dailyHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  dailyCardTitle: {
-    fontSize: 16,
-    fontFamily: theme.fonts.bold,
-    color: '#111827',
-  },
-  dailyCardSubtitle: {
-    fontSize: 12,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  dailyCount: {
-    fontSize: 12,
-    fontFamily: theme.fonts.regular,
-    color: '#6B7280',
-  },
-  dailyRowItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  dailyRowItemBorder: {
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-  },
-  dailyLeft: {
-    flex: 1,
-    marginRight: 16,
-  },
-  dailyDateText: {
-    fontSize: 13,
-    fontFamily: theme.fonts.medium,
-    color: '#111827',
-    marginBottom: 6,
-  },
-  dailyBarTrack: {
-    height: 5,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 2.5,
-    overflow: 'hidden',
-  },
-  dailyBarFill: {
-    height: '100%',
-    borderRadius: 2.5,
-  },
-  dailyRight: {
-    alignItems: 'flex-end',
-  },
-  dailyAmountText: {
-    fontSize: 14,
-    fontFamily: theme.fonts.semiBold,
-    color: '#111827',
-  },
-  dailyAmountTextHighest: {
-    color: '#111827',
-    fontFamily: theme.fonts.bold,
-  },
-  highBadge: {
-    backgroundColor: '#FDF4ED',
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    marginTop: 3,
-  },
-  highBadgeText: {
-    fontSize: 9,
-    fontFamily: theme.fonts.bold,
-    color: '#B45309',
-    letterSpacing: 0.5,
-  },
-  dailyAmountRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  dailyChevron: {
-    marginLeft: 2,
-  },
-  detailChevron: {
-    marginLeft: 4,
-  },
-  expenseDetailRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-});
